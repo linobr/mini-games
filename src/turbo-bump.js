@@ -238,6 +238,7 @@ class TurboBump {
     this.particles = [];
     this.shake = 0;
     this.collisionCooldowns = new Map();
+    this.connectionTimer = null;
     this.manualClose = false;
     this.controls = normalizeInput();
     this.activePointers = new Map();
@@ -377,6 +378,7 @@ class TurboBump {
 
   closeSession({ notify = true } = {}) {
     this.manualClose = true;
+    this.clearConnectionTimer();
     if (notify && this.isHost) {
       this.broadcast({ type: "host-ended" });
     }
@@ -451,6 +453,7 @@ class TurboBump {
     this.showLobby();
 
     this.peer = new Peer();
+    this.startConnectionTimer();
     this.peer.on("open", () => {
       const connection = this.peer.connect(`${ROOM_PREFIX}${this.roomCode}`, {
         reliable: true,
@@ -462,6 +465,7 @@ class TurboBump {
   }
 
   handlePeerError(error, host) {
+    this.clearConnectionTimer();
     const roomMissing = !host && error?.type === "peer-unavailable";
     const duplicateRoom = host && error?.type === "unavailable-id";
     this.connectionStatus = "error";
@@ -556,12 +560,14 @@ class TurboBump {
   bindHostConnection(connection, name) {
     this.hostConnection = connection;
     connection.on("open", () => {
+      this.clearConnectionTimer();
       this.connectionStatus = "connected";
       connection.send({ type: "join", name });
       this.renderLobby();
     });
     connection.on("data", (message) => this.handleClientMessage(message));
     connection.on("close", () => {
+      this.clearConnectionTimer();
       if (this.manualClose) return;
       this.connectionStatus = "disconnected";
       this.showGameDisconnect(
@@ -569,6 +575,7 @@ class TurboBump {
       );
     });
     connection.on("error", () => {
+      this.clearConnectionTimer();
       if (this.manualClose) return;
       this.connectionStatus = "error";
       this.showGameDisconnect(
@@ -580,6 +587,7 @@ class TurboBump {
   handleClientMessage(message) {
     if (!message || typeof message !== "object") return;
     if (message.type === "welcome") {
+      this.clearConnectionTimer();
       this.localId = String(message.playerId);
       this.players = this.validateLobbyPlayers(message.players);
       this.connectionStatus = "connected";
@@ -628,6 +636,24 @@ class TurboBump {
       host: Boolean(player.host),
       connected: player.connected !== false,
     }));
+  }
+
+  startConnectionTimer() {
+    this.clearConnectionTimer();
+    this.connectionTimer = window.setTimeout(() => {
+      if (this.localId || this.connectionStatus === "connected") return;
+      this.connectionStatus = "error";
+      this.showNotice(
+        this.elements.lobbyNotice,
+        "Die Verbindung dauert zu lange. Prüfe den Raumcode, die Internetverbindung oder versucht einen neuen Raum.",
+      );
+      this.renderLobby();
+    }, 15000);
+  }
+
+  clearConnectionTimer() {
+    if (this.connectionTimer) window.clearTimeout(this.connectionTimer);
+    this.connectionTimer = null;
   }
 
   publicPlayers() {
