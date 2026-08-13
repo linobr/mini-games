@@ -1,6 +1,7 @@
 import Peer from "peerjs";
 import "./styles.css";
 import { createTurboBump } from "./turbo-bump.js";
+import { createColorClash } from "./color-clash.js";
 
 const WINNING_LINES = [
   [0, 1, 2],
@@ -24,6 +25,7 @@ const elements = {
   brand: document.querySelector("#brand-button"),
   openTicTacToe: document.querySelector("#open-tictactoe"),
   openTurbo: document.querySelector("#open-turbo"),
+  openColorClash: document.querySelector("#open-color-clash"),
   setupBack: document.querySelector("#setup-back"),
   createRoom: document.querySelector("#create-room"),
   roomInput: document.querySelector("#room-input"),
@@ -60,6 +62,7 @@ let connection = null;
 let isHost = false;
 let connectionTimer = null;
 let turboBump = null;
+let colorClash = null;
 
 function createGame(score = { X: 0, O: 0 }, round = 1) {
   return {
@@ -139,7 +142,7 @@ function isValidGameState(value) {
 }
 
 function showView(view) {
-  elements.views.forEach((item) => item.classList.add("hidden"));
+  document.querySelectorAll(".view").forEach((item) => item.classList.add("hidden"));
   view.classList.remove("hidden");
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -193,6 +196,7 @@ function cleanConnection() {
 
 function returnHome() {
   turboBump?.closeSession();
+  colorClash?.closeSession();
   cleanConnection();
   mode = null;
   role = null;
@@ -206,6 +210,7 @@ function returnHome() {
 
 function openSetup() {
   turboBump?.closeSession();
+  colorClash?.closeSession();
   cleanConnection();
   mode = null;
   role = null;
@@ -508,7 +513,16 @@ async function shareRoom() {
 
 elements.brand.addEventListener("click", returnHome);
 elements.openTicTacToe.addEventListener("click", openSetup);
-elements.openTurbo.addEventListener("click", () => turboBump.openSetup());
+elements.openTurbo.addEventListener("click", () => {
+  colorClash?.closeSession();
+  cleanConnection();
+  turboBump.openSetup();
+});
+elements.openColorClash.addEventListener("click", () => {
+  turboBump?.closeSession();
+  cleanConnection();
+  colorClash.openSetup();
+});
 elements.setupBack.addEventListener("click", returnHome);
 elements.createRoom.addEventListener("click", createOnlineRoom);
 elements.startLocal.addEventListener("click", startLocalGame);
@@ -535,9 +549,15 @@ elements.board.addEventListener("click", (event) => {
 window.addEventListener("beforeunload", () => {
   cleanConnection();
   turboBump?.closeSession({ notify: false });
+  colorClash?.closeSession({ notify: false });
 });
 
 turboBump = createTurboBump({
+  showView,
+  onReturnHome: returnHome,
+});
+
+colorClash = createColorClash({
   showView,
   onReturnHome: returnHome,
 });
@@ -546,7 +566,9 @@ const initialParams = new URLSearchParams(window.location.search);
 const invitedRoom = normalizeRoomCode(initialParams.get("room") ?? "");
 const invitedGame = initialParams.get("game");
 
-if (invitedGame === "turbo-bump" && invitedRoom.length === 6) {
+if (invitedGame === "color-clash" && invitedRoom.length === 6) {
+  colorClash.openSetup(invitedRoom);
+} else if (invitedGame === "turbo-bump" && invitedRoom.length === 6) {
   turboBump.openSetup(invitedRoom);
 } else if (invitedRoom.length === 6) {
   elements.roomInput.value = invitedRoom;
