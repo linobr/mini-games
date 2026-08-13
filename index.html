@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Tic-Tac-Toe online oder gemeinsam an einem Gerät spielen."
+    />
+    <meta name="theme-color" content="#17221d" />
+    <title>Mini Games</title>
+  </head>
+  <body>
+    <main class="site-shell">
+      <header class="topbar">
+        <button class="brand" id="brand-button" aria-label="Zur Startseite">
+          <span class="brand-mark" aria-hidden="true">XO</span>
+          <span>Mini Games</span>
+        </button>
+        <span class="online-pill">
+          <span class="online-dot"></span>
+          Kostenlos &amp; ohne Anmeldung
+        </span>
+      </header>
+
+      <section class="home-view view" id="home-view">
+        <div class="hero-copy">
+          <span class="eyebrow">Spieleabend, direkt im Browser</span>
+          <h1>Kleine Spiele.<br />Grosse Revanchen.</h1>
+          <p>
+            Starte eine Runde, teile den Code und spiele sofort mit deinem
+            Kollegen – am gleichen Gerät oder online.
+          </p>
+        </div>
+
+        <div class="game-grid" aria-label="Verfügbare Spiele">
+          <button class="game-card game-card-active" id="open-tictactoe">
+            <span class="card-topline">
+              <span class="game-icon tic-icon" aria-hidden="true">
+                <i>X</i><i>O</i><i>X</i><i>O</i>
+              </span>
+              <span class="available-badge">Jetzt spielen</span>
+            </span>
+            <span class="game-card-copy">
+              <strong>Tic-Tac-Toe</strong>
+              <small>2 Spieler · ca. 2 Minuten</small>
+            </span>
+            <span class="card-arrow" aria-hidden="true">→</span>
+          </button>
+
+          <article class="game-card coming-soon" aria-label="Vier gewinnt, bald verfügbar">
+            <span class="card-topline">
+              <span class="game-icon connect-icon" aria-hidden="true">●●<br />●●</span>
+              <span class="soon-badge">Bald</span>
+            </span>
+            <span class="game-card-copy">
+              <strong>Vier gewinnt</strong>
+              <small>Das nächste Spiel</small>
+            </span>
+          </article>
+
+          <article class="game-card coming-soon" aria-label="Weiteres Spiel geplant">
+            <span class="card-topline">
+              <span class="game-icon plus-icon" aria-hidden="true">+</span>
+            </span>
+            <span class="game-card-copy">
+              <strong>Deine nächste Idee</strong>
+              <small>Die Plattform wächst mit</small>
+            </span>
+          </article>
+        </div>
+      </section>
+
+      <section class="setup-view view hidden" id="setup-view">
+        <button class="back-link" id="setup-back">← Alle Spiele</button>
+        <div class="setup-card">
+          <div class="setup-heading">
+            <span class="game-icon tic-icon large" aria-hidden="true">
+              <i>X</i><i>O</i><i>X</i><i>O</i>
+            </span>
+            <div>
+              <span class="eyebrow">Tic-Tac-Toe</span>
+              <h1>Wie möchtet ihr spielen?</h1>
+            </div>
+          </div>
+
+          <div class="mode-grid">
+            <button class="mode-card primary-mode" id="create-room">
+              <span class="mode-number">01</span>
+              <strong>Online-Raum erstellen</strong>
+              <small>Du erhältst einen Code zum Teilen.</small>
+              <span class="mode-arrow">→</span>
+            </button>
+
+            <div class="mode-card join-card">
+              <span class="mode-number">02</span>
+              <strong>Raum beitreten</strong>
+              <small>Gib den Code deines Kollegen ein.</small>
+              <div class="join-row">
+                <input
+                  id="room-input"
+                  placeholder="ABC123"
+                  aria-label="Raumcode"
+                  maxlength="6"
+                  autocomplete="off"
+                />
+                <button id="join-room" aria-label="Raum beitreten">→</button>
+              </div>
+            </div>
+
+            <button class="mode-card local-mode" id="start-local">
+              <span class="mode-number">03</span>
+              <strong>Am gleichen Gerät</strong>
+              <small>Spielt abwechselnd auf einem Bildschirm.</small>
+              <span class="mode-arrow">→</span>
+            </button>
+          </div>
+          <p class="notice error-notice hidden" id="setup-notice" role="alert"></p>
+        </div>
+      </section>
+
+      <section class="game-view view hidden" id="game-view">
+        <div class="game-toolbar">
+          <button class="back-link" id="leave-game">← Spiel verlassen</button>
+          <div class="room-chip hidden" id="room-chip">
+            <span>Raum</span>
+            <strong id="room-code"></strong>
+            <button id="share-room">Einladen</button>
+          </div>
+        </div>
+
+        <div class="game-layout">
+          <aside class="score-panel">
+            <span class="eyebrow" id="round-label">Runde 1</span>
+            <h1>Tic-Tac-Toe</h1>
+            <div class="score-list">
+              <div class="score-row active" id="score-row-x">
+                <span class="score-mark x-mark">X</span>
+                <span>
+                  <small id="player-x">Spieler X</small>
+                  <strong id="score-x">0</strong>
+                </span>
+              </div>
+              <div class="score-row" id="score-row-o">
+                <span class="score-mark o-mark">O</span>
+                <span>
+                  <small id="player-o">Spieler O</small>
+                  <strong id="score-o">0</strong>
+                </span>
+              </div>
+            </div>
+            <div class="connection-line hidden" id="connection-line">
+              <span></span>
+              <label id="connection-label">Getrennt</label>
+            </div>
+          </aside>
+
+          <div class="board-panel">
+            <p class="turn-status" id="game-status" aria-live="polite">X ist am Zug</p>
+            <div class="board" id="board" role="grid" aria-label="Tic-Tac-Toe Spielfeld">
+              <button class="cell" data-index="0" role="gridcell" aria-label="Feld 1: leer"></button>
+              <button class="cell" data-index="1" role="gridcell" aria-label="Feld 2: leer"></button>
+              <button class="cell" data-index="2" role="gridcell" aria-label="Feld 3: leer"></button>
+              <button class="cell" data-index="3" role="gridcell" aria-label="Feld 4: leer"></button>
+              <button class="cell" data-index="4" role="gridcell" aria-label="Feld 5: leer"></button>
+              <button class="cell" data-index="5" role="gridcell" aria-label="Feld 6: leer"></button>
+              <button class="cell" data-index="6" role="gridcell" aria-label="Feld 7: leer"></button>
+              <button class="cell" data-index="7" role="gridcell" aria-label="Feld 8: leer"></button>
+              <button class="cell" data-index="8" role="gridcell" aria-label="Feld 9: leer"></button>
+            </div>
+            <p class="notice error-notice hidden" id="game-notice" role="alert"></p>
+            <button class="new-round-button hidden" id="new-round">
+              Nächste Runde <span>→</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <footer>
+        <span>Mini Games · Version 1</span>
+        <span>Fair play, viel Spass.</span>
+      </footer>
+    </main>
+
+    <script type="module" src="/src/app.js"></script>
+  </body>
+</html>
