@@ -1,5 +1,6 @@
 import Peer from "peerjs";
 import "./styles.css";
+import { createTurboBump } from "./turbo-bump.js";
 
 const WINNING_LINES = [
   [0, 1, 2],
@@ -22,6 +23,7 @@ const elements = {
   game: document.querySelector("#game-view"),
   brand: document.querySelector("#brand-button"),
   openTicTacToe: document.querySelector("#open-tictactoe"),
+  openTurbo: document.querySelector("#open-turbo"),
   setupBack: document.querySelector("#setup-back"),
   createRoom: document.querySelector("#create-room"),
   roomInput: document.querySelector("#room-input"),
@@ -57,6 +59,7 @@ let peer = null;
 let connection = null;
 let isHost = false;
 let connectionTimer = null;
+let turboBump = null;
 
 function createGame(score = { X: 0, O: 0 }, round = 1) {
   return {
@@ -164,8 +167,13 @@ function setConnectionStatus(status) {
 
 function setRoomInUrl(code = "") {
   const url = new URL(window.location.href);
-  if (code) url.searchParams.set("room", code);
-  else url.searchParams.delete("room");
+  if (code) {
+    url.searchParams.set("game", "tic-tac-toe");
+    url.searchParams.set("room", code);
+  } else {
+    url.searchParams.delete("game");
+    url.searchParams.delete("room");
+  }
   history.replaceState({}, "", url);
 }
 
@@ -184,6 +192,7 @@ function cleanConnection() {
 }
 
 function returnHome() {
+  turboBump?.closeSession();
   cleanConnection();
   mode = null;
   role = null;
@@ -196,6 +205,7 @@ function returnHome() {
 }
 
 function openSetup() {
+  turboBump?.closeSession();
   cleanConnection();
   mode = null;
   role = null;
@@ -465,6 +475,7 @@ function renderGame() {
 
 async function shareRoom() {
   const url = new URL(window.location.href);
+  url.searchParams.set("game", "tic-tac-toe");
   url.searchParams.set("room", roomCode);
   const shareData = {
     title: "Tic-Tac-Toe",
@@ -497,6 +508,7 @@ async function shareRoom() {
 
 elements.brand.addEventListener("click", returnHome);
 elements.openTicTacToe.addEventListener("click", openSetup);
+elements.openTurbo.addEventListener("click", () => turboBump.openSetup());
 elements.setupBack.addEventListener("click", returnHome);
 elements.createRoom.addEventListener("click", createOnlineRoom);
 elements.startLocal.addEventListener("click", startLocalGame);
@@ -520,13 +532,23 @@ elements.board.addEventListener("click", (event) => {
   selectCell(Number(cell.dataset.index));
 });
 
-window.addEventListener("beforeunload", cleanConnection);
+window.addEventListener("beforeunload", () => {
+  cleanConnection();
+  turboBump?.closeSession({ notify: false });
+});
 
-const invitedRoom = normalizeRoomCode(
-  new URLSearchParams(window.location.search).get("room") ?? "",
-);
+turboBump = createTurboBump({
+  showView,
+  onReturnHome: returnHome,
+});
 
-if (invitedRoom.length === 6) {
+const initialParams = new URLSearchParams(window.location.search);
+const invitedRoom = normalizeRoomCode(initialParams.get("room") ?? "");
+const invitedGame = initialParams.get("game");
+
+if (invitedGame === "turbo-bump" && invitedRoom.length === 6) {
+  turboBump.openSetup(invitedRoom);
+} else if (invitedRoom.length === 6) {
   elements.roomInput.value = invitedRoom;
   showView(elements.setup);
 } else {

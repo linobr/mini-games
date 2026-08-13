@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="Tic-Tac-Toe online oder gemeinsam an einem Gerät spielen."
+      content="Tic-Tac-Toe und Turbo Bump kostenlos mit Freunden im Browser spielen."
     />
     <meta name="theme-color" content="#17221d" />
     <title>Mini Games</title>
@@ -48,16 +48,19 @@
             <span class="card-arrow" aria-hidden="true">→</span>
           </button>
 
-          <article class="game-card coming-soon" aria-label="Vier gewinnt, bald verfügbar">
+          <button class="game-card game-card-active turbo-card" id="open-turbo">
             <span class="card-topline">
-              <span class="game-icon connect-icon" aria-hidden="true">●●<br />●●</span>
-              <span class="soon-badge">Bald</span>
+              <span class="game-icon turbo-icon" aria-hidden="true">
+                <i></i><i></i><i></i>
+              </span>
+              <span class="available-badge">Neu</span>
             </span>
             <span class="game-card-copy">
-              <strong>Vier gewinnt</strong>
-              <small>Das nächste Spiel</small>
+              <strong>Turbo Bump</strong>
+              <small>2–4 Spieler · Autoscooter-Sumo</small>
             </span>
-          </article>
+            <span class="card-arrow" aria-hidden="true">→</span>
+          </button>
 
           <article class="game-card coming-soon" aria-label="Weiteres Spiel geplant">
             <span class="card-topline">
@@ -176,8 +179,139 @@
         </div>
       </section>
 
+      <section class="turbo-setup-view view hidden" id="turbo-setup-view">
+        <button class="back-link" id="turbo-setup-back">← Alle Spiele</button>
+        <div class="setup-card turbo-setup-card">
+          <div class="setup-heading">
+            <span class="game-icon turbo-icon large" aria-hidden="true">
+              <i></i><i></i><i></i>
+            </span>
+            <div>
+              <span class="eyebrow">Turbo Bump</span>
+              <h1>Bereit zum Rammen?</h1>
+            </div>
+          </div>
+
+          <label class="player-name-field">
+            <span>Dein Fahrername</span>
+            <input
+              id="turbo-player-name"
+              maxlength="16"
+              autocomplete="nickname"
+              placeholder="Spieler"
+            />
+          </label>
+
+          <div class="mode-grid turbo-mode-grid">
+            <button class="mode-card primary-mode turbo-primary-mode" id="turbo-create-room">
+              <span class="mode-number">01</span>
+              <strong>Online-Raum erstellen</strong>
+              <small>Du bist Host und startest das Match.</small>
+              <span class="mode-arrow">→</span>
+            </button>
+
+            <div class="mode-card join-card turbo-join-card">
+              <span class="mode-number">02</span>
+              <strong>Raum beitreten</strong>
+              <small>Bis zu vier Fahrer können mitspielen.</small>
+              <div class="join-row">
+                <input
+                  id="turbo-room-input"
+                  placeholder="ABC123"
+                  aria-label="Turbo-Bump-Raumcode"
+                  maxlength="6"
+                  autocomplete="off"
+                />
+                <button id="turbo-join-room" aria-label="Turbo-Bump-Raum beitreten">→</button>
+              </div>
+            </div>
+          </div>
+          <p class="notice error-notice hidden" id="turbo-setup-notice" role="alert"></p>
+        </div>
+      </section>
+
+      <section class="turbo-lobby-view view hidden" id="turbo-lobby-view">
+        <div class="game-toolbar">
+          <button class="back-link turbo-back-link" id="turbo-leave-lobby">← Raum verlassen</button>
+          <div class="room-chip turbo-room-chip">
+            <span>Raum</span>
+            <strong id="turbo-lobby-code"></strong>
+            <button id="turbo-share-lobby">Einladen</button>
+          </div>
+        </div>
+
+        <div class="turbo-lobby-shell">
+          <div class="turbo-lobby-copy">
+            <span class="turbo-kicker">Fahrerlager</span>
+            <h1>Motoren an.<br />Freunde rein.</h1>
+            <p id="turbo-lobby-status">Raum wird vorbereitet …</p>
+          </div>
+
+          <div class="turbo-lobby-panel">
+            <div class="turbo-lobby-header">
+              <span>Fahrer</span>
+              <strong id="turbo-player-count">1 / 4</strong>
+            </div>
+            <div class="turbo-player-slots" id="turbo-player-slots"></div>
+            <p class="turbo-lobby-notice hidden" id="turbo-lobby-notice" role="alert"></p>
+            <button class="turbo-start-button" id="turbo-start-game" disabled>
+              Match starten <span>→</span>
+            </button>
+            <p class="turbo-host-hint" id="turbo-host-hint">
+              Mindestens zwei Fahrer werden benötigt.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="turbo-game-view view hidden" id="turbo-game-view">
+        <div class="turbo-game-toolbar">
+          <button class="back-link turbo-back-link" id="turbo-leave-game">← Spiel verlassen</button>
+          <div class="turbo-game-meta">
+            <span id="turbo-round-label">Runde 1</span>
+            <strong id="turbo-arena-label">Arena stabil</strong>
+          </div>
+          <div class="room-chip turbo-room-chip">
+            <span>Raum</span>
+            <strong id="turbo-game-code"></strong>
+            <button id="turbo-share-game">Einladen</button>
+          </div>
+        </div>
+
+        <div class="turbo-stage" id="turbo-stage">
+          <div class="turbo-hud" id="turbo-hud"></div>
+          <div class="turbo-canvas-wrap">
+            <canvas
+              id="turbo-canvas"
+              width="960"
+              height="600"
+              aria-label="Turbo-Bump-Arena"
+            ></canvas>
+            <div class="turbo-message hidden" id="turbo-message" role="status">
+              <span id="turbo-message-kicker">Rundenergebnis</span>
+              <h2 id="turbo-message-title">Gewonnen!</h2>
+              <p id="turbo-message-copy"></p>
+              <button id="turbo-new-round">Neue Runde <span>→</span></button>
+            </div>
+          </div>
+
+          <div class="turbo-mobile-controls" id="turbo-mobile-controls" aria-label="Touch-Steuerung">
+            <div class="turbo-steer-controls">
+              <button data-control="left" aria-label="Nach links lenken">←</button>
+              <button data-control="right" aria-label="Nach rechts lenken">→</button>
+            </div>
+            <button class="turbo-boost-control" data-control="boost" aria-label="Boost">BOOST</button>
+            <div class="turbo-pedal-controls">
+              <button data-control="up" aria-label="Gas geben">▲</button>
+              <button data-control="down" aria-label="Bremsen und rückwärts">▼</button>
+            </div>
+          </div>
+          <p class="turbo-game-notice hidden" id="turbo-game-notice" role="alert"></p>
+        </div>
+      </section>
+
       <footer>
-        <span>Mini Games · Version 1</span>
+        <span>Mini Games · Version 2</span>
         <span>Fair play, viel Spass.</span>
       </footer>
     </main>
