@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#17221d" />
+    <meta name="description" content="Meteor Run – kostenloses Solo-Arcade-Spiel aus Mini Games." />
+    <title>Meteor Run · Mini Games</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        --bg: #0c1511;
+        --panel: #14221b;
+        --panel-2: #1a2b22;
+        --line: rgba(255,255,255,.10);
+        --text: #f4f7f5;
+        --muted: #9fb0a7;
+        --accent: #b8ff63;
+        --accent-dark: #7db73b;
+        --danger: #ff785f;
+      }
+
+      * { box-sizing: border-box; }
+      html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--text); }
+      body {
+        min-height: 100vh;
+        background:
+          radial-gradient(circle at 20% 10%, rgba(184,255,99,.10), transparent 28rem),
+          radial-gradient(circle at 85% 20%, rgba(76,126,255,.10), transparent 25rem),
+          var(--bg);
+      }
+      button, a { font: inherit; }
+      button { touch-action: manipulation; }
+
+      .shell { width: min(1180px, calc(100% - 32px)); margin: 0 auto; padding: 26px 0 38px; }
+      .topbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 26px; }
+      .back {
+        color: var(--text); text-decoration: none; border: 1px solid var(--line); background: rgba(255,255,255,.03);
+        padding: 10px 14px; border-radius: 999px; font-weight: 700;
+      }
+      .back:hover { border-color: rgba(184,255,99,.45); }
+      .solo-pill { color: #15210f; background: var(--accent); border-radius: 999px; padding: 8px 12px; font-size: 13px; font-weight: 900; }
+
+      .intro { display: grid; grid-template-columns: 1.1fr .9fr; gap: 24px; align-items: end; margin-bottom: 18px; }
+      .eyebrow { color: var(--accent); font-size: 13px; font-weight: 900; text-transform: uppercase; letter-spacing: .12em; }
+      h1 { margin: 8px 0 10px; font-size: clamp(42px, 7vw, 82px); line-height: .9; letter-spacing: -.055em; }
+      .intro p { margin: 0; color: var(--muted); font-size: 17px; line-height: 1.55; max-width: 560px; }
+      .controls-copy { justify-self: end; width: min(100%, 360px); padding: 16px 18px; border: 1px solid var(--line); border-radius: 18px; background: rgba(255,255,255,.025); color: var(--muted); }
+      .controls-copy strong { display: block; color: var(--text); margin-bottom: 5px; }
+
+      .game-layout { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 18px; }
+      .hud { display: grid; gap: 12px; align-content: start; }
+      .stat { padding: 16px; border-radius: 18px; border: 1px solid var(--line); background: var(--panel); }
+      .stat span { display: block; color: var(--muted); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+      .stat strong { display: block; margin-top: 5px; font-size: 30px; letter-spacing: -.03em; }
+      .lives { display: flex; gap: 7px; margin-top: 8px; }
+      .life { width: 20px; height: 20px; border-radius: 7px 7px 10px 10px; background: var(--danger); transform: rotate(45deg); }
+      .life.off { opacity: .14; }
+      .actions { display: grid; gap: 9px; }
+      .action {
+        width: 100%; border: 0; border-radius: 14px; padding: 13px 14px; font-weight: 900; cursor: pointer;
+        background: var(--accent); color: #15210f;
+      }
+      .action.secondary { background: var(--panel-2); color: var(--text); border: 1px solid var(--line); }
+      .action:disabled { opacity: .45; cursor: default; }
+
+      .stage-wrap { position: relative; min-width: 0; border: 1px solid var(--line); border-radius: 24px; overflow: hidden; background: #070e0b; box-shadow: 0 26px 70px rgba(0,0,0,.25); }
+      canvas { display: block; width: 100%; aspect-ratio: 3 / 2; background: #08100c; touch-action: none; }
+      .overlay {
+        position: absolute; inset: 0; display: grid; place-items: center; padding: 24px;
+        background: linear-gradient(rgba(6,12,9,.22), rgba(6,12,9,.72)); text-align: center;
+      }
+      .overlay.hidden { display: none; }
+      .overlay-card { max-width: 430px; border: 1px solid var(--line); background: rgba(18,31,24,.92); backdrop-filter: blur(14px); border-radius: 22px; padding: 24px; }
+      .overlay-card h2 { margin: 4px 0 8px; font-size: 34px; letter-spacing: -.04em; }
+      .overlay-card p { margin: 0 0 16px; color: var(--muted); line-height: 1.5; }
+
+      .touch-controls { display: none; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 12px; }
+      .touch-controls button { border: 1px solid var(--line); background: var(--panel); color: var(--text); border-radius: 14px; min-height: 48px; font-size: 20px; font-weight: 900; }
+      .touch-controls button:active { background: var(--panel-2); transform: translateY(1px); }
+      .tip { margin: 12px 2px 0; color: var(--muted); font-size: 13px; }
+
+      @media (max-width: 860px) {
+        .intro { grid-template-columns: 1fr; align-items: start; }
+        .controls-copy { justify-self: start; }
+        .game-layout { grid-template-columns: 1fr; }
+        .hud { grid-template-columns: repeat(3, 1fr); }
+        .actions { grid-column: 1 / -1; grid-template-columns: 1fr 1fr; }
+      }
+
+      @media (max-width: 620px) {
+        .shell { width: min(100% - 20px, 1180px); padding-top: 16px; }
+        .topbar { margin-bottom: 20px; }
+        h1 { font-size: clamp(48px, 17vw, 70px); }
+        .intro p { font-size: 15px; }
+        .controls-copy { display: none; }
+        .hud { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .stat { padding: 12px; border-radius: 14px; }
+        .stat strong { font-size: 22px; }
+        .stat span { font-size: 10px; }
+        .life { width: 14px; height: 14px; }
+        .stage-wrap { border-radius: 18px; }
+        canvas { aspect-ratio: 4 / 5; }
+        .touch-controls { display: grid; }
+        .tip { text-align: center; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <a class="back" href="./">← Alle Spiele</a>
+        <span class="solo-pill">Solo</span>
+      </header>
+
+      <section class="intro">
+        <div>
+          <span class="eyebrow">Mini Games · 1 Spieler</span>
+          <h1>Meteor Run</h1>
+          <p>Bleib im Weltraumkorridor, weiche den Meteoren aus und halte so lange wie möglich durch. Je länger du überlebst, desto schneller wird es.</p>
+        </div>
+        <div class="controls-copy">
+          <strong>Steuerung</strong>
+          Pfeiltasten oder WASD. Auf Handy kannst du die Buttons nutzen oder dein Schiff direkt über das Spielfeld ziehen.
+        </div>
+      </section>
+
+      <section class="game-layout">
+        <aside class="hud">
+          <div class="stat"><span>Score</span><strong id="score">0</strong></div>
+          <div class="stat"><span>Highscore</span><strong id="highscore">0</strong></div>
+          <div class="stat"><span>Leben</span><div class="lives" id="lives" aria-label="3 Leben"></div></div>
+          <div class="actions">
+            <button class="action" id="start">Starten</button>
+            <button class="action secondary" id="pause" disabled>Pause</button>
+          </div>
+        </aside>
+
+        <div>
+          <div class="stage-wrap">
+            <canvas id="game" width="900" height="600" aria-label="Meteor Run Spielfeld"></canvas>
+            <div class="overlay" id="overlay">
+              <div class="overlay-card">
+                <span class="eyebrow" id="overlay-kicker">Bereit?</span>
+                <h2 id="overlay-title">Meteor Run</h2>
+                <p id="overlay-copy">Du hast drei Leben. Weiche den Meteoren aus und knacke deinen Highscore.</p>
+                <button class="action" id="overlay-start">Spiel starten</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="touch-controls" aria-label="Touch-Steuerung">
+            <button data-key="ArrowLeft" aria-label="Links">←</button>
+            <button data-key="ArrowUp" aria-label="Hoch">↑</button>
+            <button data-key="ArrowDown" aria-label="Runter">↓</button>
+            <button data-key="ArrowRight" aria-label="Rechts">→</button>
+          </div>
+          <p class="tip">Tipp: Nach einem Treffer bist du kurz unverwundbar.</p>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const canvas = document.querySelector('#game');
+      const ctx = canvas.getContext('2d');
+      const scoreEl = document.querySelector('#score');
+      const highscoreEl = document.querySelector('#highscore');
+      const livesEl = document.querySelector('#lives');
+      const startBtn = document.querySelector('#start');
+      const pauseBtn = document.querySelector('#pause');
+      const overlay = document.querySelector('#overlay');
+      const overlayKicker = document.querySelector('#overlay-kicker');
+      const overlayTitle = document.querySelector('#overlay-title');
+      const overlayCopy = document.querySelector('#overlay-copy');
+      const overlayStart = document.querySelector('#overlay-start');
+      const touchButtons = [...document.querySelectorAll('[data-key]')];
+
+      const keys = new Set();
+      const stars = Array.from({ length: 80 }, () => ({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        r: Math.random() * 1.5 + 0.25,
+        speed: Math.random() * 35 + 15,
+        alpha: Math.random() * 0.55 + 0.2,
+      }));
+
+      let player;
+      let meteors = [];
+      let running = false;
+      let paused = false;
+      let score = 0;
+      let lives = 3;
+      let elapsed = 0;
+      let spawnTimer = 0;
+      let lastTime = performance.now();
+      let invincible = 0;
+      let dragging = false;
+      let highscore = Number(localStorage.getItem('mini-games-meteor-run-highscore') || 0);
+
+      highscoreEl.textContent = String(highscore);
+
+      function resetPlayer() {
+        player = { x: canvas.width / 2, y: canvas.height * 0.82, r: 18, speed: 350 };
+      }
+
+      function updateLives() {
+        livesEl.innerHTML = '';
+        for (let i = 0; i < 3; i += 1) {
+          const life = document.createElement('span');
+          life.className = `life${i >= lives ? ' off' : ''}`;
+          livesEl.append(life);
+        }
+        livesEl.setAttribute('aria-label', `${lives} Leben`);
+      }
+
+      function startGame() {
+        resetPlayer();
+        meteors = [];
+        score = 0;
+        lives = 3;
+        elapsed = 0;
+        spawnTimer = 0;
+        invincible = 0;
+        running = true;
+        paused = false;
+        lastTime = performance.now();
+        keys.clear();
+        scoreEl.textContent = '0';
+        startBtn.textContent = 'Neu starten';
+        pauseBtn.disabled = false;
+        pauseBtn.textContent = 'Pause';
+        overlay.classList.add('hidden');
+        updateLives();
+      }
+
+      function setPause(next) {
+        if (!running) return;
+        paused = next;
+        pauseBtn.textContent = paused ? 'Weiter' : 'Pause';
+        if (!paused) lastTime = performance.now();
+      }
+
+      function endGame() {
+        running = false;
+        paused = false;
+        pauseBtn.disabled = true;
+        const finalScore = Math.floor(score);
+        if (finalScore > highscore) {
+          highscore = finalScore;
+          localStorage.setItem('mini-games-meteor-run-highscore', String(highscore));
+          highscoreEl.textContent = String(highscore);
+          overlayKicker.textContent = 'Neuer Highscore';
+        } else {
+          overlayKicker.textContent = 'Game Over';
+        }
+        overlayTitle.textContent = `${finalScore} Punkte`;
+        overlayCopy.textContent = `Du hast ${Math.floor(elapsed)} Sekunden durchgehalten. Noch eine Runde?`;
+        overlayStart.textContent = 'Nochmal spielen';
+        overlay.classList.remove('hidden');
+      }
+
+      function spawnMeteor() {
+        const difficulty = 1 + elapsed / 28;
+        const r = 12 + Math.random() * 22;
+        const margin = r + 4;
+        meteors.push({
+          x: margin + Math.random() * (canvas.width - margin * 2),
+          y: -r - 15,
+          r,
+          speed: (145 + Math.random() * 120) * Math.min(difficulty, 2.6),
+          drift: (Math.random() - 0.5) * 46,
+          rotation: Math.random() * Math.PI * 2,
+          rotationSpeed: (Math.random() - 0.5) * 2.2,
+        });
+      }
+
+      function circleHit(a, b) {
+        const dx = a.x - b.x;
+        const dy = a.y - b.y;
+        const rr = a.r + b.r;
+        return dx * dx + dy * dy < rr * rr;
+      }
+
+      function update(dt) {
+        if (!running || paused) return;
+
+        elapsed += dt;
+        score += dt * (12 + elapsed * 0.12);
+        scoreEl.textContent = String(Math.floor(score));
+        invincible = Math.max(0, invincible - dt);
+
+        let dx = 0;
+        let dy = 0;
+        if (keys.has('ArrowLeft') || keys.has('a')) dx -= 1;
+        if (keys.has('ArrowRight') || keys.has('d')) dx += 1;
+        if (keys.has('ArrowUp') || keys.has('w')) dy -= 1;
+        if (keys.has('ArrowDown') || keys.has('s')) dy += 1;
+        if (dx && dy) { dx *= Math.SQRT1_2; dy *= Math.SQRT1_2; }
+        player.x += dx * player.speed * dt;
+        player.y += dy * player.speed * dt;
+        player.x = Math.max(player.r + 6, Math.min(canvas.width - player.r - 6, player.x));
+        player.y = Math.max(player.r + 6, Math.min(canvas.height - player.r - 6, player.y));
+
+        const spawnInterval = Math.max(0.22, 0.72 - elapsed * 0.008);
+        spawnTimer -= dt;
+        if (spawnTimer <= 0) {
+          spawnMeteor();
+          spawnTimer = spawnInterval * (0.75 + Math.random() * 0.5);
+        }
+
+        for (const meteor of meteors) {
+          meteor.y += meteor.speed * dt;
+          meteor.x += meteor.drift * dt;
+          meteor.rotation += meteor.rotationSpeed * dt;
+        }
+
+        meteors = meteors.filter((meteor) => {
+          if (meteor.y - meteor.r > canvas.height + 20) return false;
+          if (invincible <= 0 && circleHit(player, meteor)) {
+            lives -= 1;
+            invincible = 1.15;
+            updateLives();
+            if (lives <= 0) endGame();
+            return false;
+          }
+          return true;
+        });
+      }
+
+      function drawBackground(dt) {
+        const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        gradient.addColorStop(0, '#07100c');
+        gradient.addColorStop(1, '#0e1b15');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        for (const star of stars) {
+          if (running && !paused) star.y += star.speed * dt;
+          if (star.y > canvas.height + 2) { star.y = -2; star.x = Math.random() * canvas.width; }
+          ctx.globalAlpha = star.alpha;
+          ctx.fillStyle = '#f2fff7';
+          ctx.beginPath();
+          ctx.arc(star.x, star.y, star.r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+
+        ctx.strokeStyle = 'rgba(184,255,99,.08)';
+        ctx.lineWidth = 1;
+        for (let x = 90; x < canvas.width; x += 90) {
+          ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+        }
+      }
+
+      function drawMeteor(meteor) {
+        ctx.save();
+        ctx.translate(meteor.x, meteor.y);
+        ctx.rotate(meteor.rotation);
+        const grad = ctx.createRadialGradient(-meteor.r * .3, -meteor.r * .35, 2, 0, 0, meteor.r);
+        grad.addColorStop(0, '#c8966e');
+        grad.addColorStop(.55, '#76513f');
+        grad.addColorStop(1, '#3e2d26');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        const points = 9;
+        for (let i = 0; i < points; i += 1) {
+          const angle = (i / points) * Math.PI * 2;
+          const wobble = i % 2 ? .82 : 1;
+          const x = Math.cos(angle) * meteor.r * wobble;
+          const y = Math.sin(angle) * meteor.r * wobble;
+          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = 'rgba(30,18,14,.28)';
+        ctx.beginPath(); ctx.arc(-meteor.r*.25, meteor.r*.12, meteor.r*.20, 0, Math.PI*2); ctx.fill();
+        ctx.restore();
+      }
+
+      function drawPlayer() {
+        if (invincible > 0 && Math.floor(invincible * 12) % 2 === 0) return;
+        ctx.save();
+        ctx.translate(player.x, player.y);
+        ctx.shadowColor = '#b8ff63';
+        ctx.shadowBlur = 22;
+        ctx.fillStyle = '#b8ff63';
+        ctx.beginPath();
+        ctx.moveTo(0, -player.r * 1.35);
+        ctx.lineTo(player.r * .95, player.r * 1.05);
+        ctx.lineTo(0, player.r * .62);
+        ctx.lineTo(-player.r * .95, player.r * 1.05);
+        ctx.closePath();
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = '#14221b';
+        ctx.beginPath(); ctx.arc(0, -2, player.r*.28, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#dfffc0';
+        ctx.beginPath();
+        ctx.moveTo(-player.r*.34, player.r*.72);
+        ctx.lineTo(0, player.r*1.55 + Math.random()*6);
+        ctx.lineTo(player.r*.34, player.r*.72);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
+
+      function draw(dt) {
+        drawBackground(dt);
+        meteors.forEach(drawMeteor);
+        if (player) drawPlayer();
+
+        if (paused && running) {
+          ctx.fillStyle = 'rgba(5,10,8,.52)';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.fillStyle = '#f4f7f5';
+          ctx.font = '900 42px system-ui';
+          ctx.textAlign = 'center';
+          ctx.fillText('PAUSE', canvas.width / 2, canvas.height / 2);
+        }
+      }
+
+      function frame(now) {
+        const dt = Math.min((now - lastTime) / 1000, 0.035);
+        lastTime = now;
+        update(dt);
+        draw(dt);
+        requestAnimationFrame(frame);
+      }
+
+      function normalizeKey(key) {
+        return key.length === 1 ? key.toLowerCase() : key;
+      }
+
+      window.addEventListener('keydown', (event) => {
+        const key = normalizeKey(event.key);
+        if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','w','a','s','d'].includes(key)) {
+          event.preventDefault();
+          keys.add(key);
+        }
+        if (event.key === ' ' && running) {
+          event.preventDefault();
+          setPause(!paused);
+        }
+      });
+
+      window.addEventListener('keyup', (event) => keys.delete(normalizeKey(event.key)));
+      window.addEventListener('blur', () => { if (running) setPause(true); });
+      document.addEventListener('visibilitychange', () => { if (document.hidden && running) setPause(true); });
+
+      touchButtons.forEach((button) => {
+        const key = button.dataset.key;
+        const down = (event) => { event.preventDefault(); keys.add(key); };
+        const up = (event) => { event.preventDefault(); keys.delete(key); };
+        button.addEventListener('pointerdown', down);
+        button.addEventListener('pointerup', up);
+        button.addEventListener('pointercancel', up);
+        button.addEventListener('pointerleave', up);
+      });
+
+      function moveToPointer(event) {
+        if (!running || paused) return;
+        const rect = canvas.getBoundingClientRect();
+        player.x = (event.clientX - rect.left) / rect.width * canvas.width;
+        player.y = (event.clientY - rect.top) / rect.height * canvas.height;
+        player.x = Math.max(player.r + 6, Math.min(canvas.width - player.r - 6, player.x));
+        player.y = Math.max(player.r + 6, Math.min(canvas.height - player.r - 6, player.y));
+      }
+
+      canvas.addEventListener('pointerdown', (event) => {
+        if (!running || paused) return;
+        dragging = true;
+        canvas.setPointerCapture(event.pointerId);
+        moveToPointer(event);
+      });
+      canvas.addEventListener('pointermove', (event) => { if (dragging) moveToPointer(event); });
+      canvas.addEventListener('pointerup', () => { dragging = false; });
+      canvas.addEventListener('pointercancel', () => { dragging = false; });
+
+      startBtn.addEventListener('click', startGame);
+      overlayStart.addEventListener('click', startGame);
+      pauseBtn.addEventListener('click', () => setPause(!paused));
+
+      resetPlayer();
+      updateLives();
+      requestAnimationFrame(frame);
+    </script>
+  </body>
+</html>
