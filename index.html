@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="Tic-Tac-Toe, Turbo Bump und Color Clash Flip kostenlos mit Freunden im Browser spielen."
+      content="Tic-Tac-Toe, Turbo Bump, Color Clash Flip und Meteor Run kostenlos im Browser spielen."
     />
     <meta name="theme-color" content="#17221d" />
     <title>Mini Games</title>
@@ -28,8 +28,8 @@
           <span class="eyebrow">Spieleabend, direkt im Browser</span>
           <h1>Kleine Spiele.<br />Grosse Revanchen.</h1>
           <p>
-            Starte eine Runde, teile den Code und spiele sofort mit deinem
-            Kollegen – am gleichen Gerät oder online.
+            Starte eine Runde, spiele alleine oder teile den Code und spiele
+            sofort mit deinem Kollegen – am gleichen Gerät oder online.
           </p>
         </div>
 
@@ -76,15 +76,26 @@
             <span class="card-arrow" aria-hidden="true">→</span>
           </button>
 
-          <article class="game-card coming-soon" aria-label="Weiteres Spiel geplant">
+          <a
+            class="game-card game-card-active"
+            href="./meteor-run.html"
+            style="color: inherit; text-decoration: none; cursor: pointer"
+            aria-label="Meteor Run spielen"
+          >
             <span class="card-topline">
-              <span class="game-icon plus-icon" aria-hidden="true">+</span>
+              <span
+                class="game-icon"
+                aria-hidden="true"
+                style="background: #b8ff63; color: #17221d; font-size: 34px"
+              >☄</span>
+              <span class="available-badge">Solo · Neu</span>
             </span>
             <span class="game-card-copy">
-              <strong>Deine nächste Idee</strong>
-              <small>Die Plattform wächst mit</small>
+              <strong>Meteor Run</strong>
+              <small>1 Spieler · Ausweichen &amp; Highscore</small>
             </span>
-          </article>
+            <span class="card-arrow" aria-hidden="true">→</span>
+          </a>
         </div>
       </section>
 
@@ -325,7 +336,7 @@
       </section>
 
       <footer>
-        <span>Mini Games · Version 3</span>
+        <span>Mini Games · Version 4</span>
         <span>Fair play, viel Spass.</span>
       </footer>
     </main>
