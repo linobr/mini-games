@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="Interaktives Atom-Labor: Baue Atome aus Protonen, Neutronen und Elektronen und sieh das Bohrsche Schalenmodell direkt im Browser."
+      content="Interaktives Atom-Labor für alle 118 Elemente: Protonen, Neutronen und Elektronen verändern und das Bohrsche Schalenmodell erkunden."
     />
     <meta name="theme-color" content="#17221d" />
-    <title>Atom-Labor · Mini Games</title>
+    <title>Atom-Labor · Alle 118 Elemente</title>
     <link rel="stylesheet" href="./src/atom-lab.css" />
   </head>
   <body>
@@ -18,7 +18,7 @@
           <span class="atom-brand-mark" aria-hidden="true">⚛</span>
           <span>Mini Games</span>
         </a>
-        <span class="atom-pill">Lernmodus · Bohrsches Modell</span>
+        <span class="atom-pill">118 Elemente · Bohrsches Modell</span>
       </header>
 
       <section class="atom-intro">
@@ -26,8 +26,8 @@
         <span class="eyebrow">Chemie · interaktiv</span>
         <h1>Atom-Labor</h1>
         <p>
-          Stelle Atome selbst zusammen. Verändere Protonen, Neutronen und Elektronen
-          und beobachte direkt, welches Element, Isotop und welche Ladung entsteht.
+          Baue jedes der 118 bekannten Elemente nach. Wähle ein Element oder
+          verändere Protonen, Neutronen und Elektronen selbst.
         </p>
       </section>
 
@@ -37,15 +37,18 @@
             <div>
               <span class="eyebrow">Bohrsches Atommodell</span>
               <h2 id="atom-title">Kohlenstoff-12</h2>
+              <p class="model-subtitle" id="atom-subtitle">C · Ordnungszahl 6</p>
             </div>
-            <button id="toggle-animation" class="small-button" type="button">Animation pausieren</button>
+            <button id="toggle-animation" class="small-button" type="button">
+              Animation pausieren
+            </button>
           </div>
 
           <div class="canvas-wrap">
             <canvas
               id="atom-canvas"
-              width="760"
-              height="620"
+              width="820"
+              height="680"
               aria-label="Darstellung des Atoms im Bohrschen Schalenmodell"
             ></canvas>
           </div>
@@ -60,53 +63,77 @@
         <aside class="control-card">
           <div class="preset-block">
             <label for="element-select">Element auswählen</label>
-            <select id="element-select"></select>
+            <select id="element-select" aria-label="Element auswählen"></select>
+            <div class="search-row">
+              <input
+                id="element-search"
+                list="element-options"
+                placeholder="z. B. Gold, Au oder 79"
+                autocomplete="off"
+                aria-label="Element suchen"
+              />
+              <datalist id="element-options"></datalist>
+              <button id="search-element" type="button">Suchen</button>
+            </div>
           </div>
 
           <div class="particle-control">
             <div class="particle-heading">
               <span><i class="proton-dot"></i> Protonen</span>
-              <strong id="proton-value">6</strong>
+              <input id="proton-number" class="particle-number" type="number" min="1" max="118" value="6" />
             </div>
             <div class="stepper">
               <button type="button" data-step="protons" data-delta="-1" aria-label="Ein Proton entfernen">−</button>
-              <input id="protons" type="range" min="1" max="20" value="6" />
+              <input id="protons" type="range" min="1" max="118" value="6" />
               <button type="button" data-step="protons" data-delta="1" aria-label="Ein Proton hinzufügen">+</button>
             </div>
-            <small>Bestimmen das Element: Ordnungszahl Z.</small>
+            <small>Protonenzahl = Ordnungszahl. Sie bestimmt das Element.</small>
           </div>
 
           <div class="particle-control">
             <div class="particle-heading">
               <span><i class="neutron-dot"></i> Neutronen</span>
-              <strong id="neutron-value">6</strong>
+              <input id="neutron-number" class="particle-number" type="number" min="0" max="220" value="6" />
             </div>
             <div class="stepper">
               <button type="button" data-step="neutrons" data-delta="-1" aria-label="Ein Neutron entfernen">−</button>
-              <input id="neutrons" type="range" min="0" max="24" value="6" />
+              <input id="neutrons" type="range" min="0" max="220" value="6" />
               <button type="button" data-step="neutrons" data-delta="1" aria-label="Ein Neutron hinzufügen">+</button>
             </div>
-            <small>Ändern das Isotop, aber nicht das Element.</small>
+            <small>Neutronen verändern die Massenzahl und damit das Isotop.</small>
           </div>
 
           <div class="particle-control">
             <div class="particle-heading">
               <span><i class="electron-dot"></i> Elektronen</span>
-              <strong id="electron-value">6</strong>
+              <input id="electron-number" class="particle-number" type="number" min="0" max="130" value="6" />
             </div>
             <div class="stepper">
               <button type="button" data-step="electrons" data-delta="-1" aria-label="Ein Elektron entfernen">−</button>
-              <input id="electrons" type="range" min="0" max="20" value="6" />
+              <input id="electrons" type="range" min="0" max="130" value="6" />
               <button type="button" data-step="electrons" data-delta="1" aria-label="Ein Elektron hinzufügen">+</button>
             </div>
-            <small>Bei einem neutralen Atom gilt: Elektronen = Protonen.</small>
+            <small>Neutral: Elektronen = Protonen. Sonst entsteht ein Ion.</small>
           </div>
 
           <div class="quick-actions">
             <button id="make-neutral" type="button">Neutral machen</button>
-            <button id="common-isotope" type="button">Häufiges Isotop</button>
+            <button id="reference-isotope" type="button">≈ Standard-Masse</button>
           </div>
         </aside>
+      </section>
+
+      <section class="periodic-card">
+        <div class="periodic-heading">
+          <div>
+            <span class="eyebrow">Direktauswahl</span>
+            <h2>Periodensystem</h2>
+          </div>
+          <p>Klicke auf ein Element, um sein neutrales Atom sofort zu laden.</p>
+        </div>
+        <div class="periodic-scroll">
+          <div class="periodic-table" id="periodic-table" aria-label="Periodensystem der Elemente"></div>
+        </div>
       </section>
 
       <section class="facts-grid" aria-live="polite">
@@ -118,7 +145,7 @@
         <article class="fact-card">
           <span>Massenzahl A</span>
           <strong id="fact-mass">12</strong>
-          <small>Protonen + Neutronen</small>
+          <small id="fact-atomic-mass">Atommasse ≈ 12.011 u</small>
         </article>
         <article class="fact-card">
           <span>Ladung</span>
@@ -130,6 +157,16 @@
           <strong id="fact-shells">2 · 4</strong>
           <small id="fact-shell-count">2 besetzte Schalen</small>
         </article>
+        <article class="fact-card">
+          <span>Position</span>
+          <strong id="fact-position">Periode 2</strong>
+          <small id="fact-group">Gruppe 14</small>
+        </article>
+        <article class="fact-card config-card">
+          <span>Elektronenkonfiguration</span>
+          <strong id="fact-config">[He] 2s2 2p2</strong>
+          <small id="fact-config-hint">Neutralatom</small>
+        </article>
       </section>
 
       <section class="learn-card">
@@ -138,15 +175,16 @@
           <h2>So liest du ein Atom</h2>
         </div>
         <div class="learn-points">
-          <p><strong>Protonen = Ordnungszahl.</strong> 6 Protonen bedeuten immer Kohlenstoff.</p>
-          <p><strong>Neutronen ändern das Isotop.</strong> 6 p + 6 n ergibt Kohlenstoff-12.</p>
-          <p><strong>Elektronen ändern die Ladung.</strong> Gleich viele Elektronen und Protonen = neutral.</p>
+          <p><strong>Protonen = Ordnungszahl.</strong> Die Protonenzahl bestimmt immer das Element.</p>
+          <p><strong>Massenzahl = Protonen + Neutronen.</strong> Unterschiedliche Neutronenzahlen ergeben Isotope.</p>
+          <p><strong>Neutral gilt p⁺ = e⁻.</strong> Zu viele oder zu wenige Elektronen ergeben ein Ion.</p>
+          <p><strong>Schalenmodell ist vereinfacht.</strong> Die Orbitaltheorie beschreibt Elektronen genauer.</p>
         </div>
       </section>
 
       <footer>
-        <span>Mini Games · Atom-Labor</span>
-        <span>Darstellung vereinfacht nach dem Bohrschen Schalenmodell.</span>
+        <span>Mini Games · Atom-Labor · 118 Elemente</span>
+        <span>Elementdaten lokal gespeichert · keine externe API nötig.</span>
       </footer>
     </main>
 
