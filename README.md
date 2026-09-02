@@ -85,12 +85,13 @@ bleibt das Match ohne eigenen Spielserver synchron.
 
 ## Atom-Labor
 
-Das Atom-Labor ist ein interaktives Chemie-Lernmodul für die Elemente 1–20.
-Protonen, Neutronen und Elektronen können einzeln verändert werden. Die Seite
-zeigt daraus automatisch Element, Isotop, Massenzahl, Ionenladung und die
-Elektronenverteilung im vereinfachten Bohrschen Schalenmodell. Häufige Isotope
-lassen sich als Ausgangspunkt laden; eine Neutral-Funktion setzt die Zahl der
-Elektronen gleich der Protonenzahl.
+Das Atom-Labor ist ein interaktives Chemie-Lernmodul für alle 118 bekannten
+Elemente. Elemente können über Suche, Dropdown oder ein anklickbares
+Periodensystem gewählt werden. Protonen, Neutronen und Elektronen lassen sich
+einzeln verändern. Die Seite zeigt Element, Isotop, Massenzahl, Ionenladung,
+Periode, Gruppe, Elektronenkonfiguration und die Elektronenverteilung im
+vereinfachten Bohrschen Schalenmodell. Die Elementdaten liegen lokal im Projekt,
+damit das Lernmodul ohne externe API funktioniert.
 
 ## Technik
 
