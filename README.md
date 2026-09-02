@@ -1,11 +1,12 @@
 # Mini Games
 
-Eine kleine, erweiterbare Browser-Spielesammlung mit drei Spielen:
+Eine kleine, erweiterbare Browser-Spielesammlung mit Spielen und einem interaktiven Lernmodul:
 
 - **Tic-Tac-Toe** für zwei Personen, online oder am gleichen Gerät
 - **Turbo Bump** für zwei bis vier Personen – Autoscooter trifft Sumo
 - **Color Clash Flip** für eine bis vier Personen – ein eigenes doppelseitiges
   Kartenspiel mit Bots, lokalen und Online-Runden
+- **Atom-Labor** zum interaktiven Nachbauen von Atomen im Bohrschen Schalenmodell
 
 ## Spielen
 
@@ -81,6 +82,15 @@ Der Host erstellt den Raum und kann das Match ab zwei verbundenen Fahrern
 starten. Die Lobby ist bei vier Fahrern voll. Der Host berechnet die Physik und
 verteilt den Spielzustand; die übrigen Browser senden nur ihre Eingaben. Damit
 bleibt das Match ohne eigenen Spielserver synchron.
+
+## Atom-Labor
+
+Das Atom-Labor ist ein interaktives Chemie-Lernmodul für die Elemente 1–20.
+Protonen, Neutronen und Elektronen können einzeln verändert werden. Die Seite
+zeigt daraus automatisch Element, Isotop, Massenzahl, Ionenladung und die
+Elektronenverteilung im vereinfachten Bohrschen Schalenmodell. Häufige Isotope
+lassen sich als Ausgangspunkt laden; eine Neutral-Funktion setzt die Zahl der
+Elektronen gleich der Protonenzahl.
 
 ## Technik
 
