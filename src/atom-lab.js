@@ -1,72 +1,81 @@
-const elementsData = [
-  ["H", "Wasserstoff", 1, 1],
-  ["He", "Helium", 2, 4],
-  ["Li", "Lithium", 3, 7],
-  ["Be", "Beryllium", 4, 9],
-  ["B", "Bor", 5, 11],
-  ["C", "Kohlenstoff", 6, 12],
-  ["N", "Stickstoff", 7, 14],
-  ["O", "Sauerstoff", 8, 16],
-  ["F", "Fluor", 9, 19],
-  ["Ne", "Neon", 10, 20],
-  ["Na", "Natrium", 11, 23],
-  ["Mg", "Magnesium", 12, 24],
-  ["Al", "Aluminium", 13, 27],
-  ["Si", "Silicium", 14, 28],
-  ["P", "Phosphor", 15, 31],
-  ["S", "Schwefel", 16, 32],
-  ["Cl", "Chlor", 17, 35],
-  ["Ar", "Argon", 18, 40],
-  ["K", "Kalium", 19, 39],
-  ["Ca", "Calcium", 20, 40],
-].map(([symbol, name, atomicNumber, commonMass]) => ({
-  symbol,
-  name,
-  atomicNumber,
-  commonMass,
-}));
+import { PERIODIC_TABLE } from "./periodic-table-data.js";
 
 const canvas = document.querySelector("#atom-canvas");
 const ctx = canvas.getContext("2d");
-const protonInput = document.querySelector("#protons");
-const neutronInput = document.querySelector("#neutrons");
-const electronInput = document.querySelector("#electrons");
-const elementSelect = document.querySelector("#element-select");
-const animationButton = document.querySelector("#toggle-animation");
+
+const controls = {
+  protons: document.querySelector("#protons"),
+  neutrons: document.querySelector("#neutrons"),
+  electrons: document.querySelector("#electrons"),
+  protonNumber: document.querySelector("#proton-number"),
+  neutronNumber: document.querySelector("#neutron-number"),
+  electronNumber: document.querySelector("#electron-number"),
+  elementSelect: document.querySelector("#element-select"),
+  elementSearch: document.querySelector("#element-search"),
+  elementOptions: document.querySelector("#element-options"),
+  searchButton: document.querySelector("#search-element"),
+  animationButton: document.querySelector("#toggle-animation"),
+  periodicTable: document.querySelector("#periodic-table"),
+};
 
 const output = {
   title: document.querySelector("#atom-title"),
-  protons: document.querySelector("#proton-value"),
-  neutrons: document.querySelector("#neutron-value"),
-  electrons: document.querySelector("#electron-value"),
+  subtitle: document.querySelector("#atom-subtitle"),
   element: document.querySelector("#fact-element"),
   number: document.querySelector("#fact-number"),
   mass: document.querySelector("#fact-mass"),
+  atomicMass: document.querySelector("#fact-atomic-mass"),
   charge: document.querySelector("#fact-charge"),
   ion: document.querySelector("#fact-ion"),
   shells: document.querySelector("#fact-shells"),
   shellCount: document.querySelector("#fact-shell-count"),
+  position: document.querySelector("#fact-position"),
+  group: document.querySelector("#fact-group"),
+  config: document.querySelector("#fact-config"),
+  configHint: document.querySelector("#fact-config-hint"),
 };
+
+const LIMITS = {
+  protons: [1, 118],
+  neutrons: [0, 220],
+  electrons: [0, 130],
+};
+
+const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 let state = {
   protons: 6,
   neutrons: 6,
   electrons: 6,
-  animate: !window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+  animate: !prefersReducedMotion,
 };
 
 let animationStart = performance.now();
+let animationFrame = null;
 
-function getElement(protons = state.protons) {
-  return elementsData[protons - 1];
+function getElement(atomicNumber = state.protons) {
+  return PERIODIC_TABLE[atomicNumber - 1];
 }
 
 function clamp(value, min, max) {
-  return Math.max(min, Math.min(max, value));
+  return Math.max(min, Math.min(max, Number(value) || 0));
 }
 
-function shellDistribution(electrons) {
-  const capacities = [2, 8, 8, 2];
+function formatAtomicMass(value) {
+  if (!Number.isFinite(Number(value))) return "unbekannt";
+  const numeric = Number(value);
+  return Number.isInteger(numeric) ? String(numeric) : numeric.toFixed(3).replace(/0+$/, "").replace(/\.$/, "");
+}
+
+function referenceMassNumber(element) {
+  return Math.max(element.atomicNumber, Math.round(Number(element.atomicMass)));
+}
+
+function neutralShellsForElectronCount(electrons) {
+  if (electrons <= 0) return [];
+  if (electrons <= 118) return [...PERIODIC_TABLE[electrons - 1].shells];
+
+  const capacities = [2, 8, 18, 32, 32, 18, 8, 8];
   const shells = [];
   let remaining = electrons;
 
@@ -77,30 +86,89 @@ function shellDistribution(electrons) {
     remaining -= count;
   }
 
+  if (remaining > 0) shells.push(remaining);
   return shells;
 }
 
+function shellDistribution() {
+  const element = getElement();
+
+  if (state.electrons === state.protons) {
+    return [...element.shells];
+  }
+
+  if (state.electrons < state.protons) {
+    const shells = [...element.shells];
+    let toRemove = state.protons - state.electrons;
+
+    for (let i = shells.length - 1; i >= 0 && toRemove > 0; i -= 1) {
+      const removed = Math.min(shells[i], toRemove);
+      shells[i] -= removed;
+      toRemove -= removed;
+    }
+
+    while (shells.length && shells[shells.length - 1] === 0) shells.pop();
+    return shells;
+  }
+
+  return neutralShellsForElectronCount(state.electrons);
+}
+
+function setElement(atomicNumber, { keepParticles = false } = {}) {
+  const next = clamp(atomicNumber, 1, 118);
+  const element = getElement(next);
+
+  state.protons = next;
+
+  if (!keepParticles) {
+    const mass = referenceMassNumber(element);
+    state.neutrons = clamp(mass - next, ...LIMITS.neutrons);
+    state.electrons = next;
+  }
+
+  rerender({ restartAnimation: true });
+}
+
+function setParticle(key, value) {
+  const [min, max] = LIMITS[key];
+  state[key] = clamp(value, min, max);
+  rerender();
+}
+
 function syncControls() {
-  protonInput.value = String(state.protons);
-  neutronInput.value = String(state.neutrons);
-  electronInput.value = String(state.electrons);
-  output.protons.textContent = state.protons;
-  output.neutrons.textContent = state.neutrons;
-  output.electrons.textContent = state.electrons;
-  elementSelect.value = String(state.protons);
+  controls.protons.value = String(state.protons);
+  controls.neutrons.value = String(state.neutrons);
+  controls.electrons.value = String(state.electrons);
+  controls.protonNumber.value = String(state.protons);
+  controls.neutronNumber.value = String(state.neutrons);
+  controls.electronNumber.value = String(state.electrons);
+  controls.elementSelect.value = String(state.protons);
+
+  document.querySelectorAll(".element-tile.active").forEach((tile) => {
+    tile.classList.remove("active");
+    tile.removeAttribute("aria-current");
+  });
+
+  const activeTile = document.querySelector(`.element-tile[data-z="${state.protons}"]`);
+  if (activeTile) {
+    activeTile.classList.add("active");
+    activeTile.setAttribute("aria-current", "true");
+  }
 }
 
 function renderFacts() {
   const element = getElement();
   const mass = state.protons + state.neutrons;
   const charge = state.protons - state.electrons;
-  const shells = shellDistribution(state.electrons);
-  const isotopeName = `${element.name}-${mass}`;
+  const shells = shellDistribution();
+  const shellText = shells.length ? shells.join(" · ") : "keine";
 
-  output.title.textContent = isotopeName;
+  output.title.textContent = `${element.name}-${mass}`;
+  output.subtitle.textContent = `${element.symbol} · Ordnungszahl ${element.atomicNumber}`;
   output.element.textContent = `${element.name} (${element.symbol})`;
   output.number.textContent = `Ordnungszahl ${element.atomicNumber}`;
   output.mass.textContent = String(mass);
+  output.atomicMass.textContent = `Atommasse ≈ ${formatAtomicMass(element.atomicMass)} u`;
 
   if (charge === 0) {
     output.charge.textContent = "0 · neutral";
@@ -110,27 +178,21 @@ function renderFacts() {
     output.charge.textContent = `${charge} · Anion`;
   }
 
-  output.ion.textContent = `${state.protons} p⁺ und ${state.electrons} e⁻`;
-  output.shells.textContent = shells.length ? shells.join(" · ") : "keine";
+  output.ion.textContent = `${state.protons} p⁺ · ${state.neutrons} n · ${state.electrons} e⁻`;
+  output.shells.textContent = shellText;
   output.shellCount.textContent =
     shells.length === 1 ? "1 besetzte Schale" : `${shells.length} besetzte Schalen`;
-}
 
-function particlePositions(count) {
-  if (count === 1) return [{ x: 0, y: 0 }];
-  const points = [];
-  const spacing = 22;
+  output.position.textContent = `Periode ${element.period}`;
+  output.group.textContent = element.group ? `Gruppe ${element.group}` : "Lanthanid / Actinid";
 
-  for (let i = 0; i < count; i += 1) {
-    const angle = i * 2.3999632297;
-    const radius = spacing * Math.sqrt(i);
-    points.push({
-      x: Math.cos(angle) * radius,
-      y: Math.sin(angle) * radius,
-    });
+  if (charge === 0) {
+    output.config.textContent = element.electronConfigurationShort;
+    output.configHint.textContent = "Elektronenkonfiguration des Neutralatoms";
+  } else {
+    output.config.textContent = shellText;
+    output.configHint.textContent = "Vereinfachte Schalenverteilung des Ions";
   }
-
-  return points;
 }
 
 function drawCircle(x, y, radius, fill, stroke = null, lineWidth = 1) {
@@ -138,6 +200,7 @@ function drawCircle(x, y, radius, fill, stroke = null, lineWidth = 1) {
   ctx.arc(x, y, radius, 0, Math.PI * 2);
   ctx.fillStyle = fill;
   ctx.fill();
+
   if (stroke) {
     ctx.strokeStyle = stroke;
     ctx.lineWidth = lineWidth;
@@ -145,128 +208,209 @@ function drawCircle(x, y, radius, fill, stroke = null, lineWidth = 1) {
   }
 }
 
+function drawNucleus(cx, cy, nucleusCount, nucleusRadius) {
+  drawCircle(
+    cx,
+    cy,
+    nucleusRadius,
+    "rgba(255,253,248,0.055)",
+    "rgba(255,255,255,0.18)",
+    2,
+  );
+
+  const particleRadius = clamp(nucleusRadius / (Math.sqrt(nucleusCount) * 2.05), 2.4, 9.5);
+  const usableRadius = Math.max(1, nucleusRadius - particleRadius - 4);
+  const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+
+  for (let i = 0; i < nucleusCount; i += 1) {
+    const ratio = nucleusCount === 1 ? 0 : Math.sqrt((i + 0.5) / nucleusCount);
+    const angle = i * goldenAngle;
+    const radius = usableRadius * ratio;
+    const x = cx + Math.cos(angle) * radius;
+    const y = cy + Math.sin(angle) * radius;
+    const isProton = i < state.protons;
+
+    drawCircle(
+      x,
+      y,
+      particleRadius,
+      isProton ? "#f25f5c" : "#5b7cfa",
+      "rgba(255,255,255,0.22)",
+      0.8,
+    );
+  }
+
+  drawCircle(cx, cy, clamp(nucleusRadius * 0.29, 18, 28), "rgba(23,34,29,0.88)");
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "800 21px system-ui, sans-serif";
+  ctx.fillText(getElement().symbol, cx, cy + 1);
+}
+
 function drawAtom(now) {
   const width = canvas.width;
   const height = canvas.height;
   const cx = width / 2;
   const cy = height / 2 + 8;
-  const shells = shellDistribution(state.electrons);
-  const maxRadius = Math.min(width, height) * 0.4;
-  const shellGap = shells.length > 1 ? maxRadius / shells.length : maxRadius * 0.72;
+  const shells = shellDistribution();
+  const maxRadius = Math.min(width, height) * 0.435;
+  const shellGap = shells.length ? maxRadius / shells.length : maxRadius;
   const time = state.animate ? (now - animationStart) / 1000 : 0;
 
   ctx.clearRect(0, 0, width, height);
 
-  const gradient = ctx.createRadialGradient(cx, cy, 10, cx, cy, maxRadius + 90);
-  gradient.addColorStop(0, "rgba(216,255,98,0.08)");
+  const gradient = ctx.createRadialGradient(cx, cy, 12, cx, cy, maxRadius + 90);
+  gradient.addColorStop(0, "rgba(216,255,98,0.09)");
   gradient.addColorStop(1, "rgba(216,255,98,0)");
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, width, height);
 
   shells.forEach((count, shellIndex) => {
     const radius = shellGap * (shellIndex + 1);
+
     ctx.beginPath();
     ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-    ctx.strokeStyle = "rgba(255,255,255,0.19)";
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = "rgba(255,255,255,0.18)";
+    ctx.lineWidth = 1.7;
     ctx.stroke();
+
+    const electronRadius = clamp(10.5 - count * 0.08, 5.7, 9.5);
 
     for (let i = 0; i < count; i += 1) {
       const base = (Math.PI * 2 * i) / count - Math.PI / 2;
-      const speed = 0.28 + shellIndex * 0.08;
+      const speed = 0.18 + shellIndex * 0.035;
       const direction = shellIndex % 2 === 0 ? 1 : -1;
       const angle = base + time * speed * direction;
       const x = cx + Math.cos(angle) * radius;
       const y = cy + Math.sin(angle) * radius;
 
-      ctx.shadowBlur = 18;
+      ctx.shadowBlur = electronRadius * 1.5;
       ctx.shadowColor = "#d8ff62";
-      drawCircle(x, y, 10, "#d8ff62", "#17221d", 2);
+      drawCircle(x, y, electronRadius, "#d8ff62", "#17221d", 1.6);
       ctx.shadowBlur = 0;
     }
   });
 
   const nucleusCount = state.protons + state.neutrons;
-  const nucleusRadius = clamp(34 + nucleusCount * 1.5, 42, 82);
-  drawCircle(cx, cy, nucleusRadius, "rgba(255,253,248,0.08)", "rgba(255,255,255,0.16)", 2);
+  const nucleusRadius = clamp(36 + Math.sqrt(nucleusCount) * 3.0, 42, 96);
+  drawNucleus(cx, cy, nucleusCount, nucleusRadius);
 
-  const positions = particlePositions(nucleusCount);
-  const scale = nucleusCount > 24 ? 0.72 : nucleusCount > 14 ? 0.86 : 1;
-  const particleRadius = 10 * scale;
+  if (state.animate) {
+    animationFrame = requestAnimationFrame(drawAtom);
+  }
+}
 
-  positions.forEach((point, index) => {
-    const isProton = index < state.protons;
-    const x = cx + point.x * scale;
-    const y = cy + point.y * scale;
-    drawCircle(
-      x,
-      y,
-      particleRadius,
-      isProton ? "#f25f5c" : "#5b7cfa",
-      "rgba(255,255,255,0.38)",
-      1,
-    );
-  });
-
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillStyle = "#ffffff";
-  ctx.font = "800 15px system-ui, sans-serif";
-  const element = getElement();
-  ctx.fillText(element.symbol, cx, cy + nucleusRadius + 24);
-
-  if (state.animate) requestAnimationFrame(drawAtom);
+function renderAtomOnce() {
+  drawAtom(performance.now());
 }
 
 function rerender({ restartAnimation = false } = {}) {
   syncControls();
   renderFacts();
+
   if (restartAnimation) animationStart = performance.now();
-  if (!state.animate) drawAtom(performance.now());
+  if (!state.animate) renderAtomOnce();
 }
 
-function setParticle(key, value) {
-  const limits = {
-    protons: [1, 20],
-    neutrons: [0, 24],
-    electrons: [0, 20],
-  };
-  const [min, max] = limits[key];
-  state[key] = clamp(Number(value), min, max);
+function buildElementControls() {
+  PERIODIC_TABLE.forEach((element) => {
+    const option = document.createElement("option");
+    option.value = String(element.atomicNumber);
+    option.textContent = `${element.atomicNumber}. ${element.name} (${element.symbol})`;
+    controls.elementSelect.append(option);
 
-  if (key === "protons") {
-    neutronInput.max = "24";
+    const suggestion = document.createElement("option");
+    suggestion.value = `${element.atomicNumber} · ${element.name} (${element.symbol})`;
+    controls.elementOptions.append(suggestion);
+
+    const tile = document.createElement("button");
+    tile.type = "button";
+    tile.className = "element-tile";
+    tile.dataset.z = String(element.atomicNumber);
+    tile.style.gridColumn = String(element.xpos);
+    tile.style.gridRow = String(element.ypos);
+    tile.title = `${element.atomicNumber}. ${element.name}`;
+    tile.setAttribute("aria-label", `${element.name}, Ordnungszahl ${element.atomicNumber}`);
+    tile.innerHTML = `
+      <small>${element.atomicNumber}</small>
+      <strong>${element.symbol}</strong>
+      <span>${element.name}</span>
+    `;
+    tile.addEventListener("click", () => setElement(element.atomicNumber));
+    controls.periodicTable.append(tile);
+  });
+}
+
+function findElement(query) {
+  const cleaned = query.trim();
+  if (!cleaned) return null;
+
+  const leadingNumber = cleaned.match(/^\d{1,3}/);
+  if (leadingNumber) {
+    const atomicNumber = Number(leadingNumber[0]);
+    if (atomicNumber >= 1 && atomicNumber <= 118) return getElement(atomicNumber);
   }
 
-  rerender();
+  const normalized = cleaned.toLocaleLowerCase("de-CH").replace(/[^a-zäöüß]/g, "");
+  if (!normalized) return null;
+
+  return (
+    PERIODIC_TABLE.find((element) => element.symbol.toLowerCase() === normalized) ||
+    PERIODIC_TABLE.find((element) => element.name.toLocaleLowerCase("de-CH") === normalized) ||
+    PERIODIC_TABLE.find((element) => element.englishName.toLowerCase() === normalized) ||
+    PERIODIC_TABLE.find((element) => element.name.toLocaleLowerCase("de-CH").startsWith(normalized)) ||
+    PERIODIC_TABLE.find((element) => element.englishName.toLowerCase().startsWith(normalized)) ||
+    null
+  );
 }
 
-elementsData.forEach((element) => {
-  const option = document.createElement("option");
-  option.value = String(element.atomicNumber);
-  option.textContent = `${element.atomicNumber}. ${element.name} (${element.symbol})`;
-  elementSelect.append(option);
-});
+function searchAndSelect() {
+  const element = findElement(controls.elementSearch.value);
+  if (!element) {
+    controls.elementSearch.setCustomValidity("Element nicht gefunden.");
+    controls.elementSearch.reportValidity();
+    return;
+  }
 
-protonInput.addEventListener("input", () => setParticle("protons", protonInput.value));
-neutronInput.addEventListener("input", () => setParticle("neutrons", neutronInput.value));
-electronInput.addEventListener("input", () => setParticle("electrons", electronInput.value));
+  controls.elementSearch.setCustomValidity("");
+  controls.elementSearch.value = `${element.atomicNumber} · ${element.name} (${element.symbol})`;
+  setElement(element.atomicNumber);
+}
+
+buildElementControls();
+
+controls.protons.addEventListener("input", () => setParticle("protons", controls.protons.value));
+controls.neutrons.addEventListener("input", () => setParticle("neutrons", controls.neutrons.value));
+controls.electrons.addEventListener("input", () => setParticle("electrons", controls.electrons.value));
+
+controls.protonNumber.addEventListener("change", () => setParticle("protons", controls.protonNumber.value));
+controls.neutronNumber.addEventListener("change", () => setParticle("neutrons", controls.neutronNumber.value));
+controls.electronNumber.addEventListener("change", () => setParticle("electrons", controls.electronNumber.value));
 
 document.querySelectorAll("[data-step]").forEach((button) => {
   button.addEventListener("click", () => {
     const key = button.dataset.step;
-    const delta = Number(button.dataset.delta);
-    setParticle(key, state[key] + delta);
+    setParticle(key, state[key] + Number(button.dataset.delta));
   });
 });
 
-elementSelect.addEventListener("change", () => {
-  const protons = Number(elementSelect.value);
-  const element = elementsData[protons - 1];
-  state.protons = protons;
-  state.neutrons = element.commonMass - protons;
-  state.electrons = protons;
-  rerender({ restartAnimation: true });
+controls.elementSelect.addEventListener("change", () => {
+  setElement(Number(controls.elementSelect.value));
+});
+
+controls.searchButton.addEventListener("click", searchAndSelect);
+controls.elementSearch.addEventListener("change", () => {
+  if (controls.elementSearch.value) searchAndSelect();
+});
+controls.elementSearch.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    searchAndSelect();
+  }
+});
+controls.elementSearch.addEventListener("input", () => {
+  controls.elementSearch.setCustomValidity("");
 });
 
 document.querySelector("#make-neutral").addEventListener("click", () => {
@@ -274,26 +418,26 @@ document.querySelector("#make-neutral").addEventListener("click", () => {
   rerender();
 });
 
-document.querySelector("#common-isotope").addEventListener("click", () => {
+document.querySelector("#reference-isotope").addEventListener("click", () => {
   const element = getElement();
-  state.neutrons = element.commonMass - element.atomicNumber;
+  state.neutrons = clamp(referenceMassNumber(element) - element.atomicNumber, ...LIMITS.neutrons);
   rerender();
 });
 
-animationButton.addEventListener("click", () => {
+controls.animationButton.addEventListener("click", () => {
   state.animate = !state.animate;
-  animationButton.textContent = state.animate ? "Animation pausieren" : "Animation starten";
+  controls.animationButton.textContent = state.animate ? "Animation pausieren" : "Animation starten";
+
   if (state.animate) {
     animationStart = performance.now();
-    requestAnimationFrame(drawAtom);
+    if (animationFrame) cancelAnimationFrame(animationFrame);
+    animationFrame = requestAnimationFrame(drawAtom);
   } else {
-    drawAtom(performance.now());
+    if (animationFrame) cancelAnimationFrame(animationFrame);
+    animationFrame = null;
+    renderAtomOnce();
   }
 });
 
-window.addEventListener("resize", () => {
-  if (!state.animate) drawAtom(performance.now());
-});
-
 rerender({ restartAnimation: true });
-requestAnimationFrame(drawAtom);
+if (state.animate) animationFrame = requestAnimationFrame(drawAtom);
