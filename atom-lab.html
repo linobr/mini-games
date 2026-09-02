@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Interaktives Atom-Labor: Baue Atome aus Protonen, Neutronen und Elektronen und sieh das Bohrsche Schalenmodell direkt im Browser."
+    />
+    <meta name="theme-color" content="#17221d" />
+    <title>Atom-Labor · Mini Games</title>
+    <link rel="stylesheet" href="./src/atom-lab.css" />
+  </head>
+  <body>
+    <main class="atom-shell">
+      <header class="atom-topbar">
+        <a class="atom-brand" href="./index.html">
+          <span class="atom-brand-mark" aria-hidden="true">⚛</span>
+          <span>Mini Games</span>
+        </a>
+        <span class="atom-pill">Lernmodus · Bohrsches Modell</span>
+      </header>
+
+      <section class="atom-intro">
+        <a class="back-link" href="./index.html">← Alle Spiele</a>
+        <span class="eyebrow">Chemie · interaktiv</span>
+        <h1>Atom-Labor</h1>
+        <p>
+          Stelle Atome selbst zusammen. Verändere Protonen, Neutronen und Elektronen
+          und beobachte direkt, welches Element, Isotop und welche Ladung entsteht.
+        </p>
+      </section>
+
+      <section class="lab-layout">
+        <article class="model-card">
+          <div class="model-toolbar">
+            <div>
+              <span class="eyebrow">Bohrsches Atommodell</span>
+              <h2 id="atom-title">Kohlenstoff-12</h2>
+            </div>
+            <button id="toggle-animation" class="small-button" type="button">Animation pausieren</button>
+          </div>
+
+          <div class="canvas-wrap">
+            <canvas
+              id="atom-canvas"
+              width="760"
+              height="620"
+              aria-label="Darstellung des Atoms im Bohrschen Schalenmodell"
+            ></canvas>
+          </div>
+
+          <div class="legend" aria-label="Legende">
+            <span><i class="proton-dot"></i> Proton +</span>
+            <span><i class="neutron-dot"></i> Neutron</span>
+            <span><i class="electron-dot"></i> Elektron −</span>
+          </div>
+        </article>
+
+        <aside class="control-card">
+          <div class="preset-block">
+            <label for="element-select">Element auswählen</label>
+            <select id="element-select"></select>
+          </div>
+
+          <div class="particle-control">
+            <div class="particle-heading">
+              <span><i class="proton-dot"></i> Protonen</span>
+              <strong id="proton-value">6</strong>
+            </div>
+            <div class="stepper">
+              <button type="button" data-step="protons" data-delta="-1" aria-label="Ein Proton entfernen">−</button>
+              <input id="protons" type="range" min="1" max="20" value="6" />
+              <button type="button" data-step="protons" data-delta="1" aria-label="Ein Proton hinzufügen">+</button>
+            </div>
+            <small>Bestimmen das Element: Ordnungszahl Z.</small>
+          </div>
+
+          <div class="particle-control">
+            <div class="particle-heading">
+              <span><i class="neutron-dot"></i> Neutronen</span>
+              <strong id="neutron-value">6</strong>
+            </div>
+            <div class="stepper">
+              <button type="button" data-step="neutrons" data-delta="-1" aria-label="Ein Neutron entfernen">−</button>
+              <input id="neutrons" type="range" min="0" max="24" value="6" />
+              <button type="button" data-step="neutrons" data-delta="1" aria-label="Ein Neutron hinzufügen">+</button>
+            </div>
+            <small>Ändern das Isotop, aber nicht das Element.</small>
+          </div>
+
+          <div class="particle-control">
+            <div class="particle-heading">
+              <span><i class="electron-dot"></i> Elektronen</span>
+              <strong id="electron-value">6</strong>
+            </div>
+            <div class="stepper">
+              <button type="button" data-step="electrons" data-delta="-1" aria-label="Ein Elektron entfernen">−</button>
+              <input id="electrons" type="range" min="0" max="20" value="6" />
+              <button type="button" data-step="electrons" data-delta="1" aria-label="Ein Elektron hinzufügen">+</button>
+            </div>
+            <small>Bei einem neutralen Atom gilt: Elektronen = Protonen.</small>
+          </div>
+
+          <div class="quick-actions">
+            <button id="make-neutral" type="button">Neutral machen</button>
+            <button id="common-isotope" type="button">Häufiges Isotop</button>
+          </div>
+        </aside>
+      </section>
+
+      <section class="facts-grid" aria-live="polite">
+        <article class="fact-card">
+          <span>Element</span>
+          <strong id="fact-element">Kohlenstoff (C)</strong>
+          <small id="fact-number">Ordnungszahl 6</small>
+        </article>
+        <article class="fact-card">
+          <span>Massenzahl A</span>
+          <strong id="fact-mass">12</strong>
+          <small>Protonen + Neutronen</small>
+        </article>
+        <article class="fact-card">
+          <span>Ladung</span>
+          <strong id="fact-charge">0 · neutral</strong>
+          <small id="fact-ion">6 p⁺ und 6 e⁻</small>
+        </article>
+        <article class="fact-card">
+          <span>Elektronenschalen</span>
+          <strong id="fact-shells">2 · 4</strong>
+          <small id="fact-shell-count">2 besetzte Schalen</small>
+        </article>
+      </section>
+
+      <section class="learn-card">
+        <div>
+          <span class="eyebrow">Merksatz</span>
+          <h2>So liest du ein Atom</h2>
+        </div>
+        <div class="learn-points">
+          <p><strong>Protonen = Ordnungszahl.</strong> 6 Protonen bedeuten immer Kohlenstoff.</p>
+          <p><strong>Neutronen ändern das Isotop.</strong> 6 p + 6 n ergibt Kohlenstoff-12.</p>
+          <p><strong>Elektronen ändern die Ladung.</strong> Gleich viele Elektronen und Protonen = neutral.</p>
+        </div>
+      </section>
+
+      <footer>
+        <span>Mini Games · Atom-Labor</span>
+        <span>Darstellung vereinfacht nach dem Bohrschen Schalenmodell.</span>
+      </footer>
+    </main>
+
+    <script type="module" src="./src/atom-lab.js"></script>
+  </body>
+</html>
