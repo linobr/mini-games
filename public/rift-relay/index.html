@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#080d12">
+  <meta name="description" content="RIFT//RELAY – verwandle mit deinem Dash gegnerische Energie in deinen nächsten Angriff. Ein schnelles Arcade-Spiel aus Mini Games.">
+  <title>RIFT//RELAY · Mini Games</title>
+  <link rel="icon" type="image/svg+xml" href="./icon.svg">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <canvas id="arena" aria-label="RIFT RELAY Spielfeld: Bewegung mit WASD oder Pfeiltasten, Energie umwandeln mit Leertaste."></canvas>
+  <div class="grain" aria-hidden="true"></div>
+  <header class="chrome">
+    <a class="back" href="../" aria-label="Zurück zu Mini Games"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6M8 12h13"/></svg><span>MINI GAMES</span></a>
+    <div class="wordmark">R<span>//</span>R <i>ENERGY RECLAMATION DIVISION</i></div>
+    <div class="chrome-actions">
+      <button id="mute" class="icon-button" aria-label="Ton ausschalten" aria-pressed="false" title="Ton (M)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 5 5 9H2v6h3l5 4ZM15 8q5 4 0 8M18 5q8 7 0 14"/></svg></button>
+      <button id="fullscreen" class="icon-button" aria-label="Vollbild" title="Vollbild (F)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9V3h6m6 0h6v6m0 6v6h-6m-6 0H3v-6"/></svg></button>
+      <button id="pause-button" class="icon-button" aria-label="Spiel pausieren" title="Pause (Esc)" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg></button>
+    </div>
+  </header>
+
+  <main>
+    <section id="menu" class="menu screen">
+      <div class="menu-content">
+        <div class="eyebrow"><span class="line"></span> SOLO ARCADE <span class="edition">// 01</span></div>
+        <h1><span>RIFT<span class="slashes">//</span></span><span class="outline">RELAY</span></h1>
+        <p class="hook">Ihre Energie.<br><strong>Dein Gegenschlag.</strong></p>
+        <p class="menu-intro">Weiche aus. Dash durch ihre Kugeln.<br>Schick das Chaos zurück.</p>
+        <button id="play" class="primary"><span>RUN STARTEN</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15m-6-6 6 6-6 6"/></svg><kbd>ENTER</kbd></button>
+        <div class="menu-links">
+          <button id="daily-open">DAILY RUN <span>↗</span></button>
+          <button id="archive-open">ARCHIV <span>↗</span></button>
+          <button id="help-open">ANLEITUNG <span>↗</span></button>
+        </div>
+        <div class="records"><div><span>DEIN REKORD</span><strong id="menu-best">000 000</strong></div><div><span>BESTE KOMBO</span><strong id="menu-combo">×1</strong></div><button id="settings-open" class="settings-link" aria-label="Einstellungen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 17h16M9 4v6M15 14v6"/></svg></button></div>
+      </div>
+      <div class="arena-caption" aria-hidden="true"><span>01 / RELAISFELD</span><b>ENERGIE IST NIE VERLOREN.</b><span>SIE WECHSELT DIE SEITE.</span></div>
+      <div class="menu-footer"><span><kbd>W A S D</kbd> BEWEGEN <i>/</i> <kbd>SPACE</kbd> UMWANDELN</span><span>3 MINUTEN. EIN SIGNAL.</span></div>
+    </section>
+
+    <section id="hud" class="hud" aria-label="Spielstatus" hidden>
+      <div class="score-block"><span class="eyebrow">SCORE</span><strong id="score">000 000</strong><span id="best-label">BEST 000 000</span></div>
+      <div class="run-status"><span id="phase-label">01 / KONTAKT</span><strong id="timer">00:00 <small>/ 03:00</small></strong><div class="timeline"><i id="timeline-fill"></i><b></b><b></b></div></div>
+      <div class="health-block"><span class="eyebrow">HÜLLE</span><div id="health" aria-label="3 von 3 Trefferpunkten"><i></i><i></i><i></i></div></div>
+      <div class="combo-block" id="combo-block"><strong id="combo">×1</strong><span>RELAIS-KOMBO</span><div class="combo-track"><i id="combo-fill"></i></div></div>
+      <div class="dash-hud"><div class="dash-label"><kbd>SPACE</kbd><strong id="dash-label">DASH BEREIT</strong></div><div class="dash-track"><i id="dash-fill"></i></div><span>IM DASH: KUGELN UMWANDELN + UNVERWUNDBAR</span></div>
+      <div id="tutorial" class="tutorial" role="status"></div>
+      <div id="event-banner" class="event-banner" role="status"></div>
+    </section>
+
+    <section id="results" class="results screen" hidden>
+      <div class="result-content">
+        <span id="result-kicker" class="eyebrow">SIGNAL VERLOREN</span>
+        <h2 id="result-title">NOCH EIN<br>VERSUCH?</h2>
+        <div class="result-score"><span>DEIN SCORE</span><strong id="result-score">0</strong><span id="highscore-note"></span></div>
+        <div class="result-stats"><div><span>ZEIT</span><strong id="result-time"></strong></div><div><span>KOMBO</span><strong id="result-combo"></strong></div><div><span>UMGEWANDELT</span><strong id="result-reflected"></strong></div></div>
+        <p id="result-detail"></p><p id="unlocks" class="unlocks"></p>
+        <button id="restart" class="primary"><span>NOCH EIN RUN</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15m-6-6 6 6-6 6"/></svg><kbd>R</kbd></button>
+        <div class="result-links"><button id="result-menu">HAUPTMENÜ</button><button id="copy-result">ERGEBNIS KOPIEREN</button></div>
+      </div>
+    </section>
+  </main>
+
+  <div id="touch-controls" hidden><div id="stick" aria-label="Touch-Joystick zum Bewegen"><span id="stick-knob"></span></div><button id="touch-dash" aria-label="Dash und Energie umwandeln">DASH<small>UMWANDELN</small></button></div>
+  <div id="fps" hidden></div>
+  <div id="toast" role="status"></div>
+
+  <dialog id="pause-dialog" aria-labelledby="pause-title"><div class="dialog-head"><span class="eyebrow">SIGNAL GEHALTEN</span></div><h2 id="pause-title">PAUSE.</h2><div class="dialog-actions"><button class="primary" id="resume">WEITERSPIELEN <kbd>ESC</kbd></button><button class="secondary" id="pause-restart">NEUER RUN</button><button class="secondary" id="pause-settings">EINSTELLUNGEN</button><button class="text-button" id="pause-menu">HAUPTMENÜ</button></div></dialog>
+
+  <dialog id="settings-dialog" aria-labelledby="settings-title"><div class="dialog-head"><span class="eyebrow">DEIN SETUP</span><button class="close" data-close aria-label="Einstellungen schliessen">×</button></div><h2 id="settings-title">EINSTELLUNGEN</h2>
+    <form id="settings-form" class="settings-form">
+      <label>Gesamtlautstärke <output id="master-value">65%</output><input name="master" type="range" min="0" max="100" step="1"></label>
+      <label>Musik <output id="music-value">30%</output><input name="music" type="range" min="0" max="100" step="1"></label>
+      <label>Effekte <output id="sfx-value">70%</output><input name="sfx" type="range" min="0" max="100" step="1"></label>
+      <label>Screen Shake <output id="shake-value">65%</output><input name="shake" type="range" min="0" max="100" step="1"></label>
+      <label class="setting-row">Grafikqualität<select name="quality"><option value="auto">Automatisch</option><option value="low">Niedrig</option><option value="medium">Mittel</option><option value="high">Hoch</option></select></label>
+      <label class="setting-row">Partikel<input name="particles" type="checkbox"></label>
+      <label class="setting-row">Bewegung reduzieren<input name="reducedMotion" type="checkbox"></label>
+      <label class="setting-row">FPS anzeigen<input name="fps" type="checkbox"></label>
+      <label class="setting-row">Stumm<input name="muted" type="checkbox"></label>
+    </form><p class="dialog-note">Wird auf diesem Gerät gespeichert.</p>
+  </dialog>
+
+  <dialog id="help-dialog" aria-labelledby="help-title"><div class="dialog-head"><span class="eyebrow">IN 10 SEKUNDEN BEREIT</span><button class="close" data-close aria-label="Anleitung schliessen">×</button></div><h2 id="help-title">AUS CHAOS<br>WIRD ENERGIE.</h2>
+    <ol class="instructions"><li><b>01</b><div><strong>Bleib in Bewegung.</strong><p><kbd>WASD</kbd> oder <kbd>↑ ← ↓ →</kbd>. Orange Kugeln und Sender kosten dich einen Hüllenpunkt.</p></div></li><li><b>02</b><div><strong>Dash hinein.</strong><p><kbd>SPACE</kbd> oder <kbd>SHIFT</kbd> in Bewegungsrichtung. Im Dash bist du unverwundbar. Nahe Kugeln werden zu zielsuchenden Gegenangriffen.</p></div></li><li><b>03</b><div><strong>Halte die Kette.</strong><p>Umwandeln, Sender zerstören und knapp ausweichen erhöhen die Kombo. Nach vier Sekunden ohne Aktion fällt sie zurück.</p></div></li></ol>
+    <p class="help-foot">Ein Run dauert bis zu drei Minuten. Nach 60 Sekunden öffnet sich der Riss. Dash durch Pulsringe oder nutze ihre Lücke. Helle Rauten geben Punkte; Kreuze reparieren deine Hülle.</p><p class="dialog-note">ESC Pause · R Neustart · M Ton · F Vollbild<br>Touch: linker Joystick + DASH rechts.</p>
+  </dialog>
+
+  <dialog id="daily-dialog" aria-labelledby="daily-title"><div class="dialog-head"><span class="eyebrow">EIN TAG. EIN AUSGANGSPUNKT.</span><button class="close" data-close aria-label="Daily Run schliessen">×</button></div><h2 id="daily-title">DAILY RUN</h2><p class="daily-date" id="daily-date"></p><p>Gleicher Start-Seed für alle. Gegner reagieren auf deine Bewegung. Wie weit bringst du das heutige Signal?</p><div class="daily-record"><span>DEIN TAGESREKORD</span><strong id="daily-best">0</strong></div><button id="daily-play" class="primary">DAILY STARTEN <span>↗</span></button><p class="dialog-note">Wechselt um 00:00 UTC. Rekorde bleiben auf deinem Gerät.</p></dialog>
+
+  <dialog id="archive-dialog" class="wide-dialog" aria-labelledby="archive-title"><div class="dialog-head"><span class="eyebrow">DEINE SPUREN IM FELD</span><button class="close" data-close aria-label="Archiv schliessen">×</button></div><h2 id="archive-title">ARCHIV</h2><div id="archive-stats" class="archive-stats"></div><h3>SIGNALFARBE</h3><div id="skins" class="skins"></div><h3>ERFOLGE <span id="achievement-count"></span></h3><div id="achievements" class="achievements"></div></dialog>
+  <noscript><div class="no-js">RIFT//RELAY benötigt JavaScript. Bitte aktiviere JavaScript in deinem Browser.</div></noscript>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
