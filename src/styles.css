@@ -11,6 +11,10 @@
 }
 
 * { box-sizing: border-box; }
+.game-card.mooslicht-card { background: linear-gradient(135deg, #224e43, #477762); color: #fff4d5; text-decoration: none; }
+.mooslicht-card .game-card-copy small { color: #d4e5c9; }
+.mooslicht-card .available-badge { background: #f8d587; color: #294739; }
+.mooslicht-card .mooslicht-icon { background: #f8d587; color: #294739; font-size: 48px; }
 html { background: var(--paper); }
 
 body {

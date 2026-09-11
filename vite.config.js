@@ -8,6 +8,7 @@ export default defineConfig({
       input: {
         main: resolve(process.cwd(), "index.html"),
         atomLab: resolve(process.cwd(), "atom-lab.html"),
+        mooslicht: resolve(process.cwd(), "mooslicht/index.html"),
       },
     },
   },
