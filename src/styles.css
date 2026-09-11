@@ -116,6 +116,19 @@ button { color: inherit; }
   line-height: 1.65;
 }
 
+.network-notice {
+  margin-top: 30px;
+  padding: 18px 22px;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--green);
+  border-radius: 12px;
+  background: var(--card);
+}
+
+.network-notice strong { color: var(--green); font-size: 16px; }
+.network-notice p { margin: 8px 0 0; font-size: 15px; line-height: 1.6; }
+.network-notice + .game-grid { margin-top: 26px; }
+
 .game-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -487,3 +500,7 @@ footer {
     transition-duration: 0.01ms !important;
   }
 }
+
+.rift-relay-card { text-decoration: none; color: var(--card); }
+.rift-relay-card .rift-relay-icon { background: #10282d; color: #83f9e0; }
+.rift-relay-card:hover .rift-relay-icon { background: #183a3e; }

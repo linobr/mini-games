@@ -7,6 +7,7 @@ Eine kleine, erweiterbare Browser-Spielesammlung mit Spielen und einem interakti
 - **Color Clash Flip** für eine bis vier Personen – ein eigenes doppelseitiges
   Kartenspiel mit Bots, lokalen und Online-Runden
 - **Atom-Labor** zum interaktiven Nachbauen von Atomen im Bohrschen Schalenmodell
+- **RIFT//RELAY** – Solo-Arcade: gegnerische Energie mit einem Dash in Gegenangriffe umwandeln
 
 ## Spielen
 
@@ -21,6 +22,22 @@ Nach der ersten erfolgreichen GitHub-Pages-Veröffentlichung ist die Seite unter
 - Synchronisiertes Spielfeld, Rundenzähler und Punktestand
 - Responsive Oberfläche für Smartphone und Desktop
 - Startseite als Basis für weitere Spiele
+
+## RIFT//RELAY
+
+Ein eigenständiges Canvas-Spiel unter `public/rift-relay/`, erreichbar über
+die Spieleübersicht und nach Veröffentlichung unter `/mini-games/rift-relay/`.
+WASD oder Pfeiltasten bewegen das Schiff, Leertaste oder Shift lösen den Dash
+aus. Im Dash werden nahe gegnerische Kugeln in zielsuchende eigene Geschosse
+umgewandelt. Risikoreiche Manöver, Trefferketten und zerstörte Sender bringen
+Punkte; reines Überleben bringt keine laufenden Punkte.
+
+Ein Run dauert maximal drei Minuten. Kernereignisse nach 60 und 120 Sekunden,
+Pulsringe, Kombos bis ×16, ein Daily-Seed, zwölf Erfolge und drei freischaltbare
+Signalfarben sorgen für Variation. Highscores, Statistik und Einstellungen
+bleiben ausschliesslich auf dem Gerät. Das Spiel benötigt keine zusätzlichen
+Pakete, externen Assets, Accounts oder Server. Details und Steuerung stehen in
+[`public/rift-relay/README.md`](public/rift-relay/README.md).
 
 ## Color Clash Flip
 
