@@ -4,32 +4,40 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#183e38" />
-  <meta name="description" content="KI-Mooslicht: der separat weiterentwickelte Live-Ableger von Mooslicht." />
-  <title>KI-Mooslicht – Live · Mini Games</title>
+  <meta name="description" content="Mooslicht: ein magisches Miniatur-Abenteuer im echten Garten. Erklimme die Palme, entdecke die Hütte, löse Klangrätsel und erwecke den Herzbaum. Kostenlos im Browser." />
+  <title>KI-Mooslicht · Live</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%23183e38'/%3E%3Cpath d='M32 8 38 25 54 32 38 39 32 56 26 39 10 32 26 25Z' fill='%23f6d17b'/%3E%3C/svg%3E" />
   <link rel="stylesheet" href="./src/style.css" />
 </head>
 <body data-screen="intro">
-  <main id="adventure" aria-label="KI-Mooslicht – 3D-Abenteuer">
+  <main id="adventure" aria-label="Mooslicht – 3D-Abenteuer">
     <canvas id="world" tabindex="0" aria-label="Spielwelt. WASD oder Pfeiltasten bewegen, Leertaste springen, E interagieren, J Schwert, Shift ausweichen. Mit gedrückter rechter Maustaste Kamera drehen."></canvas>
     <div class="vignette" aria-hidden="true"></div>
     <header class="topbar">
       <a class="back-link" href="../" aria-label="Zurück zu Mini Games"><span aria-hidden="true">‹</span> Mini Games</a>
-      <div class="game-brand" aria-hidden="true"><span>✧</span> KI-MOOSLICHT · LIVE</div>
+      <div class="game-brand" aria-hidden="true"><span>✧</span> MOOSLICHT</div>
       <div class="top-actions">
         <button class="icon-button" id="overview" aria-label="Garten von oben ansehen" aria-pressed="false" title="Garten von oben · V">⌘</button><button class="icon-button" id="map-toggle" aria-label="Karte und Hinweise anzeigen" aria-pressed="false" title="Karte &amp; Hinweise · M">◈</button><button class="icon-button" id="sound" aria-label="Ton einschalten" aria-pressed="false" title="Ton ein/aus">♪</button>
         <button class="icon-button" id="fullscreen" aria-label="Vollbild" title="Vollbild">⛶</button>
         <button class="icon-button" id="pause" aria-label="Pause und Einstellungen" title="Pause · Esc">Ⅱ</button>
       </div>
     </header>
+    <div id="day-control" class="day-control" aria-label="Tageszeit wählen">
+      <div class="day-track" role="slider" tabindex="0" aria-label="Sonne verschieben: Tag bis Mooslicht-Nacht" aria-valuemin="0" aria-valuemax="5" aria-valuenow="0" aria-orientation="horizontal">
+        <svg viewBox="0 0 180 48" preserveAspectRatio="none" aria-hidden="true"><path d="M14 36 Q90 -6 166 36"/><path class="day-horizon" d="M14 43H166"/></svg>
+        <span class="day-sun" aria-hidden="true">☀</span>
+      </div>
+      <div class="day-caption"><span class="day-label">Tagesverlauf</span><button type="button" aria-label="Automatischen Tagesverlauf wiederherstellen" aria-pressed="true">Auto</button></div>
+    </div>
 
     <section class="intro" id="intro" aria-labelledby="game-title">
-      <span class="intro-overline">LIVE · AUTONOM WEITERENTWICKELT</span>
-      <h1 id="game-title">KI-Mooslicht<span>Der Garten entwickelt sich weiter</span></h1>
-      <p>Der separate KI-Ableger von Mooslicht. Dieses Spiel darf der Jetson-Agent weiterentwickeln, ohne das Original zu verändern.</p>
+      <span class="intro-overline">DEIN GARTEN. EINE GANZE WELT.</span>
+      <h1 id="game-title">Mooslicht<span>Der Garten erwacht</span></h1>
+      <p>Eine Palme wird zum Wald. Ein Gartenhaus zum Tempel. Und du bist winzig. Drei Lichter erwecken deinen schwebenden Garten – bis die Sterne über ihm aufblühen.</p>
       <button class="primary" id="start" disabled><span id="start-label">Der Garten erwacht …</span><span aria-hidden="true">✧</span></button>
       <span class="intro-detail">1 Spieler <span>·</span> Erkunden, rätseln &amp; kämpfen</span>
       <button class="text-button" id="intro-help">So spielst du</button>
+      <button class="text-button" id="intro-appearance">Aussehen</button>
       <p id="save-note" class="save-note">Dein Fortschritt wird auf diesem Gerät gespeichert.</p>
     </section>
 
@@ -48,19 +56,33 @@
       <div class="joystick" id="joystick" aria-label="Bewegen"><div id="joystick-knob"></div></div>
       <div class="touch-actions"><button id="touch-roll" aria-label="Ausweichen">↝</button><button id="touch-attack" aria-label="Schwert">⚔</button><button id="touch-interact" aria-label="Interagieren">E</button><button id="touch-jump" aria-label="Springen">↑</button></div>
     </div>
-    <div id="cinema" class="cinema" hidden><span id="cinema-title">KI-MOOSLICHT<small>Der Garten entwickelt sich weiter.</small></span><button id="skip-intro" class="text-button">Überspringen</button></div><output id="performance" hidden></output>
+    <div id="cinema" class="cinema" hidden><span id="cinema-title">MOOSLICHT<small>Der Garten erwacht</small></span><button id="skip-intro" class="text-button">Überspringen</button></div><output id="performance" hidden></output>
     <div class="damage-flash" id="damage-flash" aria-hidden="true"></div>
 
     <dialog id="pause-dialog" class="game-dialog" aria-labelledby="pause-title">
       <form method="dialog"><button class="close-dialog" aria-label="Schliessen">×</button></form>
-      <span class="dialog-overline">KI-MOOSLICHT</span><h2 id="pause-title">Eine kleine Pause.</h2>
+      <span class="dialog-overline">MOOSLICHT</span><h2 id="pause-title">Eine kleine Pause.</h2>
       <p>Dein Garten wartet auf dich.</p>
+      <button class="text-button" id="pause-appearance">Aussehen anpassen</button>
       <div class="settings-row"><label for="quality">Grafik</label><select id="quality"><option value="auto">Automatisch</option><option value="low">Niedrig</option><option value="medium">Mittel</option><option value="high">Hoch</option></select></div>
       <div class="settings-row"><label for="volume">Lautstärke</label><input id="volume" type="range" min="0" max="100" value="45" /></div>
       <div class="settings-row"><label for="motion">Ruhige Kamera</label><input id="motion" type="checkbox" /></div>
       <button class="primary" id="resume">Weiterspielen <span aria-hidden="true">✧</span></button>
       <div class="dialog-links"><button class="text-button" id="help">Steuerung</button><button class="text-button" id="reset-position">Zum Rücksetzpunkt</button></div>
       <button class="text-button subdued" id="restart">Neues Abenteuer beginnen</button>
+    </dialog>
+    <dialog id="appearance-dialog" class="game-dialog appearance-dialog" aria-labelledby="appearance-title">
+      <span class="dialog-overline">DEINE REISE, DEIN AUSSEHEN</span><h2 id="appearance-title">Ein Gesicht für dein Abenteuer.</h2>
+      <div class="appearance-layout">
+        <div class="appearance-preview">
+          <canvas id="appearance-preview" tabindex="0" aria-label="3D-Vorschau. Ziehen oder Pfeile links/rechts zum Drehen. Mausrad oder Pfeile oben/unten zum Zoomen. Pos1 setzt die Ansicht zurück."></canvas>
+          <div class="preview-actions"><button type="button" data-appearance="left" aria-label="Nach links drehen">↶</button><button type="button" data-appearance="right" aria-label="Nach rechts drehen">↷</button><button type="button" data-appearance="closer" aria-label="Näher ansehen">+</button><button type="button" data-appearance="farther" aria-label="Weiter weg">−</button><button type="button" data-appearance="camera">Ansicht zurück</button></div>
+          <p>Ziehen zum Drehen · Mausrad zum Zoomen</p>
+        </div>
+        <div class="appearance-fields"></div>
+      </div>
+      <div class="appearance-footer"><button type="button" class="text-button" data-appearance="reset">Standardaussehen</button><button type="button" class="text-button" data-appearance="cancel">Abbrechen</button><button type="button" class="primary" data-appearance="apply">Übernehmen <span aria-hidden="true">✧</span></button></div>
+      <p class="appearance-note">Erst „Übernehmen“ speichert dein Aussehen. Deine Reise bleibt erhalten.</p>
     </dialog>
     <dialog id="help-dialog" class="game-dialog" aria-labelledby="help-title">
       <form method="dialog"><button class="close-dialog" aria-label="Schliessen">×</button></form>
@@ -79,7 +101,7 @@
       <button class="primary" id="explore">Weiter erkunden <span aria-hidden="true">✧</span></button><a class="text-button" href="../">Zurück zu Mini Games</a>
     </dialog>
     <section id="error" class="error-panel" hidden role="alert"><h2>Der Garten konnte nicht starten.</h2><p id="error-text">Lade die Seite nochmals. Für die 3D-Welt muss WebGL 2 im Browser verfügbar sein.</p><button class="primary" onclick="location.reload()">Neu laden</button><a href="../">Zurück zu Mini Games</a></section>
-    <noscript><div class="error-panel">Bitte aktiviere JavaScript, um KI-Mooslicht zu spielen. <a href="../">Zurück zu Mini Games</a></div></noscript>
+    <noscript><div class="error-panel">Bitte aktiviere JavaScript, um Mooslicht zu spielen. <a href="../">Zurück zu Mini Games</a></div></noscript>
   </main>
   <script type="module">
     import('./src/main.js').catch(error => {

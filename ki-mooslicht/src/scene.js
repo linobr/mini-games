@@ -1,15 +1,20 @@
+import {makeHero} from './hero.js';
+export {makeHero} from './hero.js';
 import * as T from 'three';
 import {buildGarden} from './garden.js';
 import {buildFloating} from './floating.js';
 import {buildSky} from './sky.js';
+import {BALL_RADIUS} from './ball.js';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import { ISLANDS, BRIDGES, STONES, FLOWERS, SHRINES, WIND_ORBS, OBSTACLES, SEEDS, TREE, GUIDE, CHEST, GUARDS, edgeRadius, onIsland, random, TAU } from './world.js';
 
 const C = { grass: '#93b969', moss: '#557957', bark: '#9d7451', rock: '#99a69a', cream: '#fff1cf', gold: '#ffce73', green: '#396e58', dark: '#264e4b' };
 const geo = {
   ball: new T.IcosahedronGeometry(1, 2), pebble: new T.IcosahedronGeometry(1, 1),
-  box: new T.BoxGeometry(1,1,1), cylinder: new T.CylinderGeometry(1,1,1,10),
-  cone: new T.ConeGeometry(1,1,8), ring: new T.TorusGeometry(1,.075,6,32),
-  disk: new T.CylinderGeometry(1,1,1,32), petal: new T.SphereGeometry(1,12,8),
+  grit: new T.IcosahedronGeometry(1,0), bud: new T.SphereGeometry(1,8,5),
+  box: new T.BoxGeometry(1,1,1), cylinder: new T.CylinderGeometry(1,1,1,8),
+  cone: new T.ConeGeometry(1,1,8), ring: new T.TorusGeometry(1,.075,5,24),
+  disk: new T.CylinderGeometry(1,1,1,16), petal: new T.SphereGeometry(1,12,8),
 };
 const standard = new T.MeshStandardMaterial({ color: '#ffffff', roughness: .88, metalness: 0 });
 const noShadow = new T.MeshStandardMaterial({ color: '#ffffff', roughness: 1, side: T.DoubleSide });
@@ -46,44 +51,6 @@ class Batch {
   }
 }
 
-export function makeHero() {
-  const root=new T.Group(),body=new T.Group();root.add(body);
-  const cape=mesh('cone','#487b94',[.49,.7,.42],[0,.94,0],body);cape.rotation.y=Math.PI/8;
-  mesh('ball','#e7c293',[.19,.22,.17],[0,1.22,.05],body);
-  mesh('petal','#f9dcb4',[.31,.32,.29],[0,1.53,.03],body);
-  mesh('ball','#916d47',[.34,.18,.31],[0,1.78,-.04],body);
-  for(let i=0;i<13;i++){const a=i*2.4;mesh('ball',i%2?'#aa8256':'#957047',[.1,.105,.11],[Math.cos(a)*.29,1.75+Math.sin(i)*.09,Math.sin(a)*.23],body);}
-  const cloak=mesh('cone','#31536f',[.42,.78,.19],[0,.94,-.25],body);cloak.rotation.x=-.15;
-  mesh('box','#eac776',[.63,.065,.46],[0,.8,0],body);
-  mesh('ball','#f1d885',[.075,.08,.05],[0,1.2,.37],body,.15);
-  const leaf=mesh('petal','#a5c777',[.09,.29,.035],[.18,1.99,-.03],body);leaf.rotation.z=-.52;
-  for(const x of [-.115,.115]) {
-    mesh('petal','#4388bd',[.055,.069,.025],[x,1.55,.292],body);
-    mesh('ball','#fff5df',[.013,.015,.013],[x-.011,1.57,.31],body,.2);
-  }
-  mesh('petal','#dcab84',[.055,.042,.04],[0,1.47,.32],body);
-  mesh('box','#5b7862',[.4,.45,.21],[0,1.05,-.35],body);
-  mesh('box','#d8b981',[.055,.5,.035],[-.16,1.05,-.47],body);
-  mesh('box','#d8b981',[.055,.5,.035],[.16,1.05,-.47],body);
-  const legs=[];
-  for(const x of [-.18,.18]) {
-    const pivot=new T.Group();pivot.position.set(x,.65,0);body.add(pivot);
-    mesh('cylinder','#f0dfba',[.10,.35,.10],[0,-.2,0],pivot);
-    mesh('petal','#345855',[.15,.14,.23],[0,-.51,.06],pivot);legs.push(pivot);
-  }
-  const arm=new T.Group();arm.position.set(-.41,1.15,0);body.add(arm);
-  mesh('cylinder','#487b94',[.10,.31,.1],[0,-.17,0],arm);mesh('ball','#f3d4a7',[.12,.12,.12],[0,-.33,.015],arm);
-  const lamp=new T.Group();lamp.position.set(0,-.51,.06);arm.add(lamp);
-  mesh('box','#866547',[.21,.27,.21],[0,0,0],lamp);
-  const lampCore=mesh('ball','#ffdb83',[.095,.115,.095],[0,0,.083],lamp,1.3);
-  const swordArm=new T.Group();swordArm.position.set(.42,1.14,0);body.add(swordArm);
-  mesh('cylinder','#487b94',[.1,.31,.1],[0,-.17,0],swordArm);mesh('ball','#f3d4a7',[.12,.12,.12],[0,-.34,0],swordArm);
-  const sword=mesh('box','#dce7d6',[.105,.70,.07],[0,-.76,.06],swordArm);sword.rotation.z=-.1;
-  mesh('box','#e5bc6c',[.34,.09,.13],[0,-.41,.06],swordArm);
-  const slash=new T.Mesh(new T.RingGeometry(.8,2.15,32,1,0,2),new T.MeshBasicMaterial({color:'#fff4c2',transparent:true,opacity:.6,side:T.DoubleSide,depthWrite:false}));
-  slash.rotation.x=-Math.PI/2;slash.position.y=1;root.add(slash);slash.visible=false;
-  return { root,body,legs,arm,swordArm,slash,lampCore };
-}
 
 function guardian(id) {
   const root=new T.Group(),body=new T.Group();root.add(body);
@@ -103,9 +70,9 @@ export function buildScene() {
   const scene=new T.Scene();scene.background=new T.Color('#a7c9c3');scene.fog=new T.FogExp2('#c9d7b9',.004);
   const hemi=new T.HemisphereLight('#eff8e4','#698a82',2.1);scene.add(hemi);
   const sun=new T.DirectionalLight('#fff0ce',3.3);sun.position.set(10,50,10);sun.castShadow=true;
-  Object.assign(sun.shadow.camera,{left:-43,right:43,top:60,bottom:-60,near:.5,far:160});
+  Object.assign(sun.shadow.camera,{left:-55,right:55,top:85,bottom:-85,near:.5,far:200});
   sun.shadow.mapSize.set(2048,2048);sun.shadow.bias=-.00025;sun.shadow.normalBias=.055;sun.shadow.radius=3;
-  sun.target.position.set(0,0,-20);scene.add(sun,sun.target);
+  sun.target.position.set(0,0,7);scene.add(sun,sun.target);
   const rim=new T.DirectionalLight('#b8e9eb',.9);rim.position.set(20,15,-35);scene.add(rim);
   const batch=new Batch(scene),rng=random(61922);
   const garden=buildGarden(scene,batch,mesh);
@@ -166,6 +133,14 @@ export function buildScene() {
   for(let i=0;i<3;i++){const r=mesh('ring',SHRINES[i].color,[.55+i*.14,.55+i*.14,.55+i*.14],[0,0,0],heart,.1);r.rotation.set(i*.8,i*.6,0);}scene.add(heart);
   const guardians=GUARDS.map((g,i)=>{const v=guardian(i);v.root.position.set(g.x,g.y||0,g.z);scene.add(v.root);return v;});
   const hero=makeHero();scene.add(hero.root);hero.body.children[0].castShadow=true;
+  const ball=new T.Group();ball.name='garden-football';scene.add(ball);
+  mesh('ball','#e9e5cd',[BALL_RADIUS,BALL_RADIUS,BALL_RADIUS],[0,0,0],ball);
+  const patches=[],icosa=new T.IcosahedronGeometry(1,0),seen=new Set(),normal=new T.Vector3(),rotation=new T.Quaternion(),forward=new T.Vector3(0,0,1);
+  for(let i=0;i<icosa.attributes.position.count;i++){
+    normal.fromBufferAttribute(icosa.attributes.position,i).normalize();const key=normal.toArray().map(n=>n.toFixed(4)).join(',');if(seen.has(key))continue;seen.add(key);
+    rotation.setFromUnitVectors(forward,normal);const g=new T.CircleGeometry(.24,5);g.applyQuaternion(rotation);g.translate(normal.x*.753,normal.y*.753,normal.z*.753);patches.push(g);
+  }
+  const markings=new T.Mesh(mergeGeometries(patches),new T.MeshStandardMaterial({color:'#344c49',roughness:.9,side:T.DoubleSide}));ball.add(markings);icosa.dispose();patches.forEach(g=>g.dispose());
   batch.finish();
-  return { scene,sun,sky,floating,garden,hero,stones,flowers,shrines,seeds,windOrbs,guide,chest,lid,heart,heartCore,guardians };
+  return { scene,sun,sky,floating,garden,hero,ball,stones,flowers,shrines,seeds,windOrbs,guide,chest,lid,heart,heartCore,guardians };
 }

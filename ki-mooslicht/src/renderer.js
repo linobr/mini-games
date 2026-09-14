@@ -1,6 +1,8 @@
 import * as T from 'three';
 import { buildScene } from './scene.js';
 import { STONES, SEEDS, SHRINES, FLOWERS, ISLANDS, stonePosition, surfaceAt, random, clamp, TAU, TREE, SATELLITES, GUIDE, CHECKPOINTS, cameraFraction } from './world.js';
+const CAMERA_ORBIT_OFFSETS=[-.16,-.08,.08,.16],CAMERA_PITCH_OFFSETS=[-.10,.10];
+const CAMERA_ESCAPE_OFFSETS=[-.65,.65,-1.3,1.3,-2.1,2.1,Math.PI];
 
 function radialTexture() {
   const size=64,data=new Uint8Array(size*size*4);
@@ -44,7 +46,7 @@ export class Effects {
 export class WorldView {
   constructor(canvas,settings={}) {
     this.canvas=canvas;
-    this.renderer=new T.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:'high-performance'});
+    this.renderer=new T.WebGLRenderer({canvas,antialias:true,alpha:false,stencil:true,powerPreference:'high-performance'});
     this.renderer.outputColorSpace=T.SRGBColorSpace;this.renderer.toneMapping=T.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure=1.02;this.renderer.shadowMap.enabled=true;this.renderer.shadowMap.type=T.PCFSoftShadowMap;
     this.world=buildScene();this.scene=this.world.scene;
@@ -58,10 +60,13 @@ export class WorldView {
     const contactMaterial=new T.MeshBasicMaterial({color:'#173e3b',map:glowTexture,transparent:true,opacity:.42,depthWrite:false});
     this.shadow=new T.Mesh(new T.PlaneGeometry(1.8,1.8),contactMaterial);this.shadow.rotation.x=-Math.PI/2;this.scene.add(this.shadow);
     this.lampGlow=new T.Sprite(new T.SpriteMaterial({color:'#ffde91',map:glowTexture,transparent:true,depthWrite:false,blending:T.AdditiveBlending}));this.lampGlow.scale.set(1.3,1.3,1.3);this.world.hero.root.add(this.lampGlow);this.lampGlow.position.set(-.43,.63,.11);
-    // A translucent silhouette keeps the tiny hero visible behind a canopy.
-    const silhouette=new T.MeshBasicMaterial({color:'#f7df9b',transparent:true,opacity:.32,depthFunc:T.GreaterDepth,depthWrite:false});
+    // Mark visible hero pixels so the occlusion aid cannot reveal the hero's own back faces.
+    // This uses the existing draw calls and depth/stencil buffer, without a second render pass.
+    const silhouette=new T.MeshBasicMaterial({color:'#f7df9b',transparent:true,opacity:.32,depthFunc:T.GreaterDepth,depthWrite:false,
+      stencilWrite:true,stencilRef:1,stencilFunc:T.NotEqualStencilFunc});
     const parts=[];this.world.hero.body.traverse(o=>{if(o.isMesh)parts.push(o);});
-    for(const part of parts){const s=new T.Mesh(part.geometry,silhouette);s.scale.setScalar(1.015);s.renderOrder=5;part.add(s);}
+    for(const part of parts){part.renderOrder=1;part.material.stencilWrite=true;part.material.stencilRef=1;part.material.stencilFunc=T.AlwaysStencilFunc;part.material.stencilZPass=T.ReplaceStencilOp;
+      const s=new T.Mesh(part.geometry,silhouette);s.scale.setScalar(1.015);s.renderOrder=5;part.add(s);}
     this.makeFireflies();this.applyQuality();this.resize();
   }
   makeFireflies() {
@@ -96,7 +101,7 @@ export class WorldView {
     this.world.sun.castShadow=!low;this.fireflies.material.uniforms.pixelRatio.value=ratio;
   }
   orbit(dx,dy) { this.yaw-=dx*.006;this.pitch=clamp(this.pitch+dy*.003,-.10,1.15); }
-  resetCamera() { this.yaw=0;this.pitch=.30;this.distance=7.4;this.overview=false; }
+  resetCamera() { this.yaw=0;this.pitch=.30;this.distance=7.4;this.overview=false;this.avoidYaw=0; }
   zoom(delta) { this.distance=clamp(this.distance+delta*.012,4.5,14); }
   beginCinematic(kind){this.cinematic=kind;this.cineTime=0;}
   skipCinematic(){if(this.cinematic==='finale'){this.world.sky.state.finalAge=12;this.world.sky.state.phase=5;}this.cinematic=null;this.cineTime=0;this.started=false;this.transition=0;}
@@ -109,6 +114,10 @@ export class WorldView {
   render(game,dt,intro=false) {
     const rawDt=clamp(dt,0,2);dt=clamp(dt,0,.1);this.clock+=dt;
     const w=this.world,p=game.player,time=this.clock;
+    if(this.appearance!==game.appearance){w.hero.applyAppearance(game.appearance);this.appearance=game.appearance;}
+    // Keep the entire longer garden legible in overview, retain deep distance fog on foot.
+    this.scene.fog.density=intro||this.overview?.0023:.004;
+    w.ball.position.set(game.ball.x,game.ball.y,game.ball.z);w.ball.rotation.set(game.ball.rx,0,game.ball.rz);w.ball.visible=game.ball.resetIn===0;
     w.hero.root.position.set(p.x,p.y,p.z);w.hero.root.rotation.y+=Math.atan2(Math.sin(p.facing-w.hero.root.rotation.y),Math.cos(p.facing-w.hero.root.rotation.y))*(1-Math.exp(-dt*18));
     w.hero.root.visible=!(p.invulnerable>0&&Math.floor(time*12)%3===0);
     const walking=Math.min(1,Math.hypot(p.vx,p.vz)/4),cycle=p.walk*2.6;
@@ -177,8 +186,8 @@ export class WorldView {
         if(t>=11)this.skipCinematic();
       }
     } else if(intro || this.overview) {
-      this.camera.position.set(36,80,64);this.camera.lookAt(0,0,-20);
-      if(this.camera.aspect<.75){this.camera.position.set(25,112,92);this.camera.lookAt(0,0,-20);}
+      this.camera.position.set(72,142,152);this.camera.lookAt(-10,0,8);
+      if(this.camera.aspect<.75){this.camera.position.set(34,186,195);this.camera.lookAt(-10,0,8);}
     } else {
       if(!this.started){this.started=true;this.target.set(p.x,p.y+1.65,p.z);}
       this.transition=Math.min(1,this.transition+dt);
@@ -186,15 +195,46 @@ export class WorldView {
       this.target.lerp(this.look.set(p.x,p.y+1.65,p.z),alpha);
       const d=(this.distance+walking*.35)*(this.camera.aspect<.75?1.1:1);
       this.desired.set(this.target.x+Math.sin(this.yaw)*d,this.target.y+d*this.pitch,this.target.z+Math.cos(this.yaw)*d);
-      const fraction=cameraFraction(this.target,this.desired);
+      let fraction=cameraFraction(this.target,this.desired);
+      // Anticipate an orbit past a thin furniture leg or balcony column before the
+      // final safety clamp has to pull the eye forward in a single frame.
+      for(const offset of CAMERA_ORBIT_OFFSETS){
+        this.look.set(this.target.x+Math.sin(this.yaw+offset)*d,this.target.y+d*this.pitch,this.target.z+Math.cos(this.yaw+offset)*d);
+        fraction=Math.min(fraction,cameraFraction(this.target,this.look));
+      }
+      for(const offset of CAMERA_PITCH_OFFSETS){
+        this.look.copy(this.desired);this.look.y+=d*offset;
+        fraction=Math.min(fraction,cameraFraction(this.target,this.look));
+      }
+      // At a tight railing corner, gently orbit into the free aisle instead of
+      // pushing the eye inside the hero's head. Ordinary camera paths stay put.
+      let escape=0;
+      if(fraction*d<2.8){
+        let clearance=fraction*d;
+        for(const offset of CAMERA_ESCAPE_OFFSETS){
+          this.look.set(this.target.x+Math.sin(this.yaw+offset)*d,this.target.y+d*this.pitch,this.target.z+Math.cos(this.yaw+offset)*d);
+          const available=cameraFraction(this.target,this.look)*d;
+          if(available>clearance+.25){escape=offset;clearance=available;}
+        }
+      }
+      this.avoidYaw=(this.avoidYaw||0)+(escape-(this.avoidYaw||0))*(1-Math.exp(-dt*8));
+      if(Math.abs(this.avoidYaw)>.005){
+        this.desired.set(this.target.x+Math.sin(this.yaw+this.avoidYaw)*d,this.target.y+d*this.pitch,this.target.z+Math.cos(this.yaw+this.avoidYaw)*d);
+        fraction=cameraFraction(this.target,this.desired);
+      }
       this.desired.lerpVectors(this.target,this.desired,fraction);
-      this.camera.position.lerp(this.desired,1-Math.exp(-dt*(this.transition<1?5:12)));
+      const extending=this.desired.distanceToSquared(this.target)>this.camera.position.distanceToSquared(this.target);
+      const cameraRate=this.transition<1?5:extending?4.5:12;
+      this.camera.position.lerp(this.desired,1-Math.exp(-dt*cameraRate));
       // Apply collision again after smoothing to avoid crossing a corner on an orbit.
       const actual=cameraFraction(this.target,this.camera.position);
       if(actual<1)this.camera.position.lerpVectors(this.target,this.camera.position,actual);
       if(!this.motion&&this.shake>0){this.camera.position.x+=Math.sin(time*101)*this.shake*.25;this.camera.position.y+=Math.cos(time*93)*this.shake*.17;}
       this.camera.lookAt(this.target);
     }
+    // In the short transition out of an unavoidable close corner, do not render
+    // the inside of the avatar. It returns as soon as the near plane is clear.
+    w.hero.body.visible=intro||this.overview||!!this.cinematic||this.camera.position.distanceTo(this.look.set(p.x,p.y+1.6,p.z))>1.35;
     // Sky follows the eye: no parallax or clipping at high garden viewpoints.
     w.sky.sky.position.copy(this.camera.position);w.sky.stars.position.copy(this.camera.position);w.sky.moon.position.copy(this.camera.position).add(this.look.set(-95,155,-150));
     this.renderer.render(this.scene,this.camera);
