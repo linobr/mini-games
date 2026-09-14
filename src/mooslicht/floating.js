@@ -4,14 +4,17 @@ import {GARDEN_OUTLINE,SATELLITES,SHRINES,TREE,PALM,edgeRadius,random,TAU} from 
 // One coloured mesh per island, four faceted strata; the top uses the collision outline.
 export function islandGeometry(outline,cx,cz,y,depth){
   const positions=[],colors=[],indices=[],rng=random(Math.round(cx*33+cz*14+733)),c=new T.Color();
-  const layers=[{s:1,y:0,c:'#7c9c52'},{s:1.01,y:-.65,c:'#776f4a'},{s:.86,y:-depth*.36,c:'#6a6b66'},{s:.49,y:-depth*.8,c:'#5f666c'},{s:.13,y:-depth,c:'#555e65'}];
-  positions.push(cx,y,cz);c.set('#7d9d51');colors.push(c.r,c.g,c.b);
+  const layers=[{s:1,y:0,c:'#557748'},{s:1.01,y:-.65,c:'#776f4a'},{s:.86,y:-depth*.36,c:'#6a6b66'},{s:.49,y:-depth*.8,c:'#5f666c'},{s:.13,y:-depth,c:'#555e65'}];
+  positions.push(cx,y,cz);c.set('#557748');colors.push(c.r,c.g,c.b);
   layers.forEach((layer,l)=>outline.forEach((p,i)=>{
     positions.push(cx+(p.x-cx)*layer.s,y+layer.y+(l>1?Math.sin(i*2.1)*depth*.07:0),cz+(p.z-cz)*layer.s);
-    c.set(layer.c).offsetHSL((rng()-.5)*.025,0,(rng()-.5)*.055);colors.push(c.r,c.g,c.b);
+    c.set(layer.c).offsetHSL((rng()-.5)*(l?.025:.004),0,(rng()-.5)*(l?.055:.008));colors.push(c.r,c.g,c.b);
   }));
   const n=outline.length;
-  for(let i=0;i<n;i++){const j=(i+1)%n;indices.push(0,1+j,1+i);for(let l=0;l<layers.length-1;l++){const a=1+l*n+i,b=1+l*n+j;indices.push(a,b,b+n,a,b+n,a+n);}}
+  // Ear clipping also supports the concave garden return; a centre fan would
+  // fill the bay outside the house and disagree with the walking surface.
+  for(const [a,b,d] of T.ShapeUtils.triangulateShape(outline.map(p=>new T.Vector2(p.x,p.z)),[]))indices.push(1+d,1+b,1+a);
+  for(let i=0;i<n;i++){const j=(i+1)%n;for(let l=0;l<layers.length-1;l++){const a=1+l*n+i,b=1+l*n+j;indices.push(a,b,b+n,a,b+n,a+n);}}
   // Closed tapered bottom, unlike an open cylinder seen from below.
   positions.push(cx,y-depth*1.08,cz);c.set('#50585e');colors.push(c.r,c.g,c.b);
   for(let i=0;i<n;i++)indices.push(positions.length/3-1,1+(layers.length-1)*n+i,1+(layers.length-1)*n+(i+1)%n);
@@ -20,17 +23,30 @@ export function islandGeometry(outline,cx,cz,y,depth){
 export function satelliteOutline(s){return s.outline;}
 export function buildFloating(scene,batch,mesh){
   const rng=random(90024),material=new T.MeshStandardMaterial({vertexColors:true,roughness:1,flatShading:true}),islands=[],crystals=[];
+  // Fine turf variation avoids the huge radial colour wedges of the island's coarse top mesh.
+  material.onBeforeCompile=shader=>{
+    shader.vertexShader='varying vec3 turfPosition;\n'+shader.vertexShader;
+    shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nturfPosition=position;');
+    shader.fragmentShader='varying vec3 turfPosition;\n'+shader.fragmentShader;
+    shader.fragmentShader=shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
+      float topFace=1.-smoothstep(.02,.35,abs(turfPosition.y));
+      float turfPatch=sin(turfPosition.x*.63+sin(turfPosition.z*.27))*sin(turfPosition.z*.71);
+      float fine=sin(turfPosition.x*31.)*sin(turfPosition.z*37.);
+      float detail=1.-smoothstep(.04,.16,max(fwidth(turfPosition.x),fwidth(turfPosition.z)));
+      diffuseColor.rgb*=1.+topFace*(turfPatch*.035+fine*.04*detail);
+    `);
+  };
   const make=(outline,x,z,y,depth)=>{const m=new T.Mesh(islandGeometry(outline,x,z,y,depth),material);m.receiveShadow=true;scene.add(m);islands.push(m);return m;};
-  make(GARDEN_OUTLINE,0,-17,0,24);
+  make(GARDEN_OUTLINE,0,7,0,27);
   // Broken turf lips, hanging roots and small rock shelves live on the same edge.
   for(let i=0;i<GARDEN_OUTLINE.length;i++){
-    const p=GARDEN_OUTLINE[i],inward=new T.Vector3(-p.x,0,-17-p.z).normalize();
+    const p=GARDEN_OUTLINE[i],inward=new T.Vector3(-p.x,0,7-p.z).normalize();
     batch.add('pebble',i%3?'#788954':'#919b78',[p.x+inward.x*.4,-.36,p.z+inward.z*.4],[.9,.45,1.2],[0,i,0],false);
     if(i%3===0){
-      const end=[p.x*.86,-7-rng()*7,-17+(p.z+17)*.87];batch.beam([p.x-.2,-.3,p.z],end,.09,'#655d42',false);
+      const end=[p.x*.86,-7-rng()*7,7+(p.z-7)*.87];batch.beam([p.x-.2,-.3,p.z],end,.09,'#655d42',false);
       batch.beam(end,[end[0]-.8,end[1]-2,end[2]+.6],.045,'#887b51',false);
     }
-    if(i%8===0){const c=mesh('cone',i%2?'#b6caa0':'#a2c4c1',[.4,2.6,.45],[p.x*.94,-3.3,-17+(p.z+17)*.94],scene,.2);c.rotation.z=.35;crystals.push(c);}
+    if(i%8===0){const c=mesh('cone',i%2?'#b6caa0':'#a2c4c1',[.4,2.6,.45],[p.x*.94,-3.3,7+(p.z-7)*.94],scene,.2);c.rotation.z=.35;crystals.push(c);}
   }
   for(const s of SATELLITES){
     make(satelliteOutline(s),s.x,s.z,s.y,7+s.r*.5);
@@ -59,7 +75,7 @@ export function buildFloating(scene,batch,mesh){
   const distant=new T.Group();scene.add(distant);
   const farRock=new T.InstancedMesh(new T.IcosahedronGeometry(1,0),new T.MeshStandardMaterial({color:'#7e9aa0',roughness:1,flatShading:true}),28);
   const obj=new T.Object3D();
-  for(let i=0;i<28;i++){const a=i/28*TAU,r=105+rng()*70;obj.position.set(Math.cos(a)*r,-4+rng()*34,-17+Math.sin(a)*r);obj.scale.set(4+rng()*8,5+rng()*15,4+rng()*8);obj.rotation.set(rng()*.3,a,rng()*.5);obj.updateMatrix();farRock.setMatrixAt(i,obj.matrix);}
+  for(let i=0;i<28;i++){const a=i/28*TAU,r=135+rng()*65;obj.position.set(Math.cos(a)*r,-4+rng()*34,7+Math.sin(a)*r);obj.scale.set(4+rng()*8,5+rng()*15,4+rng()*8);obj.rotation.set(rng()*.3,a,rng()*.5);obj.updateMatrix();farRock.setMatrixAt(i,obj.matrix);}
   farRock.computeBoundingSphere();distant.add(farRock);
   // A tree silhouette and rock arch make the horizon more than scattered stones.
   for(const [x,z] of [[-87,-79],[84,-99]]){
@@ -70,12 +86,12 @@ export function buildFloating(scene,batch,mesh){
   for(const x of [88,106])batch.add('pebble','#7f989e',[x,6,38],[4,12,5],[0,0,x===88?-.2:.2],false);
   batch.add('pebble','#8ca1a7',[97,17,38],[12,3,5],[0,0,.08],false);
   const clouds=new T.InstancedMesh(new T.IcosahedronGeometry(1,1),new T.MeshStandardMaterial({color:'#f0e4d2',roughness:1,flatShading:false}),46);
-  for(let i=0;i<46;i++){const a=i*2.4,r=20+rng()*120;obj.position.set(Math.cos(a)*r,-28-rng()*20,-17+Math.sin(a)*r);obj.scale.set(12+rng()*15,2+rng()*4,6+rng()*10);obj.rotation.set(0,a,0);obj.updateMatrix();clouds.setMatrixAt(i,obj.matrix);}
+  for(let i=0;i<46;i++){const a=i*2.4,r=20+rng()*130;obj.position.set(Math.cos(a)*r,-31-rng()*20,7+Math.sin(a)*r);obj.scale.set(12+rng()*15,2+rng()*4,6+rng()*10);obj.rotation.set(0,a,0);obj.updateMatrix();clouds.setMatrixAt(i,obj.matrix);}
   clouds.computeBoundingSphere();scene.add(clouds);
   // Luminescent veins are merged into a single mesh, revealed with the lights.
   const veinPositions=[];
-  for(let i=0;i<18;i++){
-    const p=GARDEN_OUTLINE[i*4],points=[new T.Vector3(p.x,-.9,p.z),new T.Vector3(p.x*.96,-4,-17+(p.z+17)*.96),new T.Vector3(p.x*.75,-10,-17+(p.z+17)*.75)];
+  for(let i=0;i<GARDEN_OUTLINE.length;i+=4){
+    const p=GARDEN_OUTLINE[i],points=[new T.Vector3(p.x,-.9,p.z),new T.Vector3(p.x*.96,-4,7+(p.z-7)*.96),new T.Vector3(p.x*.75,-10,7+(p.z-7)*.75)];
     const g=new T.TubeGeometry(new T.CatmullRomCurve3(points),8,.045,3,false).toNonIndexed();veinPositions.push(...g.attributes.position.array);g.dispose();
   }
   const vg=new T.BufferGeometry();vg.setAttribute('position',new T.Float32BufferAttribute(veinPositions,3));vg.computeVertexNormals();

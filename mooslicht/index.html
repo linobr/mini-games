@@ -30,6 +30,7 @@
       <button class="primary" id="start" disabled><span id="start-label">Der Garten erwacht …</span><span aria-hidden="true">✧</span></button>
       <span class="intro-detail">1 Spieler <span>·</span> Erkunden, rätseln &amp; kämpfen</span>
       <button class="text-button" id="intro-help">So spielst du</button>
+      <button class="text-button" id="intro-appearance">Aussehen</button>
       <p id="save-note" class="save-note">Dein Fortschritt wird auf diesem Gerät gespeichert.</p>
     </section>
 
@@ -55,12 +56,26 @@
       <form method="dialog"><button class="close-dialog" aria-label="Schliessen">×</button></form>
       <span class="dialog-overline">MOOSLICHT</span><h2 id="pause-title">Eine kleine Pause.</h2>
       <p>Dein Garten wartet auf dich.</p>
+      <button class="text-button" id="pause-appearance">Aussehen anpassen</button>
       <div class="settings-row"><label for="quality">Grafik</label><select id="quality"><option value="auto">Automatisch</option><option value="low">Niedrig</option><option value="medium">Mittel</option><option value="high">Hoch</option></select></div>
       <div class="settings-row"><label for="volume">Lautstärke</label><input id="volume" type="range" min="0" max="100" value="45" /></div>
       <div class="settings-row"><label for="motion">Ruhige Kamera</label><input id="motion" type="checkbox" /></div>
       <button class="primary" id="resume">Weiterspielen <span aria-hidden="true">✧</span></button>
       <div class="dialog-links"><button class="text-button" id="help">Steuerung</button><button class="text-button" id="reset-position">Zum Rücksetzpunkt</button></div>
       <button class="text-button subdued" id="restart">Neues Abenteuer beginnen</button>
+    </dialog>
+    <dialog id="appearance-dialog" class="game-dialog appearance-dialog" aria-labelledby="appearance-title">
+      <span class="dialog-overline">DEINE REISE, DEIN AUSSEHEN</span><h2 id="appearance-title">Ein Gesicht für dein Abenteuer.</h2>
+      <div class="appearance-layout">
+        <div class="appearance-preview">
+          <canvas id="appearance-preview" tabindex="0" aria-label="3D-Vorschau. Ziehen oder Pfeile links/rechts zum Drehen. Mausrad oder Pfeile oben/unten zum Zoomen. Pos1 setzt die Ansicht zurück."></canvas>
+          <div class="preview-actions"><button type="button" data-appearance="left" aria-label="Nach links drehen">↶</button><button type="button" data-appearance="right" aria-label="Nach rechts drehen">↷</button><button type="button" data-appearance="closer" aria-label="Näher ansehen">+</button><button type="button" data-appearance="farther" aria-label="Weiter weg">−</button><button type="button" data-appearance="camera">Ansicht zurück</button></div>
+          <p>Ziehen zum Drehen · Mausrad zum Zoomen</p>
+        </div>
+        <div class="appearance-fields"></div>
+      </div>
+      <div class="appearance-footer"><button type="button" class="text-button" data-appearance="reset">Standardaussehen</button><button type="button" class="text-button" data-appearance="cancel">Abbrechen</button><button type="button" class="primary" data-appearance="apply">Übernehmen <span aria-hidden="true">✧</span></button></div>
+      <p class="appearance-note">Erst „Übernehmen“ speichert dein Aussehen. Deine Reise bleibt erhalten.</p>
     </dialog>
     <dialog id="help-dialog" class="game-dialog" aria-labelledby="help-title">
       <form method="dialog"><button class="close-dialog" aria-label="Schliessen">×</button></form>

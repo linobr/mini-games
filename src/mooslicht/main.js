@@ -2,9 +2,11 @@ import { Adventure, FixedClock, readSave, writeSave } from './game.js';
 import { WorldView } from './renderer.js';
 import { Controls } from './input.js';
 import { Soundscape } from './audio.js';
+import {AppearanceMenu} from './appearance-menu.js';
 import {fallOpacity,skyStage} from './atmosphere.js';
 import {MAP_DATA,mapPoint} from './map.js';
-import { ISLANDS, SHRINES, BRIDGES, TREE, CHECKPOINTS } from './world.js';
+import {TERRACE_OUTLINE,GRAVEL_OUTLINE,REAR_OUTLINE,HOUSE_RETURN} from './garden-layout.js';
+import { ISLANDS, SHRINES, BRIDGES, TREE, PALM, CHECKPOINTS } from './world.js';
 
 const $=id=>document.getElementById(id),canvas=$('world');
 const fallVeil=document.createElement('div');fallVeil.className='fall-veil';fallVeil.setAttribute('aria-hidden','true');$('adventure').appendChild(fallVeil);
@@ -20,6 +22,14 @@ let started=false,last=performance.now(),uiTime=0,savedOnce=false,savePending=fa
 let toastTimer,areaTimer,damageTimer,winTimer,restartTimer,restarting=false,winning=false,arriving=false;
 const controls=new Controls(canvas,view,()=>openPause());
 const coarse=matchMedia('(pointer:coarse)');
+const appearanceMenu=new AppearanceMenu($('appearance-dialog'),{
+  getAppearance:()=>game.appearance,
+  onOpen:()=>{const wasRunning=game.running;game.pause();controls.setActive(false);clock.reset();sound.playing=false;return wasRunning;},
+  onApply:value=>{game.appearance=value;save();},
+  onClose:wasRunning=>{controls.clear();clock.reset();last=performance.now();if(wasRunning)resumeGame();},
+});
+$('intro-appearance').addEventListener('click',()=>appearanceMenu.open());
+$('pause-appearance').addEventListener('click',()=>appearanceMenu.open());
 
 function save(){
   const ok=writeSave(storage,game.snapshot());
@@ -51,12 +61,12 @@ $('pause').addEventListener('click',openPause);
 $('resume').addEventListener('click',()=>$('pause-dialog').close());
 $('intro-help').addEventListener('click',()=>$('help-dialog').showModal());
 $('help').addEventListener('click',()=>$('help-dialog').showModal());
-for(const dialog of document.querySelectorAll('dialog'))dialog.addEventListener('close',()=>{if(!anyDialog())resumeGame();});
+for(const dialog of document.querySelectorAll('dialog'))if(dialog.id!=='appearance-dialog')dialog.addEventListener('close',()=>{if(!anyDialog())resumeGame();});
 $('reset-position').addEventListener('click',()=>{game.respawn();$('pause-dialog').close();});
 $('restart').addEventListener('click',()=>{
   if(!restarting){restarting=true;$('restart').textContent='Nochmals klicken: Fortschritt zurücksetzen';restartTimer=setTimeout(()=>{restarting=false;$('restart').textContent='Neues Abenteuer beginnen';},5000);return;}
   clearTimeout(restartTimer);clearTimeout(winTimer);restarting=false;$('restart').textContent='Neues Abenteuer beginnen';
-  game=new Adventure();view.resetCamera();view.target.set(CHECKPOINTS.home.x,1,CHECKPOINTS.home.z);save();$('pause-dialog').close();updateUI();toast('Ein neues Abenteuer beginnt.');
+  game=new Adventure({appearance:game.appearance});view.resetCamera();view.target.set(CHECKPOINTS.home.x,1,CHECKPOINTS.home.z);save();$('pause-dialog').close();updateUI();toast('Ein neues Abenteuer beginnt.');
 });
 $('quality').value=settings.quality;$('motion').checked=settings.motion;$('volume').value=Math.round(settings.volume*100);
 $('quality').addEventListener('change',e=>{settings.quality=e.target.value;view.quality=settings.quality;view.autoLow=false;view.applyQuality();saveSettings();});
@@ -71,6 +81,7 @@ document.addEventListener('fullscreenchange',()=>{$('fullscreen').setAttribute('
 $('explore').addEventListener('click',()=>$('win-dialog').close());
 document.addEventListener('visibilitychange',()=>{if(document.hidden){if(started&&!anyDialog())openPause();controls.clear();save();sound.suspend();}else{last=performance.now();clock.reset();}});
 window.addEventListener('pagehide',()=>{if(started)save();sound.suspend();});
+window.addEventListener('pagehide',()=>appearanceMenu.dispose());
 canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();pauseGame();$('error').hidden=false;$('error-text').textContent='Die Grafikverbindung wurde unterbrochen. Lade die Seite neu, um weiterzuspielen.';});
 new ResizeObserver(()=>view.resize()).observe($('adventure'));
 coarse.addEventListener('change',()=>{if(started)$('touch-controls').hidden=!coarse.matches;view.applyQuality();});
@@ -116,11 +127,13 @@ function drawMap(){
   c.clearRect(0,0,280,264);c.fillStyle='#173d35d9';c.beginPath();c.roundRect(2,2,276,260,24);c.fill();
   const outline=points=>{c.beginPath();points.forEach((p,i)=>i?c.lineTo(sx(p.x),sz(p.z)):c.moveTo(sx(p.x),sz(p.z)));c.closePath();c.fill();c.stroke();};
   c.fillStyle='#89a97199';c.strokeStyle='#c7d6a177';c.lineWidth=1;outline(MAP_DATA.garden);
+  c.fillStyle='#ac987c';outline(TERRACE_OUTLINE);outline(REAR_OUTLINE);c.fillStyle='#cfceba';outline(GRAVEL_OUTLINE);
+  c.strokeStyle='#eeeadd';c.lineWidth=2;c.beginPath();c.moveTo(sx(-22),sz(-53));c.lineTo(sx(-22),sz(50));c.lineTo(sx(HOUSE_RETURN.x-HOUSE_RETURN.w/2),sz(50));c.stroke();
   for(const island of MAP_DATA.islands)outline(island.outline);
   c.setLineDash([2,3]);c.strokeStyle='#c9d7bb';for(const r of MAP_DATA.routes){c.beginPath();c.moveTo(sx(r.from[0]),sz(r.from[1]));c.lineTo(sx(r.to[0]),sz(r.to[1]));c.stroke();}c.setLineDash([]);
-  c.fillStyle='#f0e6c6aa';c.fillRect(sx(-7),sz(-48),20*2.65,15*1.83);
+  c.fillStyle='#f0e6c6aa';c.fillRect(sx(-7),sz(-48),sx(13)-sx(-7),sz(-33)-sz(-48));
   c.lineWidth=3;c.strokeStyle='#d2c398';c.beginPath();c.moveTo(sx(-12),sz(12));c.lineTo(sx(-12),sz(-26));c.lineTo(sx(0),sz(-32));c.stroke();
-  c.fillStyle='#cbe5a8';for(const [x,z,r] of [[5,1,9],[TREE.x,TREE.z,8]]){c.beginPath();c.arc(sx(x),sz(z),r,0,Math.PI*2);c.fill();}
+  c.fillStyle='#cbe5a8';for(const [x,z,r] of [[PALM.x,PALM.z,9],[TREE.x,TREE.z,8]]){c.beginPath();c.arc(sx(x),sz(z),r,0,Math.PI*2);c.fill();}
   c.font='17px Trebuchet MS';c.textAlign='center';c.fillStyle='#fff1ce';c.fillText('N',140,22);
   for(const s of SHRINES){c.fillStyle=game.quests[s.id]?s.color:'#ccd5b9';c.save();c.translate(sx(s.x),sz(s.z));c.rotate(Math.PI/4);c.fillRect(-4,-4,8,8);c.restore();}
   const p=game.player;c.save();c.translate(sx(p.x),sz(p.z));c.rotate(-p.facing);c.fillStyle='#ffe4a1';c.beginPath();c.moveTo(0,9);c.lineTo(-6,-6);c.lineTo(0,-3);c.lineTo(6,-6);c.closePath();c.fill();c.restore();
@@ -136,7 +149,8 @@ function frame(now){
   requestAnimationFrame(frame);
   const rawDelta=(now-last)/1000,delta=Math.min(rawDelta,.1);last=now;if(document.hidden)return;
   if(game.running)clock.advance(delta,dt=>{game.update(controls.consume(),dt);});
-  events();sound.area=game.area;sound.lights=game.lights;sound.finished=game.finished;sound.night=view.world.sky.night;sound.finale=winning?view.cineTime:null;sound.falling=game.fallTimer>0;sound.tick();view.render(game,rawDelta,!started);fallVeil.style.opacity=fallOpacity(game);
+  events();sound.area=game.area;sound.lights=game.lights;sound.finished=game.finished;sound.night=view.world.sky.night;sound.finale=winning?view.cineTime:null;sound.falling=game.fallTimer>0;sound.tick();
+  if(appearanceMenu.opened)appearanceMenu.render();else view.render(game,rawDelta,!started);fallVeil.style.opacity=fallOpacity(game);
   if(arriving&&!view.cinematic){arriving=false;$('cinema').hidden=true;resumeGame();}
   if(winning&&!view.cinematic){winning=false;sound.playing=false;$('cinema').hidden=true;$('win-dialog').showModal();}
   if(!$('performance').hidden)$('performance').textContent=`${view.fps} FPS · ${view.renderer.info.render.calls} Draw Calls · ${view.renderer.info.render.triangles.toLocaleString()} Dreiecke`;

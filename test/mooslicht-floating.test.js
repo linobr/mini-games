@@ -14,7 +14,9 @@ function walk(g,x,z,jump=false){
 test('Mooslicht: visible organic top and collision share every edge, with open cliffs',()=>{
   const geo=islandGeometry(GARDEN_OUTLINE,0,-17,0,24),p=geo.attributes.position;
   GARDEN_OUTLINE.forEach((v,i)=>{assert.ok(Math.abs(p.getX(i+1)-v.x)<1e-5);assert.ok(Math.abs(p.getZ(i+1)-v.z)<1e-5);assert.equal(p.getY(i+1),0);});
-  for(const v of GARDEN_OUTLINE){const dx=v.x,dz=v.z+17,len=Math.hypot(dx,dz);const x=v.x+dx/len*2,z=v.z+dz/len*2;assert.equal(insideOutline(GARDEN_OUTLINE,x,z),false);}
+  // The return makes the outline concave: outward is the local edge normal,
+  // not a radial vector from the former rectangular garden's centre.
+  GARDEN_OUTLINE.forEach((v,i)=>{const q=GARDEN_OUTLINE[(i+1)%GARDEN_OUTLINE.length],dx=q.x-v.x,dz=q.z-v.z,len=Math.hypot(dx,dz);assert.equal(insideOutline(GARDEN_OUTLINE,(v.x+q.x)/2+dz/len*.05,(v.z+q.z)/2-dx/len*.05),false);});
   assert.equal(surfaceAt(31,15).height,-Infinity);
   const avatar={x:24,z:18,y:0,vx:1,vz:0};resolveWalls(avatar);assert.equal(avatar.x,24);
   for(const s of SECRETS.filter(s=>s.y===0))assert.ok(insideOutline(GARDEN_OUTLINE,s.x,s.z));
@@ -25,9 +27,10 @@ test('Mooslicht: all four floating islands can be visited by normal movement and
   assert.equal(g.visited.has('moss'),true);walk(g,41,-12);
   for(const s of SKY_STONES.slice(4,8))walk(g,s.x,s.z,true);walk(g,46,-27,true);assert.equal(g.visited.has('pebble'),true);
   for(const s of [...SKY_STONES.slice(4,8)].reverse())walk(g,s.x,s.z,true);walk(g,40,-8,true);
-  for(const s of [...SKY_STONES.slice(0,4)].reverse())walk(g,s.x,s.z,true);walk(g,25,-8,true);walk(g,20,-8);walk(g,-5,-8);walk(g,-5,24);
-  for(const s of SKY_STONES.slice(8,12))walk(g,s.x,s.z,true);walk(g,-5,39,true);assert.ok(g.visited.has('bloom'));
-  for(const s of [...SKY_STONES.slice(8,12)].reverse())walk(g,s.x,s.z,true);walk(g,-5,24,true);walk(g,-12,20);walk(g,-12,-52);walk(g,-4,-56);walk(g,10,-56);
+  const bloom=SATELLITES.find(s=>s.id==='bloom'),bloomRoute=SKY_ROUTES.find(s=>s.id==='bloom');
+  for(const s of [...SKY_STONES.slice(0,4)].reverse())walk(g,s.x,s.z,true);walk(g,25,-8,true);walk(g,20,-8);walk(g,-5,-8);walk(g,-5,24);walk(g,bloomRoute.from[0],bloomRoute.from[1]);
+  for(const s of SKY_STONES.slice(8,12))walk(g,s.x,s.z,true);walk(g,bloom.x,bloom.z,true);assert.ok(g.visited.has('bloom'));assert.equal(surfaceAt(g.player.x,g.player.z,0,g.player.y+.2).id,'bloom');
+  for(const s of [...SKY_STONES.slice(8,12)].reverse())walk(g,s.x,s.z,true);walk(g,bloomRoute.from[0],bloomRoute.from[1],true);walk(g,-5,24);walk(g,-12,20);walk(g,-12,-52);walk(g,-4,-56);walk(g,10,-56);
   for(const s of SKY_STONES.slice(12))walk(g,s.x,s.z,true);walk(g,10,-73,true);
   assert.equal(g.visited.size,4);assert.equal(g.player.health,5);assert.equal(g.fallTimer,0);
 });

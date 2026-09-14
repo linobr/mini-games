@@ -1,4 +1,6 @@
 import { ISLANDS, STONES, FLOWERS, SHRINES, WIND_ORBS, GUARDS, TREE, GUIDE, CHEST, CHECKPOINTS, OBSTACLES, SEEDS, SECRETS, SATELLITES, resolveWalls, clamp, distance, onIsland, stonePosition, surfaceAt } from './world.js';
+import {GardenBall} from './ball.js';
+import {cleanAppearance} from './appearance.js';
 
 export const SAVE_KEY = 'minigames.mooslicht.v1';
 export const STEP = 1 / 60;
@@ -6,7 +8,7 @@ export function cleanSave(value) {
   const s = value && typeof value === 'object' ? value : {};
   const ids = (a, max) => Array.isArray(a) ? [...new Set(a.filter(n => Number.isInteger(n) && n >= 0 && n < max))] : [];
   const quests = Object.fromEntries(['garden', 'ruins', 'wind'].map(k => [k, s.quests?.[k] === true]));
-  return { version: 1, quests, seeds: ids(s.seeds, SEEDS.length), wind: ids(s.wind, 3), secrets: ids(s.secrets, SECRETS.length),
+  return { version: 1, appearance:cleanAppearance(s.appearance), quests, seeds: ids(s.seeds, SEEDS.length), wind: ids(s.wind, 3), secrets: ids(s.secrets, SECRETS.length),
     lastLight: ['garden','ruins','wind'].includes(s.lastLight)&&quests[s.lastLight]?s.lastLight:['wind','ruins','garden'].find(id=>quests[id])||null,
     visited: Array.isArray(s.visited)?[...new Set(s.visited.filter(id=>SATELLITES.some(i=>i.id===id)))]:[],
     checkpoint: Object.hasOwn(CHECKPOINTS, s.checkpoint) ? s.checkpoint : 'home',
@@ -19,6 +21,8 @@ export function writeSave(storage, save) { try { storage.setItem(SAVE_KEY, JSON.
 export class Adventure {
   constructor(save) {
     const s = cleanSave(save);
+    this.appearance=s.appearance;
+    this.ball=new GardenBall();
     this.quests = s.quests; this.seeds = new Set(s.seeds); this.wind = new Set(s.wind);
     this.secrets = new Set(s.secrets); this.combo = 0; this.comboWindow = 0; this.hitStop = 0;
     this.checkpoint = s.checkpoint; this.elapsed = s.elapsed; this.chest = s.chest;
@@ -33,7 +37,7 @@ export class Adventure {
       health: this.quests.ruins ? 0 : 3, state: 'idle', timer: 0, facing: 0, hit: 0 }));
   }
   get lights() { return Object.values(this.quests).filter(Boolean).length; }
-  snapshot() { return { version: 1, lastLight:this.lastLight,visited:[...this.visited], quests: { ...this.quests }, seeds: [...this.seeds], wind: [...this.wind], secrets: [...this.secrets], checkpoint: this.checkpoint, elapsed: this.elapsed, chest: this.chest, finished: this.finished }; }
+  snapshot() { return { version: 1, appearance:{...this.appearance}, lastLight:this.lastLight,visited:[...this.visited], quests: { ...this.quests }, seeds: [...this.seeds], wind: [...this.wind], secrets: [...this.secrets], checkpoint: this.checkpoint, elapsed: this.elapsed, chest: this.chest, finished: this.finished }; }
   emit(type, data = {}) { if (this.events.length < 80) this.events.push({ type, ...data }); }
   drainEvents() { const events = this.events; this.events = []; return events; }
   start() { this.running = true; }
@@ -144,6 +148,7 @@ export class Adventure {
     this.time += dt; if (!this.finished) this.elapsed += dt;
     const p = this.player;
     this.returnFade=Math.max(0,this.returnFade-dt);
+    this.ball.update(p,dt,this.time,this.energy);
     if(this.fallTimer>0){this.fallTimer+=dt;p.vy-=10*dt;p.y+=p.vy*dt;if(this.fallTimer>=.72)this.respawn(true);return;}
     this.comboWindow=Math.max(0,this.comboWindow-dt);
     for (const key of ['invulnerable', 'roll', 'rollCooldown', 'attack', 'attackCooldown', 'jumpBuffer', 'coyote']) p[key] = Math.max(0, p[key] - dt);

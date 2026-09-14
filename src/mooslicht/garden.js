@@ -1,6 +1,8 @@
 import * as T from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
-import {GARDEN,PALM,SHED,TREE,STONES,WALLS,SECRETS,BRIDGES,LIFTING_PLATES,HEDGE_CLUSTERS,random,TAU} from './world.js';
+import {buildTerrace} from './terrace.js';
+import {TERRACE_OUTLINE,GRAVEL_OUTLINE,BANANA,HOUSE} from './garden-layout.js';
+import {GARDEN,PALM,SHED,TREE,STONES,WALLS,SECRETS,BRIDGES,LIFTING_PLATES,HEDGE_CLUSTERS,random,TAU,insideOutline} from './world.js';
 
 // Animated vertex displacement is shared: one uniform, no per-blade JS updates.
 function windMaterial(color, strength=.12) {
@@ -37,9 +39,9 @@ export function buildGarden(scene,batch,mesh){
   const rng=random(20260914),wind=[],roof=[],magic=[],tmp=new T.Object3D();
   const add=(shape,color,pos,scale,rot=[],shadow=true)=>batch.add(shape,color,pos,scale,rot,shadow);
   // White rendered house on the left, with repeated window bays and rain pipe.
-  add('box','#e8e5d6',[-24,15,-16],[4,30,74]);
-  add('box','#d6d9cd',[-24,30.12,-16],[4.6,.24,74.5]);
-  for(const z of [-42,-23,-4,13]){
+  add('box','#e8e5d6',[HOUSE.x,HOUSE.h/2,HOUSE.z],[HOUSE.w,HOUSE.h,HOUSE.d]);
+  add('box','#d6d9cd',[HOUSE.x,HOUSE.h+.12,HOUSE.z],[4.6,.24,HOUSE.d+.5]);
+  for(const z of [-42,-23,-4,13,33]){
     add('box','#f8f4de',[-21.92,17,z],[.22,7.4,5.6]);
     add('box','#829b9b',[-21.75,17,z],[.12,6.7,4.9]);
     add('box','#fff8e6',[-21.6,17,z],[.14,6.8,.16]);
@@ -51,7 +53,7 @@ export function buildGarden(scene,batch,mesh){
   add('box','#bcbaac',[-18,.025,-5],[6,.05,47]);
   for(let i=0;i<720;i++){
     const x=-21+rng()*6,z=-27+rng()*45,s=.15+rng()*.5;
-    add('pebble',['#e7e2cf','#a5aaa0','#c8c3b1','#8e998e'][i%4],[x,s*.28,z],[s,s*.45,s*.78],[rng(),rng()*6,rng()],i%6===0);
+    add('grit',['#e7e2cf','#a5aaa0','#c8c3b1','#8e998e'][i%4],[x,s*.28,z],[s,s*.45,s*.78],[rng(),rng()*6,rng()],i%6===0);
   }
   const slab=(x,z,w=3.6,d=3.6)=>add('box','#c9c9b6',[x,.04,z],[w,.08,d],[0,(rng()-.5)*.06,0]);
   for(let z=12;z>=-26;z-=4.2)slab(-12,z);
@@ -116,29 +118,33 @@ export function buildGarden(scene,batch,mesh){
   const sail=new T.Mesh(sg,sw.material);sail.castShadow=true;sail.receiveShadow=true;scene.add(sail);
   for(const [a,b] of [[A,B],[B,C],[C,A]])batch.beam(a.toArray(),b.toArray(),.045,'#fff7e2');
   batch.beam(C.toArray(),[9,23,16],.045,'#e5e2ce');
-  add('box','#e5e2d1',[9,11.5,16],[.65,23,.65]);
+  add('cylinder','#c4cbc7',[9,11.5,16],[.13,23,.13]);
   add('disk','#c8c9ac',[9,22.92,16],[1.2,.16,1.2]);
   // A traversable enchanted braid follows the real sail attachment.
   for(const b of BRIDGES.slice(2)){
-    batch.beam([b.ax,b.ay-.12,b.az],[b.bx,b.by-.12,b.bz],.24,'#a2b57d');
-    const length=Math.hypot(b.bx-b.ax,b.bz-b.az);
-    for(let j=0;j<=length;j+=1.25){const t=j/length;add('box','#c3c69b',[b.ax+(b.bx-b.ax)*t,b.ay+(b.by-b.ay)*t-.08,b.az+(b.bz-b.az)*t],[1.3,.12,.7],[0,Math.atan2(b.bx-b.ax,b.bz-b.az),0]);}
+    const dx=b.bx-b.ax,dz=b.bz-b.az,length=Math.hypot(dx,dz),nx=dz/length*b.width*.5,nz=-dx/length*b.width*.5;
+    const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute([b.ax-nx,b.ay-.025,b.az-nz,b.ax+nx,b.ay-.025,b.az+nz,b.bx-nx,b.by-.025,b.bz-nz,b.bx+nx,b.by-.025,b.bz+nz],3));g.setIndex([0,2,1,1,2,3]);g.computeVertexNormals();
+    const ribbon=new T.Mesh(g,new T.MeshStandardMaterial({color:'#c5cfbd',emissive:'#8b9c82',emissiveIntensity:.12,roughness:.85,side:T.DoubleSide}));ribbon.receiveShadow=true;scene.add(ribbon);
+    for(const side of [-1,1])batch.beam([b.ax+nx*side,b.ay,b.az+nz*side],[b.bx+nx*side,b.by,b.bz+nz*side],.045,'#c5d0b6',false);
   }
   const lifted=LIFTING_PLATES.map(p=>mesh('disk','#bcca9c',[p.r,.18,p.r],[p.x,p.y-.09,p.z],scene));
   // Photo's solitary pruned tree, surrounded by pale pebbles.
-  add('disk','#d9d7bd',[TREE.x,.015,TREE.z],[5,.035,5]);
+  add('disk','#c8cac0',[TREE.x,.015,TREE.z],[5,.035,5]);
   for(let i=0;i<230;i++){
-    const a=rng()*TAU,r=1.7+Math.sqrt(rng())*3,s=.16+rng()*.24;
-    add('pebble',i%3?'#eae7d5':'#c9cbbb',[TREE.x+Math.cos(a)*r,.13,TREE.z+Math.sin(a)*r],[s,.16,s*.8],[rng(),rng()*6,0],false);
+    const a=rng()*TAU,r=1.7+Math.sqrt(rng())*3,s=.06+rng()*.10;
+    add('grit',i%3?'#deded5':'#b9beb6',[TREE.x+Math.cos(a)*r,.05,TREE.z+Math.sin(a)*r],[s,.065,s*.8],[rng(),rng()*6,0],false);
   }
-  for(let i=0;i<22;i++){const a=i/22*TAU;add('pebble','#babda8',[TREE.x+Math.cos(a)*5,.18,TREE.z+Math.sin(a)*5],[.65,.3,.55],[0,a,0]);}
+  for(let i=0;i<48;i++){const a=(i+.5)/48*TAU;add('box','#89928b',[TREE.x+Math.cos(a)*5,.075,TREE.z+Math.sin(a)*5],[.18,.15,.66],[0,-a,0],false);}
   batch.beam([TREE.x,0,TREE.z],[TREE.x-1,18,TREE.z+.8],.87,'#73614a');
   for(let i=0;i<9;i++){
     const a=i*2.4;batch.beam([TREE.x-.5,12,TREE.z],[TREE.x+Math.cos(a)*4,20+rng()*2,TREE.z+Math.sin(a)*4],.27,'#79694e');
   }
   // Hedge has a dark interior, visible trunks, overlapping clusters and small leaves.
   for(const h of HEDGE_CLUSTERS){
-    add('petal','#2b5032',[h.x,h.height*.62,h.z],[h.spread,h.height*.7,2.5],[0,h.z*.1,.08*Math.sin(h.z)],false);
+    for(let lobe=0;lobe<15;lobe++){
+      const a=lobe*2.4+h.z,x=h.x+Math.sin(a)*.7,z=h.z+Math.cos(a)*1.05,y=.75+lobe/14*(h.height-.7);
+      add('bud',lobe%2?'#36583e':'#426348',[x,y,z],[.85+rng()*.35,.85+rng()*.45,.8+rng()*.4],[rng(),a,.25],false);
+    }
     batch.beam([h.x,0,h.z],[h.x,h.height,h.z],h.r,'#665d3c',false);
     for(const side of [-1,1])batch.beam([h.x,3,h.z],[h.x+side,6,h.z+side],.09,'#6c6447',false);
   }
@@ -149,30 +155,31 @@ export function buildGarden(scene,batch,mesh){
     let x,y,z,scale;
     if(i%4===0){const a=rng()*TAU,r=Math.sqrt(rng())*6;x=TREE.x+Math.cos(a)*r;z=TREE.z+Math.sin(a)*r;y=20+Math.sin(r/6*Math.PI)*2+rng()*3;scale=.65+rng();}
     else if(i%8===1){x=-21+rng()*44;if(Math.abs(x-10)<3.5)x-=7;y=rng()*(7.5+Math.sin(x));z=-53.5+Math.sin(x*.3)+rng()*2;scale=.6+rng()*.7;}
-    else {const h=HEDGE_CLUSTERS[i%HEDGE_CLUSTERS.length],a=rng()*TAU,r=Math.sqrt(rng());x=h.x+Math.cos(a)*h.spread*r;z=h.z+Math.sin(a)*2.8*r;y=.7+rng()*h.height*(1.4-r*.3);scale=.5+rng()*.75;}
+    else {const h=HEDGE_CLUSTERS[i%HEDGE_CLUSTERS.length],a=rng()*TAU,r=.7+rng()*.35;x=h.x+Math.cos(a)*1.65*r;z=h.z+Math.sin(a)*2*r;y=.45+rng()*(h.height+.5);scale=.28+rng()*.32;}
     tmp.position.set(x,y,z);tmp.rotation.set(rng()*2,rng()*TAU,rng()*TAU);tmp.scale.setScalar(scale);tmp.updateMatrix();leaves.setMatrixAt(i,tmp.matrix);
-    color.setHSL(.22+rng()*.08,.3+rng()*.3,.17+rng()*.17);leaves.setColorAt(i,color);
+    color.setHSL(.28+rng()*.065,.27+rng()*.22,.19+rng()*.11);leaves.setColorAt(i,color);
   }
   leaves.computeBoundingSphere();leaves.receiveShadow=true;scene.add(leaves);
   // Thick, fibrous palm trunk and recognisable radial fan leaves.
-  batch.beam([5,0,1],[5.3,18,1],.84,'#7e6645');
-  for(let i=0;i<40;i++)add('cone',i%2?'#8e734d':'#67573d',[5+i*.007,.3+i*.44,1],[1.05,.65,1.05],[0,i*.8,0]);
-  const palmWind=windMaterial('#6d9d40',.01);wind.push(palmWind);const palmFronds=[];
-  for(let i=0;i<42;i++){
-    const a=i*2.399,length=3.5+rng()*4,start=new T.Vector3(5.2,7+rng()*12,1),end=start.clone().add(new T.Vector3(Math.cos(a)*length,1+rng()*2,Math.sin(a)*length));
-    batch.beam(start.toArray(),end.toArray(),.075,'#a1ae58',false);
-    const verts=[],indices=[];
-    // Each frond has 17 pointed fingers, spanning a fan at the petiole tip.
-    for(let j=0;j<17;j++){
-      const theta=a+(j/16-.5)*1.8,r=3+rng()*.7,k=verts.length/3;
-      const l=theta-.055,h=theta+.055;
-      verts.push(end.x,end.y,end.z,
-        end.x+Math.cos(l)*r*.65,end.y-.45,end.z+Math.sin(l)*r*.65,
-        end.x+Math.cos(h)*r*.65,end.y-.45,end.z+Math.sin(h)*r*.65,
-        end.x+Math.cos(theta)*r,end.y-1.2-rng()*.6,end.z+Math.sin(theta)*r);
-      indices.push(k,k+1,k+2,k+1,k+3,k+2);
+  batch.beam([PALM.x,0,PALM.z],[PALM.x+.25,16.7,PALM.z],.78,'#71604b');
+  for(let i=0;i<36;i++)add('cone',i%2?'#7e6c53':'#685a48',[PALM.x+i*.007,.3+i*.45,PALM.z],[.9,.58,.9],[0,i*.8,0]);
+  for(let i=0;i<65;i++){const a=i*2.4,y=.5+rng()*16;batch.beam([PALM.x+Math.cos(a)*.83,y,PALM.z+Math.sin(a)*.83],[PALM.x+Math.cos(a+.22)*.9,y-.7,PALM.z+Math.sin(a+.22)*.9],.035,'#958168',false);}
+  const palmWind=windMaterial('#ffffff',.003);palmWind.material.vertexColors=true;wind.push(palmWind);const palmFronds=[];
+  for(let i=0;i<38;i++){
+    const a=i*2.399+rng()*.5,older=i<7,layer=i%3,tilt=older?-.35-rng()*.6:-.2+rng()*1.4,length=1.4+rng()*1.1;
+    const start=new T.Vector3(PALM.x+.2,older?5.5+rng()*3:10+rng()*6.5,PALM.z),out=new T.Vector3(Math.cos(a)*Math.cos(tilt),Math.sin(tilt),Math.sin(a)*Math.cos(tilt));
+    const side=new T.Vector3(-Math.sin(a),0,Math.cos(a)),end=start.clone().addScaledVector(out,length),size=3.1+rng()*.65;
+    batch.beam(start.toArray(),end.toArray(),.065,'#728451',false);
+    const verts=[],indices=[],colors=[];color.set(['#4e794e','#628449','#426e4b'][layer]);
+    // Pleated, partly joined fan. Each finger folds along its ridge before its split tip droops.
+    for(let j=0;j<15;j++){
+      const theta=(j/14-.5)*2.65,k=verts.length/3;
+      const point=(angle,r,fold)=>{const p=end.clone().addScaledVector(out,Math.cos(angle)*r).addScaledVector(side,Math.sin(angle)*r);p.y+=fold-Math.pow(r/size,3)*(layer===0?1.1:.35);return p.toArray();};
+      verts.push(...end.toArray(),...point(theta-.09,size*.72,-.10),...point(theta,size*.78,.15),...point(theta+.09,size*.72,-.10),...point(theta,size*(.95+rng()*.08),-.04));
+      indices.push(k,k+1,k+2,k,k+2,k+3,k+1,k+4,k+2,k+2,k+4,k+3);
+      for(const shade of [1,.88,1.08,.95,.96])colors.push(color.r*shade,color.g*shade,color.b*shade);
     }
-    const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(verts,3));g.setIndex(indices);g.computeVertexNormals();const frond=new T.Mesh(g,palmWind.material);frond.castShadow=i%6===0;scene.add(frond);palmFronds.push(frond);
+    const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(verts,3));g.setAttribute('color',new T.Float32BufferAttribute(colors,3));g.setIndex(indices);g.computeVertexNormals();const frond=new T.Mesh(g,palmWind.material);frond.castShadow=i%6===0;scene.add(frond);palmFronds.push(frond);
   }
   const palmGeometry=mergeGeometries(palmFronds.map(f=>f.geometry));
   for(const f of palmFronds){scene.remove(f);f.geometry.dispose();}
@@ -186,12 +193,7 @@ export function buildGarden(scene,batch,mesh){
       add('petal','#86a660',[x+Math.cos(a)*r,5+rng(),z+Math.sin(a)*r],[.3,.8,.15],[.4,a,.5],false);
     }
   }
-  // Front terrace and huge woven garden table, readable from the overhead reveal.
-  add('box','#82715b',[1,-.03,15],[42,.06,6]);
-  for(let x=-20;x<22;x+=.6)add('box','#a79778',[x,.015,15],[.025,.03,6],[],false);
-  add('box','#374a42',[7.5,7.8,13.5],[13,.4,7]);
-  add('box','#819b8e',[7.5,8,13.5],[12.5,.05,6.5],[],false);
-  for(const x of [1.5,13.5])for(const z of [10.5,16.5])add('box','#34453c',[x,4,z],[.45,8,.45]);
+  const terrace=buildTerrace(scene,batch);
   // Secrets are guided by tiny mushrooms, never enormous labels in the world.
   const secretMarkers=SECRETS.map(s=>{
     const marker=mesh('ball','#f6d88b',[.09,.12,.09],[s.x,s.y+.65,s.z],scene,.6);return marker;
@@ -200,9 +202,9 @@ export function buildGarden(scene,batch,mesh){
   const gw=windMaterial('#ffffff',.22);const compileGrass=gw.material.onBeforeCompile;
   gw.material.onBeforeCompile=shader=>{compileGrass(shader);shader.vertexShader=shader.vertexShader.replace('#include <project_vertex>',`float gardenDistance=length(cameraPosition.xz-worldBase.xz);float lod=(1.-smoothstep(28.,65.,gardenDistance));transformed.y*=lod;\n#include <project_vertex>`);};wind.push(gw);const count=11000,grass=new T.InstancedMesh(bladeGeometry(),gw.material,count);
   for(let i=0;i<count;i++){
-    let x,z;do{x=-14+rng()*35;z=-32+rng()*44;}while(Math.abs(x+12)<2.2 || Math.hypot(x-TREE.x,z-TREE.z)<5 || (z<-27&&Math.abs(x)<4));
-    tmp.position.set(x,0,z);tmp.rotation.set(0,rng()*TAU,(rng()-.5)*.15);const h=.45+rng()*1.35;tmp.scale.set(.8+rng(),h,1);tmp.updateMatrix();grass.setMatrixAt(i,tmp.matrix);
-    color.setHSL(.2+rng()*.08,.38+rng()*.28,.25+rng()*.14);grass.setColorAt(i,color);
+    let x,z;do{x=-14+rng()*35;z=-32+rng()*100;}while((z<12&&Math.abs(x+12)<2.2) || Math.hypot(x-TREE.x,z-TREE.z)<5 || (z<-27&&Math.abs(x)<4) || insideOutline(TERRACE_OUTLINE,x,z) || insideOutline(GRAVEL_OUTLINE,x,z) || Math.hypot(x-BANANA.x,z-BANANA.z)<4);
+    tmp.position.set(x,0,z);tmp.rotation.set(0,rng()*TAU,(rng()-.5)*.15);const h=.025+rng()*.045+(x>20&&i%9===0?.12:0);tmp.scale.set(.12+rng()*.2,h,.3);tmp.updateMatrix();grass.setMatrixAt(i,tmp.matrix);
+    color.setHSL(.27+rng()*.055,.3+rng()*.17,.24+rng()*.065);grass.setColorAt(i,color);
   }
   grass.computeBoundingSphere();grass.receiveShadow=true;scene.add(grass);
   // Friendly inhabitants, pooled and animated without creating objects per frame.
@@ -227,7 +229,7 @@ export function buildGarden(scene,batch,mesh){
   // Roof strips share a draw call; both roof materials still hide inside the shed.
   const roofGroups=new Map();for(const r of roof){const key=r.material.color.getHexString()+'-'+r.castShadow;if(!roofGroups.has(key))roofGroups.set(key,[]);roofGroups.get(key).push(r);}
   roof.length=0;for(const parts of roofGroups.values()){const copies=parts.map(r=>{r.updateMatrix();return r.geometry.clone().applyMatrix4(r.matrix);});const merged=new T.Mesh(mergeGeometries(copies),parts[0].material);merged.castShadow=parts[0].castShadow;merged.receiveShadow=true;scene.add(merged);roof.push(merged);copies.forEach(g=>g.dispose());parts.forEach((r,i)=>{scene.remove(r);if(i)r.material.dispose();});}
-  return {wind,roof,magic,sail,grass,leaves,butterflies,secretMarkers,roots,palmFronds,
+  return {wind,roof,magic,sail,grass,leaves,butterflies,secretMarkers,roots,palmFronds,terrace,
     update(time,game,motion,night=0,finale=12){
       lifted.forEach((m,i)=>{m.position.y=LIFTING_PLATES[i].y-.09+LIFTING_PLATES[i].rise*game.energy;});
       for(const w of wind)w.time.value=motion?0:time;

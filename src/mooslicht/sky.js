@@ -2,7 +2,7 @@ import * as T from 'three';
 import {AtmosphereState,nightAmount} from './atmosphere.js';
 import {random,TAU} from './world.js';
 const palettes=[
-  ['#78b7cc','#eee2bb','#d0ddc9','#fff0ce',2.1,3.3],
+  ['#79aeca','#dce5ea','#bdcdd2','#fff5e8',1.4,2.65],
   ['#80aec7','#f5cd9a','#ddd6ad','#ffd39a',2.0,2.8],
   ['#828faa','#f4b580','#d8bdab','#ffc17f',1.8,2.2],
   ['#4f557e','#c894a1','#9299b0','#dbb4ba',1.5,1.3],
@@ -42,8 +42,8 @@ export function buildSky(scene,sun,hemi,rim){
       top.set(p[0]).lerp(newColor.set(q[0]),k);bottom.set(p[1]).lerp(newColor.set(q[1]),k);fog.set(p[2]).lerp(newColor.set(q[2]),k);light.set(p[3]).lerp(newColor.set(q[3]),k);
       uniforms.top.value.copy(top);uniforms.bottom.value.copy(bottom);scene.fog.color.copy(fog);scene.background.copy(bottom);sun.color.copy(light);
       hemi.intensity=T.MathUtils.lerp(p[4],q[4],k);sun.intensity=T.MathUtils.lerp(p[5],q[5],k);rim.intensity=.65+nightAmount(state.phase)*.45;
-      const n=this.night=nightAmount(state.phase);hemi.color.set('#eff8e4').lerp(newColor.set('#b8cbe2'),n);hemi.groundColor.set('#61796e');
-      sun.position.set(10+state.phase*8,50-state.phase*6,10);uniforms.night.value=n;uniforms.galaxy.value=Math.max(0,state.phase-4);uniforms.time.value=motion?0:time;
+      const n=this.night=nightAmount(state.phase);hemi.color.set('#e8eff4').lerp(newColor.set('#b8cbe2'),n);hemi.groundColor.set('#58675d');
+      sun.position.set(10+state.phase*8,50-state.phase*6,37);uniforms.night.value=n;uniforms.galaxy.value=Math.max(0,state.phase-4);uniforms.time.value=motion?0:time;
       stars.material.uniforms.night.value=n;stars.material.uniforms.time.value=motion?0:time;moon.material.opacity=n*.85;stars.visible=n>.01;moon.visible=n>.01;
     },
     quality(low,high,ratio=1){stars.geometry.setDrawRange(0,low?500:high?1600:1000);stars.material.uniforms.ratio.value=ratio;}
