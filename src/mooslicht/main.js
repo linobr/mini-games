@@ -2,19 +2,19 @@ import { Adventure, FixedClock, readSave, writeSave } from './game.js';
 import { WorldView } from './renderer.js';
 import { Controls } from './input.js';
 import { Soundscape } from './audio.js';
-import { ISLANDS, SHRINES, BRIDGES } from './world.js';
+import { ISLANDS, SHRINES, BRIDGES, TREE, CHECKPOINTS } from './world.js';
 
 const $=id=>document.getElementById(id),canvas=$('world');
 let storage;try{storage=window.localStorage;}catch{storage=null;}
 let preferences={};try{preferences=JSON.parse(storage?.getItem('minigames.mooslicht.settings')||'{}')||{};}catch{}
-const settings={quality:['auto','low','high'].includes(preferences.quality)?preferences.quality:'auto',
+const settings={quality:['auto','low','medium','high'].includes(preferences.quality)?preferences.quality:'auto',
   volume:Number.isFinite(preferences.volume)?Math.max(0,Math.min(1,preferences.volume)):.45,
   sound:preferences.sound!==false,motion:typeof preferences.motion==='boolean'?preferences.motion:matchMedia('(prefers-reduced-motion:reduce)').matches};
 let game=new Adventure(readSave(storage)),view;
 try{view=new WorldView(canvas,settings);}catch(error){$('error').hidden=false;$('intro').hidden=true;throw error;}
 const clock=new FixedClock(),sound=new Soundscape(settings.volume,settings.sound);
 let started=false,last=performance.now(),uiTime=0,savedOnce=false,savePending=false,saveDeadline=0;
-let toastTimer,areaTimer,damageTimer,winTimer,restartTimer,restarting=false,winning=false;
+let toastTimer,areaTimer,damageTimer,winTimer,restartTimer,restarting=false,winning=false,arriving=false;
 const controls=new Controls(canvas,view,()=>openPause());
 const coarse=matchMedia('(pointer:coarse)');
 
@@ -29,15 +29,18 @@ function toast(text){$('toast').textContent=text;$('toast').classList.add('visib
 function anyDialog(){return !!document.querySelector('dialog[open]');}
 function pauseGame(){game.pause();controls.setActive(false);clock.reset();sound.playing=false;save();}
 function resumeGame(){
-  if(!started||winning||anyDialog()||document.hidden||!$('error').hidden)return;
+  if(!started||winning||arriving||anyDialog()||document.hidden||!$('error').hidden)return;
   game.start();controls.setActive(true);clock.reset();last=performance.now();canvas.focus({preventScroll:true});
   sound.unlock();sound.playing=true;
 }
-function openPause(){if(!started||winning||anyDialog())return;pauseGame();$('pause-dialog').showModal();}
+function openPause(){if(!started||winning||arriving||anyDialog())return;pauseGame();$('pause-dialog').showModal();}
 function start(){
   started=true;document.body.dataset.screen='play';$('intro').hidden=true;$('hud').hidden=false;$('controls-hint').hidden=false;$('touch-controls').hidden=!coarse.matches;
-  sound.unlock();resumeGame();toast(game.lights===3?'Kehre zum Herzbaum zurück oder erkunde die Insel.':'WASD: bewegen · Space: springen · E: entdecken. Sprich mit Lumi!');
-  $('area-title').textContent='Das schlafende Herz';$('area-title').classList.add('visible');areaTimer=setTimeout(()=>$('area-title').classList.remove('visible'),3200);
+  sound.unlock();
+  if(game.elapsed<3&&!settings.motion){arriving=true;view.beginCinematic('arrival');$('cinema').hidden=false;game.pause();sound.playing=true;}
+  else resumeGame();
+  toast(game.lights===3?'Der Herzbaum wartet am weissen Steinkreis.':'Folge den Steinplatten. Lumi wartet gleich neben dir.');
+  $('area-title').textContent='Ein Garten. Eine ganze Welt.';$('area-title').classList.add('visible');areaTimer=setTimeout(()=>$('area-title').classList.remove('visible'),3200);
 }
 $('start-label').textContent=game.elapsed>3||game.lights>0?'Abenteuer fortsetzen':'Abenteuer starten';$('start').disabled=false;
 $('start').addEventListener('click',start);
@@ -50,7 +53,7 @@ $('reset-position').addEventListener('click',()=>{game.respawn();$('pause-dialog
 $('restart').addEventListener('click',()=>{
   if(!restarting){restarting=true;$('restart').textContent='Nochmals klicken: Fortschritt zurücksetzen';restartTimer=setTimeout(()=>{restarting=false;$('restart').textContent='Neues Abenteuer beginnen';},5000);return;}
   clearTimeout(restartTimer);clearTimeout(winTimer);restarting=false;$('restart').textContent='Neues Abenteuer beginnen';
-  game=new Adventure();view.resetCamera();view.target.set(0,1,5.2);save();$('pause-dialog').close();updateUI();toast('Ein neues Abenteuer beginnt.');
+  game=new Adventure();view.resetCamera();view.target.set(CHECKPOINTS.home.x,1,CHECKPOINTS.home.z);save();$('pause-dialog').close();updateUI();toast('Ein neues Abenteuer beginnt.');
 });
 $('quality').value=settings.quality;$('motion').checked=settings.motion;$('volume').value=Math.round(settings.volume*100);
 $('quality').addEventListener('change',e=>{settings.quality=e.target.value;view.quality=settings.quality;view.autoLow=false;view.applyQuality();saveSettings();});
@@ -80,7 +83,8 @@ function events(){
     else if(e.type==='respawn'){view.target.set(game.player.x,game.player.y+1,game.player.z);clock.reset();}
     else if(e.type==='win') {
       winning=true;pauseGame();$('win-time').textContent=formatTime(game.elapsed);$('win-seeds').textContent=game.seeds.size+' / 24';
-      winTimer=setTimeout(()=>{winning=false;$('win-dialog').showModal();},1500);
+      view.beginCinematic('finale');$('cinema-title').innerHTML='MOOSLICHT<small>Dein Garten lebt.</small>';$('cinema').hidden=false;
+      if(settings.motion)view.skipCinematic();
     }
   }
 }
@@ -91,34 +95,46 @@ function updateUI(){
   $('light-count').textContent=game.lights+' / 3';
   for(const id of ['garden','ruins','wind'])$('quest-'+id).classList.toggle('done',game.quests[id]);
   $('objective').textContent=game.finished?'Der Herzbaum lebt':game.lights===3?'Kehre zum Herzbaum zurück':'Erwecke die drei Lichter';
-  const hints={home:'Westen: Klanggarten · Osten: Ruinen · Norden: Windschrein.',garden:game.quests.garden?'Die Klangblüten singen wieder.':`Spiele Gelb → Blau → Rosa. (${game.flowerStep}/3)`,
+  const hints={home:'Hütte: Echolicht · Steinkreis: Steinlicht · Palme: Blattlicht.',garden:game.quests.garden?'Die Klangblüten singen wieder.':`Spiele Gelb → Blau → Rosa. (${game.flowerStep}/3)`,
     ruins:game.quests.ruins?'Die Steinwächter haben Ruhe gefunden.':game.guards.some(g=>g.health>0)?`Wächter: ${game.guards.filter(g=>g.health<=0).length}/3 · J: Schwert · Shift: Ausweichen.`:'Berühre den violetten Schrein mit E.',
     wind:game.quests.wind?'Der Wind trägt dein Licht zum Herzbaum.':`Sammle 3 blaue Windfunken (${game.wind.size}/3). Springe zum höheren Funken!`};
-  $('area-hint').textContent=game.finished?`Noch ${24-game.seeds.size} Glühlichter verstecken sich auf der Insel.`:game.lights===3?'Berühre den grossen Baum auf der mittleren Insel mit E.':hints[game.area]||hints.home;
+  $('area-hint').textContent=game.finished?`Noch ${24-game.seeds.size} Glühlichter verstecken sich im Garten.`:game.lights===3?'Berühre den grossen Baum am weissen Steinkreis mit E.':hints[game.area]||hints.home;
   const item=game.interaction();$('interact-prompt').hidden=!started||!game.running||!item;
   if(item)$('interact-label').textContent=item.label;
   $('touch-interact').style.opacity=item?'1':'.55';drawMap();
 }
 
 // A small north-up map gives exploration a clear orientation even after orbiting.
-const map=document.createElement('canvas');map.width=280;map.height=264;map.className='island-map';map.setAttribute('aria-label','Inselkarte: Klang im Westen, Wächter im Osten, Wind im Norden.');$('hud').appendChild(map);
+const map=document.createElement('canvas');map.hidden=true;map.width=280;map.height=264;map.className='island-map';map.setAttribute('aria-label','Gartenkarte: Hütte hinten, Palme vorne, Herzbaum rechts.');$('hud').appendChild(map);
 const mapContext=map.getContext('2d');
 function drawMap(){
-  const c=mapContext;if(!c)return;const sx=x=>140+x*3.7,sz=z=>201+z*4;
-  c.clearRect(0,0,280,264);c.fillStyle='#173d35a0';c.beginPath();c.roundRect(2,2,276,260,24);c.fill();
-  c.lineWidth=7;c.strokeStyle='#d2c39880';for(const b of BRIDGES){c.beginPath();c.moveTo(sx(b.ax),sz(b.az));c.lineTo(sx(b.bx),sz(b.bz));c.stroke();}
-  c.setLineDash([5,6]);c.beginPath();c.moveTo(sx(0),sz(-9));c.lineTo(sx(0),sz(-19));c.stroke();c.setLineDash([]);
-  for(const i of ISLANDS){c.fillStyle='#91ac7777';c.beginPath();c.ellipse(sx(i.x),sz(i.z),i.r*3.1,i.r*3.25,0,0,Math.PI*2);c.fill();}
-  c.font='24px Trebuchet MS';c.textAlign='center';c.fillStyle='#fff1ce';c.fillText('N',140,34);
-  for(const s of SHRINES){c.fillStyle=game.quests[s.id]?s.color:'#ccd5b9';c.save();c.translate(sx(s.x),sz(s.z));c.rotate(Math.PI/4);c.fillRect(-5,-5,10,10);c.restore();}
+  if(map.hidden)return;
+  const c=mapContext;if(!c)return;const sx=x=>140+x*4.3,sz=z=>204+z*3.2;
+  c.clearRect(0,0,280,264);c.fillStyle='#173d35d9';c.beginPath();c.roundRect(2,2,276,260,24);c.fill();
+  c.fillStyle='#89a97177';c.fillRect(sx(-22),sz(-53),44*4.3,71*3.2);
+  c.fillStyle='#f0e6c6aa';c.fillRect(sx(-7),sz(-48),20*4.3,15*3.2);
+  c.lineWidth=6;c.strokeStyle='#d2c398';c.beginPath();c.moveTo(sx(-12),sz(12));c.lineTo(sx(-12),sz(-26));c.lineTo(sx(0),sz(-32));c.stroke();
+  c.fillStyle='#cbe5a8';for(const [x,z,r] of [[5,1,16],[TREE.x,TREE.z,12]]){c.beginPath();c.arc(sx(x),sz(z),r,0,Math.PI*2);c.fill();}
+  c.font='17px Trebuchet MS';c.textAlign='center';c.fillStyle='#fff1ce';c.fillText('N',140,22);
+  for(const s of SHRINES){c.fillStyle=game.quests[s.id]?s.color:'#ccd5b9';c.save();c.translate(sx(s.x),sz(s.z));c.rotate(Math.PI/4);c.fillRect(-4,-4,8,8);c.restore();}
   const p=game.player;c.save();c.translate(sx(p.x),sz(p.z));c.rotate(-p.facing);c.fillStyle='#ffe4a1';c.beginPath();c.moveTo(0,9);c.lineTo(-6,-6);c.lineTo(0,-3);c.lineTo(6,-6);c.closePath();c.fill();c.restore();
 }
+function toggleMap(){if(!started)return;map.hidden=!map.hidden;document.body.classList.toggle('show-hints',!map.hidden);$('map-toggle').setAttribute('aria-pressed',String(!map.hidden));}
+function toggleOverview(){if(!started||view.cinematic)return;view.overview=!view.overview;$('overview').setAttribute('aria-pressed',String(view.overview));}
+$('map-toggle').addEventListener('click',()=>{toggleMap();canvas.focus();});
+$('overview').addEventListener('click',()=>{toggleOverview();canvas.focus();});
+$('skip-intro').addEventListener('click',()=>view.skipCinematic());
+window.addEventListener('keydown',e=>{if(!started||anyDialog()||e.repeat)return;if(e.code==='KeyM')toggleMap();if(e.code==='KeyV')toggleOverview();if(e.code==='F3'){e.preventDefault();$('performance').hidden=!$('performance').hidden;}});
 updateUI();
 function frame(now){
   requestAnimationFrame(frame);
   const delta=Math.min((now-last)/1000,.1);last=now;if(document.hidden)return;
   if(game.running)clock.advance(delta,dt=>{game.update(controls.consume(),dt);});
-  events();sound.tick();view.render(game,delta,!started);
+  events();sound.area=game.area;sound.lights=game.lights;sound.finished=game.finished;sound.tick();view.render(game,delta,!started);
+  if(arriving&&!view.cinematic){arriving=false;$('cinema').hidden=true;resumeGame();}
+  if(winning&&!view.cinematic){winning=false;$('cinema').hidden=true;$('win-dialog').showModal();}
+  if(!$('performance').hidden)$('performance').textContent=`${view.fps} FPS · ${view.renderer.info.render.calls} Draw Calls · ${view.renderer.info.render.triangles.toLocaleString()} Dreiecke`;
+
   uiTime+=delta;if(uiTime>.09){uiTime=0;updateUI();}
   if(savePending&&now>=saveDeadline)save();
 }

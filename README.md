@@ -2,7 +2,7 @@
 
 Eine kleine, erweiterbare Browser-Spielesammlung mit Spielen und einem interaktiven Lernmodul:
 
-- **Mooslicht** – kleines 3D-Fantasy-Abenteuer auf schwebenden Inseln mit Klangrätsel, Schwertkampf und Sprungpassagen
+- **Mooslicht** – 3D-Miniatur-Abenteuer in einem nach Gartenfotos gestalteten Garten mit Klangrätsel, Schwertkampf und Sprungpassagen
 - **Tic-Tac-Toe** für zwei Personen, online oder am gleichen Gerät
 - **Turbo Bump** für zwei bis vier Personen – Autoscooter trifft Sumo
 - **Color Clash Flip** für eine bis vier Personen – ein eigenes doppelseitiges
@@ -27,7 +27,7 @@ Nach der ersten erfolgreichen GitHub-Pages-Veröffentlichung ist die Seite unter
 ## Mooslicht
 
 Ein kleines 3D-Fantasy-Abenteuer unter `/mini-games/mooslicht/`: frei erkunden,
-über schwebende Steine springen, Klangblüten wecken und Steinwächter besiegen.
+die Palme und das Hüttendach erklimmen, Klangobjekte spielen und Mooswächter besiegen.
 Die drei Lichter erwecken am Schluss den Herzbaum. Tastatur/Maus und Touch,
 Rücksetzpunkte, lokale Spielstände und anpassbare Grafik sind enthalten.
 Die Geometrie und die Klänge entstehen im Spiel; Three.js wird lokal mitgebaut.

@@ -1,4 +1,4 @@
-import { ISLANDS, STONES, FLOWERS, SHRINES, WIND_ORBS, GUARDS, TREE, GUIDE, CHEST, CHECKPOINTS, OBSTACLES, SEEDS, clamp, distance, onIsland, stonePosition, surfaceAt } from './world.js';
+import { ISLANDS, STONES, FLOWERS, SHRINES, WIND_ORBS, GUARDS, TREE, GUIDE, CHEST, CHECKPOINTS, OBSTACLES, SEEDS, SECRETS, resolveWalls, clamp, distance, onIsland, stonePosition, surfaceAt } from './world.js';
 
 export const SAVE_KEY = 'minigames.mooslicht.v1';
 export const STEP = 1 / 60;
@@ -6,7 +6,7 @@ export function cleanSave(value) {
   const s = value && typeof value === 'object' ? value : {};
   const ids = (a, max) => Array.isArray(a) ? [...new Set(a.filter(n => Number.isInteger(n) && n >= 0 && n < max))] : [];
   const quests = Object.fromEntries(['garden', 'ruins', 'wind'].map(k => [k, s.quests?.[k] === true]));
-  return { version: 1, quests, seeds: ids(s.seeds, SEEDS.length), wind: ids(s.wind, 3),
+  return { version: 1, quests, seeds: ids(s.seeds, SEEDS.length), wind: ids(s.wind, 3), secrets: ids(s.secrets, SECRETS.length),
     checkpoint: Object.hasOwn(CHECKPOINTS, s.checkpoint) ? s.checkpoint : 'home',
     elapsed: Number.isFinite(s.elapsed) ? clamp(s.elapsed, 0, 86400) : 0,
     chest: s.chest === true, finished: s.finished === true && Object.values(quests).every(Boolean) };
@@ -18,17 +18,19 @@ export class Adventure {
   constructor(save) {
     const s = cleanSave(save);
     this.quests = s.quests; this.seeds = new Set(s.seeds); this.wind = new Set(s.wind);
+    this.secrets = new Set(s.secrets); this.combo = 0; this.comboWindow = 0; this.hitStop = 0;
     this.checkpoint = s.checkpoint; this.elapsed = s.elapsed; this.chest = s.chest;
+    this.energy = Object.values(s.quests).filter(Boolean).length/3;
     this.finished = s.finished; this.time = 0; this.running = false; this.events = [];
     this.flowerStep = 0; this.flowerFlash = [0,0,0]; this.area = this.checkpoint;
     this.player = { ...CHECKPOINTS[this.checkpoint], vx: 0, vz: 0, vy: 0, facing: Math.PI,
       grounded: true, surface: -1, health: 5, invulnerable: 0, roll: 0, rollCooldown: 0,
       attack: 0, attackCooldown: 0, coyote: .1, jumpBuffer: 0, walk: 0 };
-    this.guards = GUARDS.map((g, id) => ({ ...g, id, y: .4, homeX: g.x, homeZ: g.z,
+    this.guards = GUARDS.map((g, id) => ({ ...g, id, y: g.y || 0, homeX: g.x, homeZ: g.z,
       health: this.quests.ruins ? 0 : 3, state: 'idle', timer: 0, facing: 0, hit: 0 }));
   }
   get lights() { return Object.values(this.quests).filter(Boolean).length; }
-  snapshot() { return { version: 1, quests: { ...this.quests }, seeds: [...this.seeds], wind: [...this.wind], checkpoint: this.checkpoint, elapsed: this.elapsed, chest: this.chest, finished: this.finished }; }
+  snapshot() { return { version: 1, quests: { ...this.quests }, seeds: [...this.seeds], wind: [...this.wind], secrets: [...this.secrets], checkpoint: this.checkpoint, elapsed: this.elapsed, chest: this.chest, finished: this.finished }; }
   emit(type, data = {}) { if (this.events.length < 80) this.events.push({ type, ...data }); }
   drainEvents() { const events = this.events; this.events = []; return events; }
   start() { this.running = true; }
@@ -55,6 +57,7 @@ export class Adventure {
   slash() {
     const p = this.player;
     if (p.attackCooldown > 0 || p.roll > 0) return;
+    this.combo = this.comboWindow > 0 ? this.combo % 3 + 1 : 1; this.comboWindow = 1.2;
     p.attack = .32; p.attackCooldown = .44;
     // A small assist makes keyboard and touch swordplay forgiving.
     const target = this.guards.filter(g => g.health > 0 && distance(p, g) < 2.7)
@@ -65,7 +68,7 @@ export class Adventure {
       const d = distance(p, g);
       const dot = (Math.sin(p.facing) * (g.x - p.x) + Math.cos(p.facing) * (g.z - p.z)) / (d || 1);
       if (g.health > 0 && d < 2.5 && dot > -.1 && Math.abs(p.y - g.y) < 1.6) {
-        g.health--; g.hit = .26; g.state = 'recover'; g.timer = .65;
+        g.health = Math.max(0,g.health-(this.combo===3?2:1)); this.hitStop = .045; g.hit = .26; g.state = 'recover'; g.timer = .65;
         this.emit(g.health ? 'hit' : 'defeat', { x: g.x, y: g.y + .7, z: g.z });
         if (!g.health && this.guards.every(enemy => enemy.health <= 0)) {
           this.emit('message', { text: 'Die Wächter ruhen. Hole das Licht am violetten Schrein.' });
@@ -80,6 +83,7 @@ export class Adventure {
       ...FLOWERS.map((f, id) => ({ ...f, id, kind: 'flower', label: f.name + ' spielen' })),
       ...SHRINES.map((s, id) => ({ ...s, id, kind: 'shrine', label: this.quests[s.id] ? s.name + ' berühren' : s.name + ' wecken' })),
     ];
+    for (const secret of SECRETS) if(!this.secrets.has(secret.id)) candidates.push({...secret,kind:'secret',label:secret.name});
     if (!this.chest) candidates.push({ ...CHEST, kind: 'chest', label: 'Lichttruhe öffnen' });
     return candidates.filter(c => distance(c, p) < (c.kind === 'tree' ? 2.8 : 2.15) && Math.abs(p.y - c.y) < 1.25)
       .sort((a, b) => distance(a, p) - distance(b, p))[0] || null;
@@ -94,15 +98,18 @@ export class Adventure {
   }
   interact() {
     const item = this.interaction(); if (!item) return;
-    if (item.kind === 'guide') {
-      this.emit('dialogue', { speaker: 'Lumi · Hüterin der Insel', text: this.lights === 3
+    if (item.kind === 'secret') {
+      this.secrets.add(item.id); this.emit('save'); this.emit('chest',item);
+      this.emit('dialogue',{speaker:item.name+' · '+this.secrets.size+'/'+SECRETS.length,text:item.text});
+    } else if (item.kind === 'guide') {
+      this.emit('dialogue', { speaker: 'Lumi · Hüterin des Gartens', text: this.lights === 3
         ? 'Du hast es geschafft! Bring die drei Lichter zum grossen Baum. Ich glaube, er träumt schon vom Frühling.'
-        : 'Unser Herzbaum schläft. Im Westen singen die Blüten, im Osten bewachen Steingeister ein Licht. Im Norden wartet der Wind. Wecke alle drei Schreine! Sammle unterwegs goldene Glühlichter – acht davon öffnen meine alte Truhe.' });
+        : 'Dieser Garten war einmal voller Licht. Folge den Platten zum Haus der Echos: Holz, Glas und Metall bewahren eine Melodie. Am weissen Steinkreis warten Mooswächter. Die schwebenden Trittsteine führen in die Krone der Palme. Dort tanzen drei Windfunken. Sammle unterwegs goldene Glühlichter – acht davon öffnen meine alte Truhe.' });
     } else if (item.kind === 'tree') {
       if (this.lights === 3 && !this.finished) {
         this.finished = true; this.emit('win'); this.emit('save');
       } else this.emit('dialogue', { speaker: 'Der Herzbaum', text: this.finished
-        ? 'Die Insel atmet wieder. Danke, kleiner Wanderer. Hier gibt es immer noch etwas zu entdecken.'
+        ? 'Der Garten atmet wieder. Danke, kleiner Wanderer. Hier gibt es immer noch etwas zu entdecken.'
         : `Ein warmes Flüstern im Holz. Noch ${3 - this.lights} ${this.lights === 2 ? 'Licht fehlt' : 'Lichter fehlen'}, um den Baum zu erwecken.` });
     } else if (item.kind === 'flower') {
       const i = item.id; this.flowerFlash[i] = .9;
@@ -114,7 +121,7 @@ export class Adventure {
     } else if (item.kind === 'shrine') {
       const id = SHRINES[item.id].id;
       if (this.quests[id]) this.emit('message', { text: 'Dieses Licht begleitet dich bereits.' });
-      else if (id === 'garden') this.emit('dialogue', { speaker: 'Eine Melodie im Moos', text: 'Erst die Sonne, dann der Himmel, zuletzt die Rose. Berühre die Klangblüten: Gelb → Blau → Rosa.' });
+      else if (id === 'garden') this.emit('dialogue', { speaker: 'Eine Melodie im Moos', text: 'Erst die Sonne, dann der Himmel, zuletzt die Rose. Spiele die drei Klangobjekte: Gelb → Blau → Rosa.' });
       else if (id === 'ruins' && this.guards.every(g => g.health <= 0)) this.activateLight(id);
       else if (id === 'wind' && this.wind.size === 3) this.activateLight(id);
       else this.emit('message', { text: id === 'ruins' ? 'Besiege zuerst die drei Steinwächter. J: Schwert · Shift: Ausweichen.' : `Fange die drei blauen Windfunken. Einer schwebt höher – springe! (${this.wind.size}/3)` });
@@ -126,9 +133,12 @@ export class Adventure {
   update(input = {}, dt = STEP) {
     if (!this.running) return;
     dt = clamp(dt, 0, STEP * 1.01);
+    this.energy += (this.lights/3-this.energy)*Math.min(1,dt*.8);
     this.time += dt; if (!this.finished) this.elapsed += dt;
     const p = this.player;
+    this.comboWindow=Math.max(0,this.comboWindow-dt);
     for (const key of ['invulnerable', 'roll', 'rollCooldown', 'attack', 'attackCooldown', 'jumpBuffer', 'coyote']) p[key] = Math.max(0, p[key] - dt);
+    if(this.hitStop>0){this.hitStop=Math.max(0,this.hitStop-dt);return;}
     this.flowerFlash = this.flowerFlash.map(t => Math.max(0, t - dt));
     if (input.jump) p.jumpBuffer = .15;
     if (p.grounded) p.coyote = .11;
@@ -154,14 +164,15 @@ export class Adventure {
     p.x += p.vx * dt; p.z += p.vz * dt;
     for (const o of OBSTACLES) {
       const d = distance(p, o), r = o.r + .3;
-      if (d < r && p.y < o.y + 2.5 && p.y > o.y - .8) {
+      if (d < r && p.y < o.y + (o.height || 2.5) && p.y > o.y - .8) {
         const dx = d > .0001 ? (p.x - o.x) / d : 1, dz = d > .0001 ? (p.z - o.z) / d : 0;
         p.x = o.x + dx * r; p.z = o.z + dz * r;
       }
     }
+    resolveWalls(p);
     const previousY = p.y;
     p.vy -= 22 * dt; p.y += p.vy * dt;
-    const ground = surfaceAt(p.x, p.z, this.time);
+    const ground = surfaceAt(p.x, p.z, this.time, previousY + .22, this.energy);
     if (p.vy <= 0 && previousY >= ground.height - .22 && p.y <= ground.height) {
       if (!p.grounded && p.vy < -3) this.emit('land', { x: p.x, y: ground.height, z: p.z });
       p.y = ground.height; p.vy = 0; p.grounded = true; p.surface = ground.stoneIndex;
@@ -171,7 +182,7 @@ export class Adventure {
     if (ground.id && Object.hasOwn(CHECKPOINTS, ground.id) && p.grounded) {
       if (this.area !== ground.id) { this.area = ground.id; this.emit('area', { name: ISLANDS.find(i => i.id === ground.id).name }); }
       const island = ISLANDS.find(i => i.id === ground.id);
-      if (this.checkpoint !== ground.id && onIsland(island, p.x, p.z, .8)) { this.checkpoint = ground.id; this.emit('save'); }
+      if (this.checkpoint !== ground.id && (ground.id==='wind'||onIsland(island, p.x, p.z, .8))) { this.checkpoint = ground.id; this.emit('save'); }
     }
     for (const seed of SEEDS) if (!this.seeds.has(seed.id) && Math.hypot(p.x - seed.x, p.z - seed.z, p.y + .75 - seed.y) < .95) {
       this.seeds.add(seed.id); this.emit('seed', seed); this.emit('save');

@@ -3,7 +3,7 @@ export class Soundscape {
   constructor(volume=.45,enabled=true){this.volume=volume;this.enabled=enabled;this.context=null;this.next=0;this.step=0;this.playing=false;this.voices=0;}
   async unlock(){
     try {
-      if(!this.context){const Context=window.AudioContext||window.webkitAudioContext;if(!Context)return;this.context=new Context();this.master=this.context.createGain();this.master.connect(this.context.destination);this.setVolume(this.volume);}
+      if(!this.context){const Context=window.AudioContext||window.webkitAudioContext;if(!Context)return;this.context=new Context();this.master=this.context.createGain();this.master.connect(this.context.destination);this.setVolume(this.volume);this.makeAmbience();}
       if(this.context.state==='suspended')await this.context.resume();
     }catch{this.enabled=false;}
   }
@@ -15,17 +15,28 @@ export class Soundscape {
     o.type=type;o.frequency.setValueAtTime(frequency,t);g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(volume,t+.015);g.gain.exponentialRampToValueAtTime(.0001,t+duration);
     o.connect(g);g.connect(this.master);o.start(t);o.stop(t+duration+.02);this.voices++;o.onended=()=>{o.disconnect();g.disconnect();this.voices--;};
   }
+  makeAmbience(){
+    const c=this.context,buffer=c.createBuffer(1,c.sampleRate*4,c.sampleRate),data=buffer.getChannelData(0);let smooth=0;
+    for(let i=0;i<data.length;i++){smooth=(smooth+(Math.random()*2-1)*.02)/1.02;data[i]=smooth*3;}
+    this.wind=c.createBufferSource();this.wind.buffer=buffer;this.wind.loop=true;
+    this.windFilter=c.createBiquadFilter();this.windFilter.type='lowpass';this.windFilter.frequency.value=650;
+    this.ambient=c.createGain();this.ambient.gain.value=0;this.wind.connect(this.windFilter);this.windFilter.connect(this.ambient);this.ambient.connect(this.master);this.wind.start();
+  }
   tick(){
+    if(this.ambient)this.ambient.gain.setTargetAtTime(this.playing?(this.area==='garden'?.06:.14):0,this.context.currentTime,.5);
+
     if(!this.playing||!this.context||!this.enabled||this.context.state!=='running')return;
     const t=this.context.currentTime;if(t<this.next)return;this.next=t+.54;
     const notes=[293.66,440,587.33,659.25,440,391.99,329.63,440,293.66,391.99,587.33,440,329.63,293.66,220,293.66];
-    this.tone(notes[this.step%notes.length],1.7,.035);
+    this.tone(notes[this.step%notes.length]*(this.finished?1.5:1),1.7,.023+(this.lights||0)*.004);
+    if(this.step%13===0&&this.area!=='garden'){this.tone(1550,.18,.018,'sine');this.tone(1930,.16,.014,'sine',.12);}
+    if(this.step%10===0&&this.area==='garden'){for(let i=0;i<3;i++)this.tone([523.25,659.25,783.99][i],.8,.04,'sine',i*.48);}
     if(this.step%4===0)this.tone([146.83,130.81,164.81,110][Math.floor(this.step/4)%4],2.4,.035,'sine');
     this.step++;
   }
   event(e){
     const t=e.type;
-    if(t==='note')this.tone([523.25,659.25,783.99][e.index],1.05,.22);
+    if(t==='note'){this.tone([523.25,659.25,783.99][e.index],e.index===0?.4:1.1,.20,e.index===0?'triangle':'sine');if(e.index===2)this.tone(1570,.75,.04);}
     else if(t==='seed'||t==='wind'){this.tone(t==='seed'?987.77:783.99,.4,.10);this.tone(1318.51,.5,.06,'sine',.07);}
     else if(t==='jump')this.tone(440,.13,.055,'triangle');
     else if(t==='land')this.tone(110,.08,.055,'triangle');
