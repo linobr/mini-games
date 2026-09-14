@@ -12,8 +12,10 @@ export function makeHero(appearance){
   materials.light.emissive.set('#ffdb83');materials.light.emissiveIntensity=1.1;
   const mesh=(shape,role,scale,pos,parent=body)=>{const m=new T.Mesh(geometries[shape],materials[role]);m.scale.set(...scale);m.position.set(...pos);m.receiveShadow=true;parent.add(m);return m;};
   const tunic=mesh('cone','outfit',[.48,.72,.4],[0,.93,0]);tunic.rotation.y=Math.PI/10;
+  tunic.name='upper-outfit';
   const shoulders=mesh('sphere','outfit',[.36,.22,.23],[0,1.13,0]);
   const cloak=mesh('cone','cloak',[.42,.78,.19],[0,.94,-.24]);cloak.rotation.x=-.15;
+  cloak.name='back-outfit';
   mesh('sphere','skin',[.18,.2,.16],[0,1.23,.03]);
   const head=mesh('sphere','skin',[.31,.32,.29],[0,1.53,.03]);
   mesh('box','gold',[.63,.065,.45],[0,.8,0]);mesh('box','gold',[.1,.13,.025],[0,.82,.25]);
@@ -51,7 +53,7 @@ export function makeHero(appearance){
   const legs=[];
   for(const x of [-.18,.18]){
     const pivot=new T.Group();pivot.position.set(x,.65,0);body.add(pivot);
-    mesh('cylinder','cloak',[.10,.35,.10],[0,-.2,0],pivot);mesh('sphere','boots',[.15,.14,.23],[0,-.51,.06],pivot);legs.push(pivot);
+    const trouser=mesh('cylinder','cloak',[.10,.35,.10],[0,-.2,0],pivot);trouser.name='trouser-leg';mesh('sphere','boots',[.15,.14,.23],[0,-.51,.06],pivot);legs.push(pivot);
   }
   const arm=new T.Group();arm.position.set(-.41,1.15,0);body.add(arm);
   const swordArm=new T.Group();swordArm.position.set(.42,1.14,0);body.add(swordArm);
@@ -66,12 +68,19 @@ export function makeHero(appearance){
     const a=cleanAppearance(value),female=a.variant==='feminine';
     for(const [role,key] of [['skin','skin'],['hair','hairColor'],['eye','eyes'],['outfit','outfit']])materials[role].color.set(appearanceColor(key,a[key]));
     materials.cloak.color.copy(materials.outfit.color).multiplyScalar(.62);materials.nose.color.copy(materials.skin.color).multiplyScalar(.85);
-    head.scale.set(female?.292:.31,female?.327:.32,.29);tunic.scale.x=female?.45:.48;
+    head.scale.set(female?.292:.31,female?.327:.32,.29);
+    // The male jacket ends at the belt; separated trousers carry the silhouette.
+    // Preserve the existing female dress and cape dimensions exactly.
+    tunic.geometry=female?geometries.cone:geometries.box;
+    tunic.scale.set(...(female?[.45,.72,.4]:[.55,.4,.4]));tunic.position.y=female?.93:1;tunic.rotation.y=female?Math.PI/10:0;
+    cloak.geometry=female?geometries.cone:geometries.box;
+    cloak.scale.set(...(female?[.42,.78,.19]:[.48,.42,.08]));cloak.position.y=female?.94:1.06;cloak.rotation.x=female?-.15:0;
+    for(const leg of legs){const trousers=leg.children[0];trousers.scale.set(female?.10:.135,female?.35:.58,female?.10:.135);trousers.position.y=female?-.2:-.09;}
     shoulders.scale.x=female?.33:.36;
     arm.position.x=female?-.38:-.41;swordArm.position.x=female?.39:.42;
     hair.geometry=hairGeometries[a.hair];
     // The existing stencil aid is a child of each part and must follow hairstyle swaps.
-    for(const overlay of hair.children)if(overlay.isMesh)overlay.geometry=hair.geometry;
+    for(const part of [hair,tunic,cloak])for(const overlay of part.children)if(overlay.isMesh)overlay.geometry=part.geometry;
   }
   applyAppearance(appearance);
   return {root,body,legs,arm,swordArm,slash,lampCore,applyAppearance,

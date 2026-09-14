@@ -3,7 +3,8 @@ import { WorldView } from './renderer.js';
 import { Controls } from './input.js';
 import { Soundscape } from './audio.js';
 import {AppearanceMenu} from './appearance-menu.js';
-import {fallOpacity,skyStage} from './atmosphere.js';
+import {fallOpacity,skyStage,cleanDayPhase} from './atmosphere.js';
+import {DayControl} from './day-control.js';
 import {MAP_DATA,mapPoint} from './map.js';
 import {TERRACE_OUTLINE,GRAVEL_OUTLINE,REAR_OUTLINE,HOUSE_RETURN} from './garden-layout.js';
 import { ISLANDS, SHRINES, BRIDGES, TREE, PALM, CHECKPOINTS } from './world.js';
@@ -12,7 +13,7 @@ const $=id=>document.getElementById(id),canvas=$('world');
 const fallVeil=document.createElement('div');fallVeil.className='fall-veil';fallVeil.setAttribute('aria-hidden','true');$('adventure').appendChild(fallVeil);
 let storage;try{storage=window.localStorage;}catch{storage=null;}
 let preferences={};try{preferences=JSON.parse(storage?.getItem('minigames.mooslicht.settings')||'{}')||{};}catch{}
-const settings={quality:['auto','low','medium','high'].includes(preferences.quality)?preferences.quality:'auto',
+const settings={dayPhase:cleanDayPhase(preferences.dayPhase),quality:['auto','low','medium','high'].includes(preferences.quality)?preferences.quality:'auto',
   volume:Number.isFinite(preferences.volume)?Math.max(0,Math.min(1,preferences.volume)):.45,
   sound:preferences.sound!==false,motion:typeof preferences.motion==='boolean'?preferences.motion:matchMedia('(prefers-reduced-motion:reduce)').matches};
 let game=new Adventure(readSave(storage)),view;
@@ -21,6 +22,8 @@ const clock=new FixedClock(),sound=new Soundscape(settings.volume,settings.sound
 let started=false,last=performance.now(),uiTime=0,savedOnce=false,savePending=false,saveDeadline=0;
 let toastTimer,areaTimer,damageTimer,winTimer,restartTimer,restarting=false,winning=false,arriving=false;
 const controls=new Controls(canvas,view,()=>openPause());
+const dayControl=new DayControl($('day-control'),{state:view.world.sky.state,value:settings.dayPhase,
+  onFocus:()=>controls.clear(),onChange:(phase,commit)=>{settings.dayPhase=phase;if(commit)saveSettings();}});
 const coarse=matchMedia('(pointer:coarse)');
 const appearanceMenu=new AppearanceMenu($('appearance-dialog'),{
   getAppearance:()=>game.appearance,
@@ -155,7 +158,7 @@ function frame(now){
   if(winning&&!view.cinematic){winning=false;sound.playing=false;$('cinema').hidden=true;$('win-dialog').showModal();}
   if(!$('performance').hidden)$('performance').textContent=`${view.fps} FPS · ${view.renderer.info.render.calls} Draw Calls · ${view.renderer.info.render.triangles.toLocaleString()} Dreiecke`;
 
-  uiTime+=delta;if(uiTime>.09){uiTime=0;updateUI();}
+  uiTime+=delta;if(uiTime>.09){uiTime=0;updateUI();dayControl.refresh();}
   if(savePending&&now>=saveDeadline)save();
 }
 requestAnimationFrame(frame);

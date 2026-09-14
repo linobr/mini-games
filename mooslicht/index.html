@@ -22,6 +22,13 @@
         <button class="icon-button" id="pause" aria-label="Pause und Einstellungen" title="Pause · Esc">Ⅱ</button>
       </div>
     </header>
+    <div id="day-control" class="day-control" aria-label="Tageszeit wählen">
+      <div class="day-track" role="slider" tabindex="0" aria-label="Sonne verschieben: Tag bis Mooslicht-Nacht" aria-valuemin="0" aria-valuemax="5" aria-valuenow="0" aria-orientation="horizontal">
+        <svg viewBox="0 0 180 48" preserveAspectRatio="none" aria-hidden="true"><path d="M14 36 Q90 -6 166 36"/><path class="day-horizon" d="M14 43H166"/></svg>
+        <span class="day-sun" aria-hidden="true">☀</span>
+      </div>
+      <div class="day-caption"><span class="day-label">Tagesverlauf</span><button type="button" aria-label="Automatischen Tagesverlauf wiederherstellen" aria-pressed="true">Auto</button></div>
+    </div>
 
     <section class="intro" id="intro" aria-labelledby="game-title">
       <span class="intro-overline">DEIN GARTEN. EINE GANZE WELT.</span>

@@ -40,5 +40,12 @@ body[data-screen="intro"] .vignette{background:linear-gradient(90deg,rgba(13,39,
 .appearance-footer{display:flex;align-items:center;justify-content:flex-end;gap:18px;margin-top:12px;padding-top:16px;border-top:1px solid #b5c3aa33}
 .appearance-footer .primary{width:auto;min-height:44px;padding:12px 22px;margin:0}
 .appearance-footer>:first-child{margin-right:auto}.appearance-footer .text-button{font-size:13px;padding:8px 0}
+.day-control{position:absolute;z-index:7;top:max(65px,calc(env(safe-area-inset-top) + 48px));left:50%;transform:translateX(-50%);width:180px;padding:0 6px 5px;border-radius:18px;background:#173b394a;color:#f6dfab;text-shadow:0 1px 5px #183e38}
+.day-track{position:relative;height:48px;cursor:ew-resize;touch-action:none;border-radius:14px;outline-offset:2px}
+.day-track:focus-visible{outline:2px solid var(--gold)}.day-track svg{width:100%;height:48px;overflow:visible;fill:none;stroke:#eee4bb88;stroke-width:1.3}.day-track .day-horizon{stroke:#eee4bb33;stroke-dasharray:1 5}
+.day-sun{position:absolute;transform:translate(-50%,-50%);font-size:29px;line-height:1;pointer-events:none;color:#ffe39a;filter:drop-shadow(0 0 5px #ffcc6666)}
+.day-caption{display:flex;justify-content:space-between;align-items:center;gap:4px;font-size:10px;letter-spacing:.035em;padding:0 8px}.day-caption button{padding:3px 6px;border:1px solid #e1d8b755;border-radius:9px;background:#173b3966;color:inherit;font-size:10px;min-height:24px}.day-caption button[aria-pressed=true]{background:#e1d8b72b}
+@media(max-width:540px){.day-control{top:max(53px,calc(env(safe-area-inset-top) + 38px));width:154px}.day-sun{font-size:27px}.hud{top:137px}.island-map{top:190px}}
+@media(max-height:560px) and (orientation:landscape){.day-control{top:52px;width:140px}.day-caption{font-size:9px}.area-title{top:136px;font-size:22px}}
 @media(max-width:720px){.appearance-dialog{padding:22px;max-height:94dvh}.appearance-layout{grid-template-columns:1fr;gap:18px}.appearance-preview{position:static}#appearance-preview{height:260px}.appearance-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}.appearance-fields fieldset{margin:0}.appearance-footer{gap:10px;flex-wrap:wrap}.appearance-dialog h2{font-size:25px}}
 @media(max-width:430px){.appearance-fields{grid-template-columns:1fr}.appearance-footer .primary{padding:10px 16px}.appearance-dialog{width:96vw;padding:18px}.appearance-footer>:first-child{flex-basis:100%}}
