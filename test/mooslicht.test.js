@@ -70,7 +70,7 @@ test('Mooslicht: the adventure only finishes with all three earned lights',()=>{
   restored.interact();assert.equal(restored.drainEvents().filter(e=>e.type==='win').length,0);
 });
 test('Mooslicht: falling and losing all hearts preserve earned quest progress',()=>{
-  const g=fresh({quests:{garden:true},seeds:[2,3],checkpoint:'garden'});stand(g,{x:50,z:50,y:-8});g.update({},STEP);
+  const g=fresh({quests:{garden:true},seeds:[2,3],checkpoint:'garden'});stand(g,{x:50,z:50,y:-8});g.update({},STEP);assert.ok(g.fallTimer>0);tick(g,.75);
   assert.equal(g.player.health,4);assert.equal(g.quests.garden,true);assert.equal(g.player.x,CHECKPOINTS.garden.x);
   g.player.health=1;g.player.invulnerable=0;g.hurt({x:0,z:0});assert.equal(g.player.health,5);assert.equal(g.seeds.size,2);
 });
@@ -138,7 +138,7 @@ test('Mooslicht: secrets persist uniquely and malformed secret saves are rejecte
 });
 test('Mooslicht: firewood ascent reaches the shed roof without teleporting',()=>{
   const g=fresh();walk(g,-12,-24);walk(g,-16,-24);
-  for(const s of STONES.slice(13)){walk(g,s.x,s.z,{jump:true});}
+  for(const s of STONES.filter(s=>s.kind==='wood')){walk(g,s.x,s.z,{jump:true});}
   walk(g,8,-39,{jump:true});assert.ok(g.player.y>=16);assert.equal(g.player.health,5);
   g.interact();assert.ok(g.secrets.has(3));
 });

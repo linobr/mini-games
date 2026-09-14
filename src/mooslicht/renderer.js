@@ -1,6 +1,6 @@
 import * as T from 'three';
 import { buildScene } from './scene.js';
-import { STONES, SEEDS, SHRINES, FLOWERS, ISLANDS, stonePosition, surfaceAt, random, clamp, TAU, TREE, GUIDE, CHECKPOINTS, cameraFraction } from './world.js';
+import { STONES, SEEDS, SHRINES, FLOWERS, ISLANDS, stonePosition, surfaceAt, random, clamp, TAU, TREE, SATELLITES, GUIDE, CHECKPOINTS, cameraFraction } from './world.js';
 
 function radialTexture() {
   const size=64,data=new Uint8Array(size*size*4);
@@ -23,7 +23,7 @@ export class Effects {
   burst(x,y,z,color,count=16,force=2) {
     const c=new T.Color(color);
     for(let j=0;j<count;j++) {
-      const i=this.cursor++%this.capacity,k=i*3,a=this.random()*TAU,v=.5+this.random()*force;
+      const i=this.cursor++%(this.activeCapacity||this.capacity),k=i*3,a=this.random()*TAU,v=.5+this.random()*force;
       this.positions.set([x,y,z],k);this.colors.set([c.r,c.g,c.b],k);
       this.velocities.set([Math.cos(a)*v,.8+this.random()*2.5,Math.sin(a)*v],k);
       this.life[i]=this.total[i]=.5+this.random()*.7;
@@ -48,11 +48,11 @@ export class WorldView {
     this.renderer.outputColorSpace=T.SRGBColorSpace;this.renderer.toneMapping=T.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure=1.02;this.renderer.shadowMap.enabled=true;this.renderer.shadowMap.type=T.PCFSoftShadowMap;
     this.world=buildScene();this.scene=this.world.scene;
-    this.camera=new T.PerspectiveCamera(50,1,.1,200);
+    this.camera=new T.PerspectiveCamera(50,1,.1,360);
     this.yaw=0;this.pitch=.30;this.distance=7.4;this.target=new T.Vector3(-10,1,10);
     this.shake=0;this.cinematic=null;this.cineTime=0;this.overview=false;this.fpsFrames=0;this.fpsTime=0;this.fps=0;
     this.desired=new T.Vector3();this.look=new T.Vector3();this.temp=new T.Object3D();
-    this.camera.position.set(-14,59,37);this.camera.lookAt(0,1,-19);
+    this.camera.position.set(36,80,64);this.camera.lookAt(0,0,-20);
     this.effects=new Effects(this.scene);this.clock=0;this.started=false;this.transition=0;
     this.motion=!!settings.motion;this.quality=settings.quality||'auto';this.autoLow=false;this.samples=0;this.sampleTime=0;
     const contactMaterial=new T.MeshBasicMaterial({color:'#173e3b',map:glowTexture,transparent:true,opacity:.42,depthWrite:false});
@@ -66,11 +66,19 @@ export class WorldView {
   }
   makeFireflies() {
     const rng=random(749),count=80,positions=new Float32Array(count*3),phases=new Float32Array(count);
-    for(let i=0;i<count;i++){const island=ISLANDS[i%4],a=rng()*TAU,r=rng()*island.r;positions.set([island.x+Math.sin(a)*r,island.y+.4+rng()*3,island.z+Math.cos(a)*r],i*3);phases[i]=rng()*TAU;}
+    for(let i=0;i<count;i++){
+      const a=rng()*TAU,r=Math.sqrt(rng()),s=SATELLITES[i%SATELLITES.length];let x,y,z;
+      if(i%4===0){x=TREE.x+Math.sin(a)*r*6;z=TREE.z+Math.cos(a)*r*6;y=1+rng()*5;}
+      else if(i%4===1){x=-10+rng()*27;z=-28+rng()*40;y=.5+rng()*3;}
+      else if(i%4===2){x=-5+rng()*16;z=-45+rng()*9;y=1.5+rng()*3;}
+      else {x=s.x+Math.sin(a)*r*4;z=s.z+Math.cos(a)*r*4;y=s.y+.6+rng()*2;}
+      positions.set([x,y,z],i*3);phases[i]=rng()*TAU;
+    }
+
     const g=new T.BufferGeometry();g.setAttribute('position',new T.BufferAttribute(positions,3));g.setAttribute('phase',new T.BufferAttribute(phases,1));
-    const m=new T.ShaderMaterial({uniforms:{time:{value:0},pixelRatio:{value:1}},transparent:true,depthWrite:false,blending:T.AdditiveBlending,
-      vertexShader:'attribute float phase;uniform float time;uniform float pixelRatio;varying float glow;void main(){vec3 p=position;p.x+=sin(time*.45+phase)*.35;p.y+=sin(time*.75+phase)*.2;vec4 v=modelViewMatrix*vec4(p,1.);gl_Position=projectionMatrix*v;gl_PointSize=clamp(42./max(1.,-v.z),1.,4.)*pixelRatio;glow=.4+.6*pow(sin(time*.9+phase)*.5+.5,2.);}',
-      fragmentShader:'varying float glow;void main(){float d=length(gl_PointCoord-.5)*2.;float a=max(0.,1.-d);gl_FragColor=vec4(1.,.85,.47,a*a*glow);}' });
+    const m=new T.ShaderMaterial({uniforms:{time:{value:0},pixelRatio:{value:1},strength:{value:1},awake:{value:0}},transparent:true,depthWrite:false,blending:T.AdditiveBlending,
+      vertexShader:'attribute float phase;uniform float awake;uniform float time;uniform float pixelRatio;varying float glow;void main(){vec3 p=position;p.y+=awake*mod(phase,2.)*.5;p.x+=sin(time*.45+phase)*.35;p.y+=sin(time*.75+phase)*.2;vec4 v=modelViewMatrix*vec4(p,1.);gl_Position=projectionMatrix*v;gl_PointSize=clamp(42./max(1.,-v.z),1.,4.)*pixelRatio;glow=.4+.6*pow(sin(time*.9+phase)*.5+.5,2.);}',
+      fragmentShader:'uniform float strength;varying float glow;void main(){float d=length(gl_PointCoord-.5)*2.;float a=max(0.,1.-d);gl_FragColor=vec4(1.,.85,.47,a*a*glow*strength);}' });
     this.fireflies=new T.Points(g,m);this.fireflies.frustumCulled=false;this.scene.add(this.fireflies);
   }
   resize() {
@@ -82,14 +90,16 @@ export class WorldView {
     const low=this.quality==='low'||(this.quality==='auto'&&(this.autoLow||matchMedia('(pointer:coarse)').matches));
     const ratio=Math.min(devicePixelRatio||1,low?1:this.quality==='high'?2:1.5);
     this.renderer.setPixelRatio(ratio);this.renderer.shadowMap.enabled=!low;
-    this.world.garden.quality(low,this.quality==='high');
+    this.world.garden.quality(low,this.quality==='high');this.world.floating.quality(low,this.quality==='high');this.world.sky.quality(low,this.quality==='high',ratio);
+    this.fireflies.geometry.setDrawRange(0,low?35:this.quality==='high'?80:55);
+    this.effects.activeCapacity=low?72:this.quality==='high'?180:120;this.effects.points.geometry.setDrawRange(0,this.effects.activeCapacity);
     this.world.sun.castShadow=!low;this.fireflies.material.uniforms.pixelRatio.value=ratio;
   }
   orbit(dx,dy) { this.yaw-=dx*.006;this.pitch=clamp(this.pitch+dy*.003,-.10,1.15); }
   resetCamera() { this.yaw=0;this.pitch=.30;this.distance=7.4;this.overview=false; }
   zoom(delta) { this.distance=clamp(this.distance+delta*.012,4.5,14); }
   beginCinematic(kind){this.cinematic=kind;this.cineTime=0;}
-  skipCinematic(){this.cinematic=null;this.cineTime=0;this.started=false;this.transition=0;}
+  skipCinematic(){if(this.cinematic==='finale'){this.world.sky.state.finalAge=12;this.world.sky.state.phase=5;}this.cinematic=null;this.cineTime=0;this.started=false;this.transition=0;}
   event(e) {
     if(e.type==='hit'||e.type==='defeat')this.shake=.11;
     if(e.type==='hurt')this.shake=.18;
@@ -97,7 +107,7 @@ export class WorldView {
     if(colors[e.type])this.effects.burst(e.x,e.y+.25,e.z,colors[e.type],e.type==='light'?64:e.type==='defeat'?28:e.type==='land'?8:14,e.type==='light'?3.2:1.5);
   }
   render(game,dt,intro=false) {
-    dt=clamp(dt,0,.1);this.clock+=dt;
+    const rawDt=clamp(dt,0,2);dt=clamp(dt,0,.1);this.clock+=dt;
     const w=this.world,p=game.player,time=this.clock;
     w.hero.root.position.set(p.x,p.y,p.z);w.hero.root.rotation.y+=Math.atan2(Math.sin(p.facing-w.hero.root.rotation.y),Math.cos(p.facing-w.hero.root.rotation.y))*(1-Math.exp(-dt*18));
     w.hero.root.visible=!(p.invulnerable>0&&Math.floor(time*12)%3===0);
@@ -145,24 +155,30 @@ export class WorldView {
       v.body.scale.set(1+(g.hit>0?.1:0),g.state==='windup'?.83:g.hit>0?.88:1,1);
       v.warning.visible=g.state==='windup';v.warning.material.opacity=.12+(1-g.timer/.8)*.42;
     }
-    w.garden.update(time,game,this.motion);
+    w.sky.update(game,dt,time,!!this.cinematic,this.motion);
+    const finalAge=w.sky.state.finalAge;
+    w.garden.update(time,game,this.motion,w.sky.night,finalAge);w.floating.update(time,game,w.sky.night,finalAge,this.motion);
+    this.fireflies.material.uniforms.strength.value=.12+game.energy*.25+w.sky.night*.6;
+    this.fireflies.material.uniforms.awake.value=game.finished?Math.max(0,finalAge-4):0;
     this.fireflies.material.uniforms.time.value=this.motion?0:time;this.effects.update(dt);
     this.shake=Math.max(0,this.shake-dt);
     if(this.cinematic){
       this.cineTime+=dt;const t=this.cineTime;
       if(this.cinematic==='arrival'){
-        const k=T.MathUtils.smoothstep(t,0,7);
-        this.camera.position.set(-11+4*k,1.2+4*k,15-1.5*k);this.camera.lookAt(-2,3+2*k,-26);
-        if(t>=7)this.skipCinematic();
+        // Grass first, then the familiar landmarks, finally the floating edge.
+        const k=T.MathUtils.smoothstep(t,0,3.5),reveal=T.MathUtils.smoothstep(t,3.5,9.5);
+        this.camera.position.set(-11+5*k+50*reveal,1.2+4*k+26*reveal,15-2*k+42*reveal);
+        this.camera.lookAt(-2+2*reveal,3+3*k-3*reveal,-24+7*reveal);
+        if(t>=10)this.skipCinematic();
       } else {
-        const k=T.MathUtils.smoothstep(t,1,10);
-        this.camera.position.set(TREE.x+7+( -14-TREE.x-7)*k,6+53*k,TREE.z+13+(37-TREE.z-13)*k);
-        this.camera.lookAt(TREE.x*(1-k),7*(1-k)+k,-19);
+        const k=T.MathUtils.smoothstep(t,5,10.5);
+        this.camera.position.set(21+15*k,14+66*k,-7+71*k);
+        this.camera.lookAt(TREE.x*(1-k),10*(1-k)+k,-19);
         if(t>=11)this.skipCinematic();
       }
     } else if(intro || this.overview) {
-      this.camera.position.set(-14,59,37);this.camera.lookAt(0,1,-19);
-      if(this.camera.aspect<.75){this.camera.position.set(-10,75,54);this.camera.lookAt(0,0,-18);}
+      this.camera.position.set(36,80,64);this.camera.lookAt(0,0,-20);
+      if(this.camera.aspect<.75){this.camera.position.set(25,112,92);this.camera.lookAt(0,0,-20);}
     } else {
       if(!this.started){this.started=true;this.target.set(p.x,p.y+1.65,p.z);}
       this.transition=Math.min(1,this.transition+dt);
@@ -179,11 +195,13 @@ export class WorldView {
       if(!this.motion&&this.shake>0){this.camera.position.x+=Math.sin(time*101)*this.shake*.25;this.camera.position.y+=Math.cos(time*93)*this.shake*.17;}
       this.camera.lookAt(this.target);
     }
+    // Sky follows the eye: no parallax or clipping at high garden viewpoints.
+    w.sky.sky.position.copy(this.camera.position);w.sky.stars.position.copy(this.camera.position);w.sky.moon.position.copy(this.camera.position).add(this.look.set(-95,155,-150));
     this.renderer.render(this.scene,this.camera);
-    this.fpsFrames++;this.fpsTime+=dt;if(this.fpsTime>=1){this.fps=Math.round(this.fpsFrames/this.fpsTime);this.fpsFrames=0;this.fpsTime=0;}
+    this.fpsFrames++;this.fpsTime+=rawDt;if(this.fpsTime>=1){this.fps=Math.round(this.fpsFrames/this.fpsTime);this.fpsFrames=0;this.fpsTime=0;}
 
-    if(!intro&&game.running&&this.transition>=1&&dt<.1&&this.quality==='auto'&&!this.autoLow) {
-      this.sampleTime+=dt;this.samples++;
+    if(!intro&&game.running&&this.transition>=1&&this.quality==='auto'&&!this.autoLow) {
+      this.sampleTime+=rawDt;this.samples++;
       if(this.sampleTime>4){if(this.samples/this.sampleTime<40){this.autoLow=true;this.applyQuality();}this.sampleTime=0;this.samples=0;}
     }
   }

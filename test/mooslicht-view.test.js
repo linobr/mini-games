@@ -20,7 +20,7 @@ test('Mooslicht: real scene animation and cinematics remain finite through every
     for(let i=0;i<120;i++)view.render(game,1/60,false);
     for(const value of [...view.camera.position.toArray(),...view.camera.quaternion.toArray()])assert.ok(Number.isFinite(value));
   }
-  view.beginCinematic('arrival');for(let i=0;i<430;i++)view.render(game,1/60);assert.equal(view.cinematic,null);
+  view.beginCinematic('arrival');for(let i=0;i<610;i++)view.render(game,1/60);assert.equal(view.cinematic,null);
   game.finished=true;view.beginCinematic('finale');for(let i=0;i<670;i++)view.render(game,1/60);assert.equal(view.cinematic,null);assert.equal(world.garden.roots.visible,true);
   view.motion=true;view.overview=true;view.camera.aspect=.55;view.render(game,1/60);assert.ok(submitted>1500);
   // Restart clears the finale growth without rebuilding or leaking scene nodes.
@@ -31,7 +31,7 @@ test('Mooslicht: quality settings reduce grass while preserving landmarks and tr
   w.garden.quality(false,true);assert.equal(w.garden.grass.count,11000);
   w.garden.quality(false,false);assert.equal(w.garden.grass.count,6500);
   w.garden.quality(true,false);assert.equal(w.garden.grass.count,3000);
-  assert.equal(w.stones.length,platformCount);assert.ok(w.garden.leaves.count>=18000);
+  assert.equal(w.stones.length,platformCount);assert.ok(w.garden.leaves.count===7000);
   let triangles=0;w.scene.traverse(o=>{if(o.isMesh){const g=o.geometry;triangles+=(g.index?g.index.count:g.attributes.position.count)/3*(o.isInstancedMesh?o.count:1);}});
   assert.ok(triangles<320000,`Geometry budget exceeded: ${triangles}`);
 });

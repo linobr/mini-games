@@ -1,5 +1,7 @@
 import * as T from 'three';
 import {buildGarden} from './garden.js';
+import {buildFloating} from './floating.js';
+import {buildSky} from './sky.js';
 import { ISLANDS, BRIDGES, STONES, FLOWERS, SHRINES, WIND_ORBS, OBSTACLES, SEEDS, TREE, GUIDE, CHEST, GUARDS, edgeRadius, onIsland, random, TAU } from './world.js';
 
 const C = { grass: '#93b969', moss: '#557957', bark: '#9d7451', rock: '#99a69a', cream: '#fff1cf', gold: '#ffce73', green: '#396e58', dark: '#264e4b' };
@@ -15,7 +17,7 @@ const tmp = new T.Object3D(), white = new T.Color('#ffffff'), up = new T.Vector3
 function material(color, emissive = 0) { return new T.MeshStandardMaterial({ color, roughness: .72, emissive: color, emissiveIntensity: emissive }); }
 function mesh(shape, color, scale, position, parent, emissive = 0) {
   const m = new T.Mesh(geo[shape], material(color, emissive));
-  m.scale.set(...scale); m.position.set(...position); m.castShadow = emissive === 0 && shape !== 'ring'; m.receiveShadow = true;
+  m.scale.set(...scale); m.position.set(...position); m.castShadow = false; m.receiveShadow = true;
   parent.add(m); return m;
 }
 class Batch {
@@ -99,12 +101,7 @@ function guardian(id) {
 
 export function buildScene() {
   const scene=new T.Scene();scene.background=new T.Color('#a7c9c3');scene.fog=new T.FogExp2('#c9d7b9',.004);
-  const sky=new T.Mesh(new T.SphereGeometry(180,24,16),new T.ShaderMaterial({side:T.BackSide,depthWrite:false,
-    uniforms:{top:{value:new T.Color('#70acbf')},bottom:{value:new T.Color('#f3dfb7')}},
-    vertexShader:'varying float h; void main(){h=position.y/180.; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
-    fragmentShader:'varying float h; uniform vec3 top; uniform vec3 bottom;\nvoid main(){\ngl_FragColor=vec4(mix(bottom,top,smoothstep(-.15,.65,h)),1.);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}'}));
-  scene.add(sky);
-  scene.add(new T.HemisphereLight('#eff8e4','#698a82',2.1));
+  const hemi=new T.HemisphereLight('#eff8e4','#698a82',2.1);scene.add(hemi);
   const sun=new T.DirectionalLight('#fff0ce',3.3);sun.position.set(10,50,10);sun.castShadow=true;
   Object.assign(sun.shadow.camera,{left:-43,right:43,top:60,bottom:-60,near:.5,far:160});
   sun.shadow.mapSize.set(2048,2048);sun.shadow.bias=-.00025;sun.shadow.normalBias=.055;sun.shadow.radius=3;
@@ -112,10 +109,12 @@ export function buildScene() {
   const rim=new T.DirectionalLight('#b8e9eb',.9);rim.position.set(20,15,-35);scene.add(rim);
   const batch=new Batch(scene),rng=random(61922);
   const garden=buildGarden(scene,batch,mesh);
+  const floating=buildFloating(scene,batch,mesh),sky=buildSky(scene,sun,hemi,rim);
   const stones=STONES.map((s,i)=>{
     const group=new T.Group();group.position.set(s.x,s.y,s.z);
-    mesh('disk',s.kind==='wood'?'#ae9267':'#bec6a6',[s.r,.28,s.r],[0,-.14,0],group);
-    mesh('pebble',s.kind==='wood'?'#78664b':'#8baba0',[s.r*.8,.7,s.r*.8],[0,-.6,0],group);
+    const top=s.kind==='wood'?'#ae9267':'#bec6a6',bottom=s.kind==='wood'?'#78664b':'#8baba0';
+    if(s.move){mesh('disk',top,[s.r,.28,s.r],[0,-.14,0],group);mesh('pebble',bottom,[s.r*.8,.7,s.r*.8],[0,-.6,0],group);}
+    else {batch.add('disk',top,[s.x,s.y-.14,s.z],[s.r,.28,s.r],[],false);batch.add('pebble',bottom,[s.x,s.y-.6,s.z],[s.r*.8,.7,s.r*.8],[],false);}
     const ring=mesh('ring',s.kind==='wood'?'#d4c28f':'#bfd0a4',[s.r*.78,s.r*.78,s.r*.78],[0,.014,0],group,.06);ring.rotation.x=-Math.PI/2;group.userData.ring=ring;
     scene.add(group);return group;
   });
@@ -166,7 +165,7 @@ export function buildScene() {
   const heartCore=mesh('pebble','#f6d47c',[.24,.4,.24],[0,0,0],heart,.2);
   for(let i=0;i<3;i++){const r=mesh('ring',SHRINES[i].color,[.55+i*.14,.55+i*.14,.55+i*.14],[0,0,0],heart,.1);r.rotation.set(i*.8,i*.6,0);}scene.add(heart);
   const guardians=GUARDS.map((g,i)=>{const v=guardian(i);v.root.position.set(g.x,g.y||0,g.z);scene.add(v.root);return v;});
-  const hero=makeHero();scene.add(hero.root);
+  const hero=makeHero();scene.add(hero.root);hero.body.children[0].castShadow=true;
   batch.finish();
-  return { scene,sun,garden,hero,stones,flowers,shrines,seeds,windOrbs,guide,chest,lid,heart,heartCore,guardians };
+  return { scene,sun,sky,floating,garden,hero,stones,flowers,shrines,seeds,windOrbs,guide,chest,lid,heart,heartCore,guardians };
 }

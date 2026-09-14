@@ -2,9 +2,12 @@ import { Adventure, FixedClock, readSave, writeSave } from './game.js';
 import { WorldView } from './renderer.js';
 import { Controls } from './input.js';
 import { Soundscape } from './audio.js';
+import {fallOpacity,skyStage} from './atmosphere.js';
+import {MAP_DATA,mapPoint} from './map.js';
 import { ISLANDS, SHRINES, BRIDGES, TREE, CHECKPOINTS } from './world.js';
 
 const $=id=>document.getElementById(id),canvas=$('world');
+const fallVeil=document.createElement('div');fallVeil.className='fall-veil';fallVeil.setAttribute('aria-hidden','true');$('adventure').appendChild(fallVeil);
 let storage;try{storage=window.localStorage;}catch{storage=null;}
 let preferences={};try{preferences=JSON.parse(storage?.getItem('minigames.mooslicht.settings')||'{}')||{};}catch{}
 const settings={quality:['auto','low','medium','high'].includes(preferences.quality)?preferences.quality:'auto',
@@ -83,7 +86,7 @@ function events(){
     else if(e.type==='respawn'){view.target.set(game.player.x,game.player.y+1,game.player.z);clock.reset();}
     else if(e.type==='win') {
       winning=true;pauseGame();$('win-time').textContent=formatTime(game.elapsed);$('win-seeds').textContent=game.seeds.size+' / 24';
-      view.beginCinematic('finale');$('cinema-title').innerHTML='MOOSLICHT<small>Dein Garten lebt.</small>';$('cinema').hidden=false;
+      sound.playing=true;view.beginCinematic('finale');$('cinema-title').innerHTML='MOOSLICHT<small>Dein Garten lebt.</small>';$('cinema').hidden=false;
       if(settings.motion)view.skipCinematic();
     }
   }
@@ -92,7 +95,7 @@ function formatTime(t){const s=Math.floor(t);return Math.floor(s/60)+':'+String(
 function updateUI(){
   const p=game.player;$('hearts').innerHTML=Array.from({length:5},(_,i)=>`<span${i>=p.health?' class="empty"':''} aria-hidden="true">♥</span>`).join('');
   $('hearts').setAttribute('aria-label',p.health+' von 5 Herzen');$('seeds').textContent=game.seeds.size;
-  $('light-count').textContent=game.lights+' / 3';
+  $('light-count').textContent=game.lights+' / 3';$('sky-state').textContent=skyStage(view.world.sky.state.phase??0);
   for(const id of ['garden','ruins','wind'])$('quest-'+id).classList.toggle('done',game.quests[id]);
   $('objective').textContent=game.finished?'Der Herzbaum lebt':game.lights===3?'Kehre zum Herzbaum zurück':'Erwecke die drei Lichter';
   const hints={home:'Hütte: Echolicht · Steinkreis: Steinlicht · Palme: Blattlicht.',garden:game.quests.garden?'Die Klangblüten singen wieder.':`Spiele Gelb → Blau → Rosa. (${game.flowerStep}/3)`,
@@ -105,16 +108,19 @@ function updateUI(){
 }
 
 // A small north-up map gives exploration a clear orientation even after orbiting.
-const map=document.createElement('canvas');map.hidden=true;map.width=280;map.height=264;map.className='island-map';map.setAttribute('aria-label','Gartenkarte: Hütte hinten, Palme vorne, Herzbaum rechts.');$('hud').appendChild(map);
+const map=document.createElement('canvas');map.hidden=true;map.width=280;map.height=264;map.className='island-map';map.setAttribute('aria-label','Inselkarte: Garten mit Hütte, Palme und Herzbaum; vier schwebende Nebeninseln.');$('hud').appendChild(map);
 const mapContext=map.getContext('2d');
 function drawMap(){
   if(map.hidden)return;
-  const c=mapContext;if(!c)return;const sx=x=>140+x*4.3,sz=z=>204+z*3.2;
+  const c=mapContext;if(!c)return;const sx=x=>mapPoint(x,0).x,sz=z=>mapPoint(0,z).y;
   c.clearRect(0,0,280,264);c.fillStyle='#173d35d9';c.beginPath();c.roundRect(2,2,276,260,24);c.fill();
-  c.fillStyle='#89a97177';c.fillRect(sx(-22),sz(-53),44*4.3,71*3.2);
-  c.fillStyle='#f0e6c6aa';c.fillRect(sx(-7),sz(-48),20*4.3,15*3.2);
-  c.lineWidth=6;c.strokeStyle='#d2c398';c.beginPath();c.moveTo(sx(-12),sz(12));c.lineTo(sx(-12),sz(-26));c.lineTo(sx(0),sz(-32));c.stroke();
-  c.fillStyle='#cbe5a8';for(const [x,z,r] of [[5,1,16],[TREE.x,TREE.z,12]]){c.beginPath();c.arc(sx(x),sz(z),r,0,Math.PI*2);c.fill();}
+  const outline=points=>{c.beginPath();points.forEach((p,i)=>i?c.lineTo(sx(p.x),sz(p.z)):c.moveTo(sx(p.x),sz(p.z)));c.closePath();c.fill();c.stroke();};
+  c.fillStyle='#89a97199';c.strokeStyle='#c7d6a177';c.lineWidth=1;outline(MAP_DATA.garden);
+  for(const island of MAP_DATA.islands)outline(island.outline);
+  c.setLineDash([2,3]);c.strokeStyle='#c9d7bb';for(const r of MAP_DATA.routes){c.beginPath();c.moveTo(sx(r.from[0]),sz(r.from[1]));c.lineTo(sx(r.to[0]),sz(r.to[1]));c.stroke();}c.setLineDash([]);
+  c.fillStyle='#f0e6c6aa';c.fillRect(sx(-7),sz(-48),20*2.65,15*1.83);
+  c.lineWidth=3;c.strokeStyle='#d2c398';c.beginPath();c.moveTo(sx(-12),sz(12));c.lineTo(sx(-12),sz(-26));c.lineTo(sx(0),sz(-32));c.stroke();
+  c.fillStyle='#cbe5a8';for(const [x,z,r] of [[5,1,9],[TREE.x,TREE.z,8]]){c.beginPath();c.arc(sx(x),sz(z),r,0,Math.PI*2);c.fill();}
   c.font='17px Trebuchet MS';c.textAlign='center';c.fillStyle='#fff1ce';c.fillText('N',140,22);
   for(const s of SHRINES){c.fillStyle=game.quests[s.id]?s.color:'#ccd5b9';c.save();c.translate(sx(s.x),sz(s.z));c.rotate(Math.PI/4);c.fillRect(-4,-4,8,8);c.restore();}
   const p=game.player;c.save();c.translate(sx(p.x),sz(p.z));c.rotate(-p.facing);c.fillStyle='#ffe4a1';c.beginPath();c.moveTo(0,9);c.lineTo(-6,-6);c.lineTo(0,-3);c.lineTo(6,-6);c.closePath();c.fill();c.restore();
@@ -128,11 +134,11 @@ window.addEventListener('keydown',e=>{if(!started||anyDialog()||e.repeat)return;
 updateUI();
 function frame(now){
   requestAnimationFrame(frame);
-  const delta=Math.min((now-last)/1000,.1);last=now;if(document.hidden)return;
+  const rawDelta=(now-last)/1000,delta=Math.min(rawDelta,.1);last=now;if(document.hidden)return;
   if(game.running)clock.advance(delta,dt=>{game.update(controls.consume(),dt);});
-  events();sound.area=game.area;sound.lights=game.lights;sound.finished=game.finished;sound.tick();view.render(game,delta,!started);
+  events();sound.area=game.area;sound.lights=game.lights;sound.finished=game.finished;sound.night=view.world.sky.night;sound.finale=winning?view.cineTime:null;sound.falling=game.fallTimer>0;sound.tick();view.render(game,rawDelta,!started);fallVeil.style.opacity=fallOpacity(game);
   if(arriving&&!view.cinematic){arriving=false;$('cinema').hidden=true;resumeGame();}
-  if(winning&&!view.cinematic){winning=false;$('cinema').hidden=true;$('win-dialog').showModal();}
+  if(winning&&!view.cinematic){winning=false;sound.playing=false;$('cinema').hidden=true;$('win-dialog').showModal();}
   if(!$('performance').hidden)$('performance').textContent=`${view.fps} FPS · ${view.renderer.info.render.calls} Draw Calls · ${view.renderer.info.render.triangles.toLocaleString()} Dreiecke`;
 
   uiTime+=delta;if(uiTime>.09){uiTime=0;updateUI();}

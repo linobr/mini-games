@@ -1,5 +1,6 @@
 import * as T from 'three';
-import {GARDEN,PALM,SHED,TREE,STONES,WALLS,SECRETS,BRIDGES,LIFTING_PLATES,random,TAU} from './world.js';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+import {GARDEN,PALM,SHED,TREE,STONES,WALLS,SECRETS,BRIDGES,LIFTING_PLATES,HEDGE_CLUSTERS,random,TAU} from './world.js';
 
 // Animated vertex displacement is shared: one uniform, no per-blade JS updates.
 function windMaterial(color, strength=.12) {
@@ -35,13 +36,9 @@ function bladeGeometry(){
 export function buildGarden(scene,batch,mesh){
   const rng=random(20260914),wind=[],roof=[],magic=[],tmp=new T.Object3D();
   const add=(shape,color,pos,scale,rot=[],shadow=true)=>batch.add(shape,color,pos,scale,rot,shadow);
-  add('box','#6d923d',[0,-.22,-17],[44,.44,70]);
-  // Lawn: broad, quiet colour variation underneath the detailed near-field grass.
-  for(let z=-52;z<18;z+=2)for(let x=-21;x<22;x+=2){
-    add('box',new T.Color('#6a953e').offsetHSL(rng()*.025,0,(rng()-.5)*.045),[x,-.009,z],[2,.015,2],[],false);
-  }
   // White rendered house on the left, with repeated window bays and rain pipe.
   add('box','#e8e5d6',[-24,15,-16],[4,30,74]);
+  add('box','#d6d9cd',[-24,30.12,-16],[4.6,.24,74.5]);
   for(const z of [-42,-23,-4,13]){
     add('box','#f8f4de',[-21.92,17,z],[.22,7.4,5.6]);
     add('box','#829b9b',[-21.75,17,z],[.12,6.7,4.9]);
@@ -63,7 +60,7 @@ export function buildGarden(scene,batch,mesh){
   // Deck, white plank walls and the asymmetric glazed double door/window.
   add('box','#77634c',[3,.28,-40],[21,.56,18]);
   for(let x=-7.4;x<14;x+=.53)add('box',Math.round(x*10)%2?'#75634f':'#826f57',[x,.575,-40],[.47,.045,18]);
-  for(const b of WALLS.slice(4))add('box','#dcded0',[b.x,b.y+b.h/2,b.z],[b.w,b.h,b.d]);
+  for(const b of WALLS.slice(1))add('box','#dcded0',[b.x,b.y+b.h/2,b.z],[b.w,b.h,b.d]);
   for(let x=-6.8;x<13;x+=.66){
     if(Math.abs(x)>2.1)add('box','#f1ecda',[x,7.2,-33.17],[.045,13,.06]);
     add('box','#ebe7d7',[x,7.2,-48.19],[.045,13,.06]);
@@ -74,13 +71,15 @@ export function buildGarden(scene,batch,mesh){
     add('box','#6e918b',[side*2.1,6,-32.2],[.06,4.8,2.25]);
   }
   add('box','#fff6dd',[8.5,8,-33.15],[4.7,4.1,.25]);
-  add('box','#708b82',[8.5,8,-32.98],[4.1,3.5,.12]);
+  const windowGlow=mesh('box','#85968a',[4.1,3.5,.12],[8.5,8,-32.98],scene,.02);magic.push(windowGlow);
+  for(let i=0;i<24;i++){const x=-6+i*.8;add('petal','#839063',[x,13.85,-33.25],[.6,.16,.3],[0,i,0],false);}
+  for(const x of [6.5,10.5])add('box','#ece7d4',[x,8,-32.84],[.09,3.5,.08]);
   // Gable front and roof, lower walkable roof plane meets the log climb.
   const gable=new T.BufferGeometry();
   gable.setAttribute('position',new T.Float32BufferAttribute([-7,14,-33.5,13,14,-33.5,3,18.5,-33.5],3));gable.computeVertexNormals();
   const gm=new T.Mesh(gable,new T.MeshStandardMaterial({color:'#d9ddcd',side:T.DoubleSide}));scene.add(gm);
   for(const side of [-1,1]){
-    const r=mesh('box','#776a67',[11.65,.38,17],[3+side*5.15,16.2,-41],scene);r.rotation.z=-side*.41;roof.push(r);
+    const r=mesh('box','#776a67',[11.65,.38,17],[3+side*5.15,16.2,-41],scene);r.rotation.z=-side*.41;r.castShadow=true;roof.push(r);
     for(let z=-49;z<=-33;z+=1.2){const strip=mesh('box','#958479',[11.65,.035,.065],[3+side*5.15,16.44,z],scene);strip.rotation.z=-side*.41;roof.push(strip);}
   }
   // The flat roof ledge is the actual platform; raised gables are decorative.
@@ -108,11 +107,13 @@ export function buildGarden(scene,batch,mesh){
   const idx=(i,j)=>i*(N+1)-i*(i-1)/2+j;
   for(let i=0;i<=N;i++)for(let j=0;j<=N-i;j++){
     const u=i/N,v=j/N,w=1-u-v,p=A.clone().multiplyScalar(w).addScaledVector(B,u).addScaledVector(C,v);
-    p.y-=Math.sin(u*Math.PI)*Math.sin(v*Math.PI)*2;sailPos.push(p.x,p.y,p.z);
+    p.y-=Math.pow(Math.max(0,27*u*v*w),.7)*2.3;const centre=A.clone().add(B).add(C).multiplyScalar(1/3);p.lerp(centre,Math.sin(Math.PI*u)*Math.sin(Math.PI*v)*Math.sin(Math.PI*w)*.08);sailPos.push(p.x,p.y,p.z);
     if(i<N&&j<N-i){sailIndices.push(idx(i,j),idx(i+1,j),idx(i,j+1));if(j<N-i-1)sailIndices.push(idx(i+1,j),idx(i+1,j+1),idx(i,j+1));}
   }
   const sg=new T.BufferGeometry();sg.setAttribute('position',new T.Float32BufferAttribute(sailPos,3));sg.setIndex(sailIndices);sg.computeVertexNormals();
-  const sw=windMaterial('#fff6df',.007);wind.push(sw);const sail=new T.Mesh(sg,sw.material);sail.castShadow=true;sail.receiveShadow=true;scene.add(sail);
+  const sw=windMaterial('#fff6df',.007);wind.push(sw);const sailNight={value:0},sailPulse={value:0},compileSail=sw.material.onBeforeCompile;
+  sw.material.onBeforeCompile=shader=>{compileSail(shader);shader.uniforms.sailNight=sailNight;shader.uniforms.sailPulse=sailPulse;shader.vertexShader='varying vec3 sailPosition;\n'+shader.vertexShader;shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nsailPosition=position;');shader.fragmentShader='varying vec3 sailPosition;uniform float sailNight;uniform float sailPulse;\n'+shader.fragmentShader;shader.fragmentShader=shader.fragmentShader.replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\nfloat pattern=pow(.5+.5*sin(sailPosition.x*.7+sailPosition.z*.4-sailPulse*2.),8.);totalEmissiveRadiance+=vec3(.3,.4,.24)*(sailNight*.09+pattern*sailPulse*.035);');};
+  const sail=new T.Mesh(sg,sw.material);sail.castShadow=true;sail.receiveShadow=true;scene.add(sail);
   for(const [a,b] of [[A,B],[B,C],[C,A]])batch.beam(a.toArray(),b.toArray(),.045,'#fff7e2');
   batch.beam(C.toArray(),[9,23,16],.045,'#e5e2ce');
   add('box','#e5e2d1',[9,11.5,16],[.65,23,.65]);
@@ -136,18 +137,19 @@ export function buildGarden(scene,batch,mesh){
     const a=i*2.4;batch.beam([TREE.x-.5,12,TREE.z],[TREE.x+Math.cos(a)*4,20+rng()*2,TREE.z+Math.sin(a)*4],.27,'#79694e');
   }
   // Hedge has a dark interior, visible trunks, overlapping clusters and small leaves.
-  for(let z=-52;z<=18;z+=3.4){
-    add('petal','#244b2d',[22.5,6,z],[2,6.5,3]);
-    batch.beam([22,0,z],[21.8,9,z+.4],.22,'#665d3c');
+  for(const h of HEDGE_CLUSTERS){
+    add('petal','#2b5032',[h.x,h.height*.62,h.z],[h.spread,h.height*.7,2.5],[0,h.z*.1,.08*Math.sin(h.z)],false);
+    batch.beam([h.x,0,h.z],[h.x,h.height,h.z],h.r,'#665d3c',false);
+    for(const side of [-1,1])batch.beam([h.x,3,h.z],[h.x+side,6,h.z+side],.09,'#6c6447',false);
   }
-  for(let x=-20;x<22;x+=3)add('petal','#294d30',[x,5.5,-53],[2.6,6,2]);
+  for(let x=-20;x<22;x+=3.8){if(Math.abs(x-10)<4)continue;add('petal','#355735',[x,3.5+Math.sin(x),-53.5+Math.sin(x*.3)],[2.8,4.6+Math.cos(x),2.2],[0,x,.1],false);}
   const lw=windMaterial('#ffffff',.13);wind.push(lw);
   const leafCount=18500,leaves=new T.InstancedMesh(leafGeometry(),lw.material,leafCount),color=new T.Color();
   for(let i=0;i<leafCount;i++){
     let x,y,z,scale;
-    if(i<11500){x=20+rng()*4;y=rng()*13;z=-53+rng()*71;scale=.5+rng()*.75;}
-    else if(i<14500){x=-21+rng()*44;y=rng()*12;z=-53+rng()*2;scale=.6+rng()*.7;}
-    else {const a=rng()*TAU,r=Math.sqrt(rng())*6;x=TREE.x+Math.cos(a)*r;z=TREE.z+Math.sin(a)*r;y=20+Math.sin(r/6*Math.PI)*2+rng()*3;scale=.65+rng();}
+    if(i%4===0){const a=rng()*TAU,r=Math.sqrt(rng())*6;x=TREE.x+Math.cos(a)*r;z=TREE.z+Math.sin(a)*r;y=20+Math.sin(r/6*Math.PI)*2+rng()*3;scale=.65+rng();}
+    else if(i%8===1){x=-21+rng()*44;if(Math.abs(x-10)<3.5)x-=7;y=rng()*(7.5+Math.sin(x));z=-53.5+Math.sin(x*.3)+rng()*2;scale=.6+rng()*.7;}
+    else {const h=HEDGE_CLUSTERS[i%HEDGE_CLUSTERS.length],a=rng()*TAU,r=Math.sqrt(rng());x=h.x+Math.cos(a)*h.spread*r;z=h.z+Math.sin(a)*2.8*r;y=.7+rng()*h.height*(1.4-r*.3);scale=.5+rng()*.75;}
     tmp.position.set(x,y,z);tmp.rotation.set(rng()*2,rng()*TAU,rng()*TAU);tmp.scale.setScalar(scale);tmp.updateMatrix();leaves.setMatrixAt(i,tmp.matrix);
     color.setHSL(.22+rng()*.08,.3+rng()*.3,.17+rng()*.17);leaves.setColorAt(i,color);
   }
@@ -170,8 +172,11 @@ export function buildGarden(scene,batch,mesh){
         end.x+Math.cos(theta)*r,end.y-1.2-rng()*.6,end.z+Math.sin(theta)*r);
       indices.push(k,k+1,k+2,k+1,k+3,k+2);
     }
-    const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(verts,3));g.setIndex(indices);g.computeVertexNormals();const frond=new T.Mesh(g,palmWind.material);frond.castShadow=true;scene.add(frond);palmFronds.push(frond);
+    const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(verts,3));g.setIndex(indices);g.computeVertexNormals();const frond=new T.Mesh(g,palmWind.material);frond.castShadow=i%6===0;scene.add(frond);palmFronds.push(frond);
   }
+  const palmGeometry=mergeGeometries(palmFronds.map(f=>f.geometry));
+  for(const f of palmFronds){scene.remove(f);f.geometry.dispose();}
+  palmFronds.length=0;const palmCanopy=new T.Mesh(palmGeometry,palmWind.material);palmCanopy.castShadow=true;scene.add(palmCanopy);palmFronds.push(palmCanopy);
   // Pots, succulents and oversized daisies at the house wall.
   for(const [x,z,r] of [[-18,-17,1.8],[-18,-31,1.25],[-19,-35,1.4],[18,8,1.7]]){
     add('cone','#8c8b69',[x,1.6,z],[r,3.2,r],[0,0,Math.PI]);
@@ -192,7 +197,8 @@ export function buildGarden(scene,batch,mesh){
     const marker=mesh('ball','#f6d88b',[.09,.12,.09],[s.x,s.y+.65,s.z],scene,.6);return marker;
   });
   // Instanced grass: a few triangles per blade, phased GPU wind, no shadow casters.
-  const gw=windMaterial('#ffffff',.22);wind.push(gw);const count=11000,grass=new T.InstancedMesh(bladeGeometry(),gw.material,count);
+  const gw=windMaterial('#ffffff',.22);const compileGrass=gw.material.onBeforeCompile;
+  gw.material.onBeforeCompile=shader=>{compileGrass(shader);shader.vertexShader=shader.vertexShader.replace('#include <project_vertex>',`float gardenDistance=length(cameraPosition.xz-worldBase.xz);float lod=(1.-smoothstep(28.,65.,gardenDistance));transformed.y*=lod;\n#include <project_vertex>`);};wind.push(gw);const count=11000,grass=new T.InstancedMesh(bladeGeometry(),gw.material,count);
   for(let i=0;i<count;i++){
     let x,z;do{x=-14+rng()*35;z=-32+rng()*44;}while(Math.abs(x+12)<2.2 || Math.hypot(x-TREE.x,z-TREE.z)<5 || (z<-27&&Math.abs(x)<4));
     tmp.position.set(x,0,z);tmp.rotation.set(0,rng()*TAU,(rng()-.5)*.15);const h=.45+rng()*1.35;tmp.scale.set(.8+rng(),h,1);tmp.updateMatrix();grass.setMatrixAt(i,tmp.matrix);
@@ -218,8 +224,11 @@ export function buildGarden(scene,batch,mesh){
     const curve=new T.CatmullRomCurve3(points),g=new T.TubeGeometry(curve,20,.035,4,false),m=new T.MeshBasicMaterial({color:i%2?'#e6c96a':'#9cddae'});roots.add(new T.Mesh(g,m));
   }
   roots.visible=false;roots.position.set(TREE.x,0,TREE.z);
+  // Roof strips share a draw call; both roof materials still hide inside the shed.
+  const roofGroups=new Map();for(const r of roof){const key=r.material.color.getHexString()+'-'+r.castShadow;if(!roofGroups.has(key))roofGroups.set(key,[]);roofGroups.get(key).push(r);}
+  roof.length=0;for(const parts of roofGroups.values()){const copies=parts.map(r=>{r.updateMatrix();return r.geometry.clone().applyMatrix4(r.matrix);});const merged=new T.Mesh(mergeGeometries(copies),parts[0].material);merged.castShadow=parts[0].castShadow;merged.receiveShadow=true;scene.add(merged);roof.push(merged);copies.forEach(g=>g.dispose());parts.forEach((r,i)=>{scene.remove(r);if(i)r.material.dispose();});}
   return {wind,roof,magic,sail,grass,leaves,butterflies,secretMarkers,roots,palmFronds,
-    update(time,game,motion){
+    update(time,game,motion,night=0,finale=12){
       lifted.forEach((m,i)=>{m.position.y=LIFTING_PLATES[i].y-.09+LIFTING_PLATES[i].rise*game.energy;});
       for(const w of wind)w.time.value=motion?0:time;
       const inside=game.player.z<-33.2&&game.player.x>-7.6&&game.player.x<13.6&&game.player.y<13;
@@ -227,9 +236,11 @@ export function buildGarden(scene,batch,mesh){
       for(const b of butterflies){const t=motion?0:time;b.group.position.set(b.x+Math.sin(t*.45+b.phase)*1.6,b.y+Math.sin(t+b.phase)*.35,b.z+Math.cos(t*.3+b.phase));for(let i=0;i<2;i++)b.wings[i].rotation.z=Math.sin(t*12+b.phase)*.9*(i?1:-1);}
       secretMarkers.forEach((m,i)=>{m.visible=!game.secrets.has(i);m.position.y=SECRETS[i].y+.7+Math.sin(time*2+i)*.1;});
       for(const m of magic)m.material.emissiveIntensity=.15+game.lights*.3+(game.finished?.8:0);
-      roots.visible=game.finished;if(game.finished)roots.scale.setScalar(Math.min(1,(time-(this.awakeAt??=time))*.17));else this.awakeAt=undefined;
-      sail.material.emissive.set(game.finished?'#b8d3a0':'#000000');sail.material.emissiveIntensity=game.finished?.32:0;
+      roots.visible=game.finished&&finale>3.5;if(game.finished)roots.scale.setScalar(Math.min(1,Math.max(.001,(finale-3.5)*.3)));
+      sailNight.value=night;sailPulse.value=game.finished?Math.min(7,Math.max(0,finale-4)):0;
+      sail.material.emissive.set('#b8c8a0');sail.material.emissiveIntensity=night*.025;
+      leaves.material.emissive.set('#849c7b');leaves.material.emissiveIntensity=game.finished?.08:night*.025;
     },
-    quality(low,high){grass.count=low?3000:high?11000:6500;leaves.count=leafCount;butterflies.forEach((b,i)=>b.group.visible=i<(low?5:14));}
+    quality(low,high){grass.count=low?3000:high?11000:6500;leaves.count=low?7000:high?leafCount:12000;butterflies.forEach((b,i)=>b.group.visible=i<(low?5:14));}
   };
 }

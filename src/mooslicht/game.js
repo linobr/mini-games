@@ -1,4 +1,4 @@
-import { ISLANDS, STONES, FLOWERS, SHRINES, WIND_ORBS, GUARDS, TREE, GUIDE, CHEST, CHECKPOINTS, OBSTACLES, SEEDS, SECRETS, resolveWalls, clamp, distance, onIsland, stonePosition, surfaceAt } from './world.js';
+import { ISLANDS, STONES, FLOWERS, SHRINES, WIND_ORBS, GUARDS, TREE, GUIDE, CHEST, CHECKPOINTS, OBSTACLES, SEEDS, SECRETS, SATELLITES, resolveWalls, clamp, distance, onIsland, stonePosition, surfaceAt } from './world.js';
 
 export const SAVE_KEY = 'minigames.mooslicht.v1';
 export const STEP = 1 / 60;
@@ -7,6 +7,8 @@ export function cleanSave(value) {
   const ids = (a, max) => Array.isArray(a) ? [...new Set(a.filter(n => Number.isInteger(n) && n >= 0 && n < max))] : [];
   const quests = Object.fromEntries(['garden', 'ruins', 'wind'].map(k => [k, s.quests?.[k] === true]));
   return { version: 1, quests, seeds: ids(s.seeds, SEEDS.length), wind: ids(s.wind, 3), secrets: ids(s.secrets, SECRETS.length),
+    lastLight: ['garden','ruins','wind'].includes(s.lastLight)&&quests[s.lastLight]?s.lastLight:['wind','ruins','garden'].find(id=>quests[id])||null,
+    visited: Array.isArray(s.visited)?[...new Set(s.visited.filter(id=>SATELLITES.some(i=>i.id===id)))]:[],
     checkpoint: Object.hasOwn(CHECKPOINTS, s.checkpoint) ? s.checkpoint : 'home',
     elapsed: Number.isFinite(s.elapsed) ? clamp(s.elapsed, 0, 86400) : 0,
     chest: s.chest === true, finished: s.finished === true && Object.values(quests).every(Boolean) };
@@ -21,6 +23,7 @@ export class Adventure {
     this.secrets = new Set(s.secrets); this.combo = 0; this.comboWindow = 0; this.hitStop = 0;
     this.checkpoint = s.checkpoint; this.elapsed = s.elapsed; this.chest = s.chest;
     this.energy = Object.values(s.quests).filter(Boolean).length/3;
+    this.lastLight=s.lastLight;this.visited=new Set(s.visited);this.fallTimer=0;this.returnFade=0;
     this.finished = s.finished; this.time = 0; this.running = false; this.events = [];
     this.flowerStep = 0; this.flowerFlash = [0,0,0]; this.area = this.checkpoint;
     this.player = { ...CHECKPOINTS[this.checkpoint], vx: 0, vz: 0, vy: 0, facing: Math.PI,
@@ -30,13 +33,13 @@ export class Adventure {
       health: this.quests.ruins ? 0 : 3, state: 'idle', timer: 0, facing: 0, hit: 0 }));
   }
   get lights() { return Object.values(this.quests).filter(Boolean).length; }
-  snapshot() { return { version: 1, quests: { ...this.quests }, seeds: [...this.seeds], wind: [...this.wind], secrets: [...this.secrets], checkpoint: this.checkpoint, elapsed: this.elapsed, chest: this.chest, finished: this.finished }; }
+  snapshot() { return { version: 1, lastLight:this.lastLight,visited:[...this.visited], quests: { ...this.quests }, seeds: [...this.seeds], wind: [...this.wind], secrets: [...this.secrets], checkpoint: this.checkpoint, elapsed: this.elapsed, chest: this.chest, finished: this.finished }; }
   emit(type, data = {}) { if (this.events.length < 80) this.events.push({ type, ...data }); }
   drainEvents() { const events = this.events; this.events = []; return events; }
   start() { this.running = true; }
   pause() { this.running = false; }
   respawn(fall = false) {
-    const p = this.player;
+    const p = this.player;this.fallTimer=0;this.returnFade=fall?.5:0;
     if (fall) p.health--;
     const exhausted = p.health <= 0;
     Object.assign(p, CHECKPOINTS[this.checkpoint], { vx: 0, vz: 0, vy: 0, grounded: true,
@@ -80,6 +83,7 @@ export class Adventure {
     const p = this.player, candidates = [
       { ...GUIDE, kind: 'guide', label: 'Mit Lumi sprechen' },
       { ...TREE, kind: 'tree', label: this.lights === 3 ? 'Den Herzbaum erwecken' : 'Den Herzbaum berühren' },
+      ...SATELLITES.map(s=>({...s,kind:'vista',label:'Einen Moment verweilen'})),
       ...FLOWERS.map((f, id) => ({ ...f, id, kind: 'flower', label: f.name + ' spielen' })),
       ...SHRINES.map((s, id) => ({ ...s, id, kind: 'shrine', label: this.quests[s.id] ? s.name + ' berühren' : s.name + ' wecken' })),
     ];
@@ -90,7 +94,7 @@ export class Adventure {
   }
   activateLight(id) {
     if (this.quests[id]) return;
-    this.quests[id] = true;
+    this.quests[id] = true;this.lastLight=id;
     this.player.health = Math.min(5, this.player.health + 2);
     const shrine = SHRINES.find(s => s.id === id);
     this.emit('light', { ...shrine }); this.emit('save');
@@ -98,7 +102,10 @@ export class Adventure {
   }
   interact() {
     const item = this.interaction(); if (!item) return;
-    if (item.kind === 'secret') {
+    if(item.kind==='vista'){
+      this.emit('dialogue',{speaker:item.name,text:{moss:'Ein Stück Wiese, das dem Himmel entgegenwächst. Hinter dir liegen die Palme, das weisse Segel und dein ganzer Garten. V öffnet die Gartenansicht.',pebble:'Die grossen Kiesel schweben so still, als hätten sie das Fallen vergessen. Durch den Steinbogen leuchtet der Herzbaum.',bloom:'Diese Blüten haben sich vom Beet gelöst. Sie drehen sich im Wind, weit über den Wolken.',echo:'Die Hölzer singen dieselbe Melodie wie die Hütte. Vielleicht hat der Garten sie einst geträumt.'}[item.id]});
+      if(item.id==='echo')for(let i=0;i<3;i++)this.emit('note',{index:i,x:item.x,y:item.y,z:item.z});
+    } else if (item.kind === 'secret') {
       this.secrets.add(item.id); this.emit('save'); this.emit('chest',item);
       this.emit('dialogue',{speaker:item.name+' · '+this.secrets.size+'/'+SECRETS.length,text:item.text});
     } else if (item.kind === 'guide') {
@@ -136,6 +143,8 @@ export class Adventure {
     this.energy += (this.lights/3-this.energy)*Math.min(1,dt*.8);
     this.time += dt; if (!this.finished) this.elapsed += dt;
     const p = this.player;
+    this.returnFade=Math.max(0,this.returnFade-dt);
+    if(this.fallTimer>0){this.fallTimer+=dt;p.vy-=10*dt;p.y+=p.vy*dt;if(this.fallTimer>=.72)this.respawn(true);return;}
     this.comboWindow=Math.max(0,this.comboWindow-dt);
     for (const key of ['invulnerable', 'roll', 'rollCooldown', 'attack', 'attackCooldown', 'jumpBuffer', 'coyote']) p[key] = Math.max(0, p[key] - dt);
     if(this.hitStop>0){this.hitStop=Math.max(0,this.hitStop-dt);return;}
@@ -178,7 +187,12 @@ export class Adventure {
       p.y = ground.height; p.vy = 0; p.grounded = true; p.surface = ground.stoneIndex;
     } else { p.grounded = false; p.surface = -1; }
     p.walk += Math.hypot(p.vx, p.vz) * dt;
-    if (p.y < -7.5) { this.respawn(true); return; }
+    if (p.y < -4) { this.fallTimer=dt;this.emit('fall'); return; }
+    if(p.grounded&&SATELLITES.some(s=>s.id===ground.id)){
+      const island=SATELLITES.find(s=>s.id===ground.id);
+      if(this.area!==island.id){this.area=island.id;this.emit('area',{name:island.name});}
+      if(!this.visited.has(island.id)){this.visited.add(island.id);this.emit('save');this.emit('message',{text:`${island.name} entdeckt · ${this.visited.size}/4 Himmelsorte`});}
+    }
     if (ground.id && Object.hasOwn(CHECKPOINTS, ground.id) && p.grounded) {
       if (this.area !== ground.id) { this.area = ground.id; this.emit('area', { name: ISLANDS.find(i => i.id === ground.id).name }); }
       const island = ISLANDS.find(i => i.id === ground.id);

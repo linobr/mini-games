@@ -5,6 +5,39 @@ export const GARDEN = { minX:-22, maxX:22, minZ:-53, maxZ:18 };
 export const PALM = { x:5, z:1, y:0, height:20 };
 export const SHED = { x:3, z:-41, w:20, d:15, height:14, doorX:0 };
 export const TREE = { x:14, y:0, z:-19 };
+// Shared outline for visible terrain, cliff collision and the map. No enclosing wall.
+const coast=[[-26,21],[-30,10],[-31,-8],[-33,-28],[-30,-47],[-24,-57],[-12,-61],[1,-59],[15,-58],[24,-49],[27,-33],[29,-19],[26,-4],[28,10],[23,21],[12,27],[-1,25],[-14,28]];
+export const GARDEN_OUTLINE=coast.flatMap((p,i)=>{
+  const q=coast[(i+1)%coast.length];return Array.from({length:4},(_,j)=>{
+    const t=j/4,dx=q[0]-p[0],dz=q[1]-p[1],r=Math.hypot(dx,dz),b=Math.sin(t*Math.PI)*Math.sin(i*2.7+j)*.85;
+    return {x:p[0]+dx*t-dz/r*b,z:p[1]+dz*t+dx/r*b};
+  });
+});
+export function insideOutline(points,x,z){
+  let inside=false;
+  for(let i=0,j=points.length-1;i<points.length;j=i++){
+    const a=points[i],b=points[j];
+    if(((a.z>z)!==(b.z>z))&&(x<(b.x-a.x)*(z-a.z)/(b.z-a.z)+a.x))inside=!inside;
+  }
+  return inside;
+}
+export const SATELLITES=[
+  {id:'moss',name:'Die schwebende Mooswiese',x:40,z:-8,y:1.4,r:5.8,seed:23,kind:'moss'},
+  {id:'pebble',name:'Kiesel über den Wolken',x:46,z:-27,y:4.2,r:5.5,seed:32,kind:'pebble'},
+  {id:'bloom',name:'Der Blütengarten im Wind',x:-5,z:39,y:1.2,r:6.2,seed:42,kind:'bloom'},
+  {id:'echo',name:'Das Echo hinter der Hütte',x:10,z:-73,y:3.2,r:6,seed:54,kind:'echo'},
+];
+for(const s of SATELLITES)s.outline=Array.from({length:64},(_,i)=>{const a=i/64*TAU,r=edgeRadius(s,a);return {x:s.x+Math.cos(a)*r,z:s.z+Math.sin(a)*r};});
+export const SKY_ROUTES=[
+  {id:'moss',from:[25,-8,0],to:[36,-8,1.4],steps:4},
+  {id:'pebble',from:[41,-12,1.4],to:[45,-23,4.2],steps:4},
+  {id:'bloom',from:[-5,24,0],to:[-5,35,1.2],steps:4},
+  {id:'echo',from:[10,-56,0],to:[10,-69,3.2],steps:5},
+];
+export const SKY_STONES=SKY_ROUTES.flatMap(route=>Array.from({length:route.steps},(_,i)=>{
+  const t=(i+1)/route.steps;return {x:route.from[0]+(route.to[0]-route.from[0])*t,z:route.from[1]+(route.to[1]-route.from[1])*t,y:route.from[2]+(route.to[2]-route.from[2])*t,r:1.48,move:0,kind:'sky'};
+}));
+export const HEDGE_CLUSTERS=Array.from({length:21},(_,i)=>({x:23+Math.sin(i*2.3)*.7,z:-51+i*3.35,y:0,r:.3,height:7+Math.sin(i)*1.4,spread:1.7+(i%3)*.3})).filter(o=>Math.abs(o.z+8)>3.8);
 export const ISLANDS = [
   { id:'home', name:'Ein Garten. Eine ganze Welt.', x:0,z:-15,y:0,r:36,w:44,d:66,seed:4 },
   { id:'garden', name:'Das Haus der Echos', x:3,z:-41,y:.6,r:10,w:20,d:15,seed:8 },
@@ -29,6 +62,7 @@ export const STONES = [
   {x:-9,z:-41,y:12.4,r:1.65,move:0,kind:'wood'},
   {x:-9,z:-38,y:13.6,r:1.65,move:0,kind:'wood'},
   {x:-6.5,z:-38,y:14.4,r:1.65,move:0,kind:'wood'},
+  ...SKY_STONES,
 ];
 export const FLOWERS = [
   {x:-3,z:-43,y:.6,color:'#ffd66b',name:'Holzklang · Sonne'},
@@ -52,13 +86,11 @@ export const OBSTACLES = [
   {...TREE,r:1.25,height:24}, {...PALM,r:1.05,height:20},
   {x:-18,z:-17,y:0,r:1.8,height:3.5},
   {x:-18,z:-31,y:0,r:1.25,height:3},
+  ...HEDGE_CLUSTERS,
 ];
 // Simple shared colliders, also used by the camera. The open shed doorway is 4 units wide.
 export const WALLS = [
-  {x:-23,z:-16,w:2,d:72,y:0,h:30},
-  {x:23,z:-16,w:2,d:72,y:0,h:15},
-  {x:0,z:-54,w:48,d:2,y:0,h:15},
-  {x:0,z:19,w:48,d:2,y:0,h:12},
+  {x:-24,z:-16,w:4,d:74,y:0,h:30},
   {x:-7,z:-41,w:.5,d:15,y:.6,h:13.4},
   {x:13,z:-41,w:.5,d:15,y:.6,h:13.4},
   {x:3,z:-48.5,w:20,d:.5,y:.6,h:13.4},
@@ -101,9 +133,10 @@ export function stonePosition(stone, time) {
 export function surfaceAt(x,z,time=0,maxY=Infinity,energy=0) {
   let height=-Infinity,id=null,stoneIndex=-1;
   const consider=(y,area,index=-1)=>{if(y<=maxY && y>height){height=y;id=area;stoneIndex=index;}};
-  if(x>=GARDEN.minX&&x<=GARDEN.maxX&&z>=GARDEN.minZ&&z<=GARDEN.maxZ){
+  if(insideOutline(GARDEN_OUTLINE,x,z)){
     consider(0,onIsland(ISLANDS[2],x,z)?'ruins':'home');
   }
+  for(const island of SATELLITES)if(insideOutline(island.outline,x,z))consider(island.y,island.id);
   if(onIsland(ISLANDS[1],x,z)){consider(.6,'garden');consider(18.5-Math.abs(x-3)*.45,'roof');}
   if(Math.hypot(x-9,z-16)<1.2)consider(23,'sail');
   // Terrace furniture platform, with space to walk beneath it.
