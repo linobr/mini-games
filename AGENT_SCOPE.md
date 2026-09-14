@@ -2,26 +2,24 @@
 
 This repository contains the public Mini Games website.
 
-## Allowed workspace
+## Live Game workspace
 
 The autonomous Jetson game-development agent may modify only:
 
-- `public/live-games/**`
+- `mooslicht/**`
 
-Each autonomous game should live in its own subdirectory, for example:
-
-- `public/live-games/garden-adventure/`
-- `public/live-games/next-game/`
+`Mooslicht` is the current Live Game. It is shown separately at the top of the normal Mini Games start page, but it keeps its existing URL and remains part of the same website.
 
 ## Forbidden for the autonomous agent
 
-The agent must not modify, delete, rename, or overwrite files outside `public/live-games/**` unless a human explicitly authorizes that specific change.
+The agent must not modify, delete, rename, or overwrite files outside `mooslicht/**` unless a human explicitly authorizes that specific change.
 
 In particular, the agent must not autonomously change:
 
-- existing normal games
+- the other normal games
 - `index.html`
 - `src/**`
+- `public/**`
 - `.github/**`
 - `package.json` or lock files
 - deployment configuration
@@ -31,7 +29,7 @@ In particular, the agent must not autonomously change:
 
 Preferred autonomous workflow:
 
-1. Work only in `public/live-games/**`.
+1. Work only in `mooslicht/**`.
 2. Run local tests before committing.
 3. Commit small, reviewable changes.
 4. Push autonomous work to the `agent-live` branch.
@@ -40,4 +38,4 @@ Preferred autonomous workflow:
 
 ## Important
 
-GitHub permissions are repository-level, not directory-level. This file documents the policy; the Jetson sandbox and Git wrapper must enforce the path restriction locally as well. A later CI check should reject agent changes outside `public/live-games/**`.
+GitHub permissions are repository-level, not directory-level. This file documents the policy; the Jetson sandbox and Git wrapper must enforce the `mooslicht/**` path restriction locally as well. A later CI check should reject agent changes outside that path.
