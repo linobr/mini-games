@@ -1,7 +1,7 @@
 import * as T from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {buildTerrace} from './terrace.js';
-import {TERRACE_OUTLINE,GRAVEL_OUTLINE,BANANA,HOUSE} from './garden-layout.js';
+import {TERRACE_OUTLINE,GRAVEL_OUTLINE,BANANA,HOUSE,HOUSE_GABLE} from './garden-layout.js';
 import {GARDEN,PALM,SHED,TREE,STONES,WALLS,SECRETS,BRIDGES,LIFTING_PLATES,HEDGE_CLUSTERS,random,TAU,insideOutline} from './world.js';
 
 // Animated vertex displacement is shared: one uniform, no per-blade JS updates.
@@ -39,9 +39,10 @@ export function buildGarden(scene,batch,mesh){
   const rng=random(20260914),wind=[],roof=[],magic=[],tmp=new T.Object3D();
   const add=(shape,color,pos,scale,rot=[],shadow=true)=>batch.add(shape,color,pos,scale,rot,shadow);
   // White rendered house on the left, with repeated window bays and rain pipe.
-  add('box','#e8e5d6',[HOUSE.x,HOUSE.h/2,HOUSE.z],[HOUSE.w,HOUSE.h,HOUSE.d]);
-  add('box','#d6d9cd',[HOUSE.x,HOUSE.h+.12,HOUSE.z],[4.6,.24,HOUSE.d+.5]);
-  for(const z of [-42,-23,-4,13,33]){
+  const north=HOUSE.z-HOUSE.d/2,end=HOUSE_GABLE.minZ;
+  add('box','#e8e5d6',[HOUSE.x,HOUSE.h/2,(north+end)/2],[HOUSE.w,HOUSE.h,end-north]);
+  add('box','#d6d9cd',[HOUSE.x,HOUSE.h+.12,(north+end)/2],[4.6,.24,end-north]);
+  for(const z of [-42,-23,-4]){
     add('box','#f8f4de',[-21.92,17,z],[.22,7.4,5.6]);
     add('box','#829b9b',[-21.75,17,z],[.12,6.7,4.9]);
     add('box','#fff8e6',[-21.6,17,z],[.14,6.8,.16]);

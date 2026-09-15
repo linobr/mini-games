@@ -1,6 +1,6 @@
 // Garden coordinates: photo viewpoint looks north (-Z), house left, hedge right.
 // Quest IDs and save key remain compatible with the original adventure.
-import {FURNITURE,BANANA,TERRACE_POTS,ARCHITECTURE,BALCONY,HOUSE,REAR_DECK,REAR_OUTLINE} from './garden-layout.js';
+import {FURNITURE,BANANA,TERRACE_POTS,ARCHITECTURE,BALCONY,HOUSE_MAIN,REAR_DECK,REAR_OUTLINE} from './garden-layout.js';
 export const TAU = Math.PI * 2;
 export const GARDEN = { minX:-22, maxX:22, minZ:-53, maxZ:68 };
 export const PALM = { x:-15, z:1, y:0, height:20 };
@@ -97,7 +97,7 @@ export const OBSTACLES = [
 ];
 // Simple shared colliders, also used by the camera. The open shed doorway is 4 units wide.
 export const WALLS = [
-  HOUSE,
+  HOUSE_MAIN,
   {x:-7,z:-41,w:.5,d:15,y:.6,h:13.4},
   {x:13,z:-41,w:.5,d:15,y:.6,h:13.4},
   {x:3,z:-48.5,w:20,d:.5,y:.6,h:13.4},

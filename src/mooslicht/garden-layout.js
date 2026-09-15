@@ -13,7 +13,18 @@ export const BALCONY_POSTS = [10.3,33.7].map(z=>({x:-8.4,z,w:.3,d:.3,y:0,h:23.6}
 // Looking from the banana lawn toward the shed, left is -X. Beyond the
 // house's south end the lawn turns west into the sheltered sitting garden.
 export const HOUSE = {x:-24,z:-1.5,w:4,d:103,y:0,h:36};
-export const HOUSE_RETURN = {x:-37,z:50,w:30,d:.5,y:0,h:36};
+// IMG_4286: the garden-facing cross gable projects beside the balcony;
+// a lower tiled roof connects it to the return above the garden lounge.
+export const HOUSE_GABLE = {minZ:34.5,maxZ:50,eave:24,ridge:36,frontX:-20.8,backX:-26};
+export const HOUSE_MAIN = {...HOUSE,z:(HOUSE.z-HOUSE.d/2+HOUSE_GABLE.minZ)/2,d:HOUSE_GABLE.minZ-(HOUSE.z-HOUSE.d/2)};
+export const HOUSE_GABLE_BODY = {x:(HOUSE_GABLE.frontX+HOUSE_GABLE.backX)/2,z:(HOUSE_GABLE.minZ+HOUSE_GABLE.maxZ)/2,w:HOUSE_GABLE.frontX-HOUSE_GABLE.backX,d:HOUSE_GABLE.maxZ-HOUSE_GABLE.minZ,y:0,h:HOUSE_GABLE.eave};
+// Five conservative slices protect orbiting cameras at the sloping cross gable.
+export const HOUSE_GABLE_TOP = Array.from({length:5},(_,i)=>{
+  const d=HOUSE_GABLE_BODY.d/5,z=HOUSE_GABLE.minZ+(i+.5)*d;
+  const nearest=Math.max(0,Math.abs(z-HOUSE_GABLE_BODY.z)-d/2);
+  return {...HOUSE_GABLE_BODY,z,d,y:HOUSE_GABLE.eave,h:(HOUSE_GABLE.ridge-HOUSE_GABLE.eave)*(1-nearest/(HOUSE_GABLE_BODY.d/2))};
+});
+export const HOUSE_RETURN = {x:-37,z:50,w:30,d:.5,y:0,h:22};
 export const REAR_DECK = {x:-40,z:59,w:24,d:18,y:0,h:.08};
 export const REAR_OUTLINE = [[-52,50],[-28,50],[-28,66],[-30,68],[-50,68],[-52,66]].map(([x,z])=>({x,z}));
 export const LOUNGE = {minX:-52,maxX:-28,minZ:50,maxZ:62,height:16};
@@ -27,8 +38,10 @@ export const BALCONY_RAILS = [
 ];
 export const BALCONY_SEATS = [{x:-18.4,z:12.6},{x:-12.3,z:12.6}];
 export const BALCONY_LOUNGERS = [{x:-17.8,z:27.5},{x:-12.2,z:27.5}];
+export const LOUNGE_CHAIRS = [{x:-33,z:53.2},{x:-30.8,z:58.2}];
 export const LOUNGE_SOLIDS = [
   HOUSE_RETURN,
+  HOUSE_GABLE_BODY,...HOUSE_GABLE_TOP,
   {x:-52,z:56,w:.25,d:12,y:0,h:16},
   {x:-28,z:56,w:.25,d:12,y:0,h:16},
   // Open front: one window bay on either side of a broad six-unit doorway.
@@ -38,6 +51,7 @@ export const LOUNGE_SOLIDS = [
   {x:-47,z:53,w:8,d:4,y:0,h:4.5},
   {x:-49,z:56.5,w:4,d:5,y:0,h:4.5},
   {x:-42,z:56.5,w:6,d:4,y:2.1,h:.25},
+  ...LOUNGE_CHAIRS.map(c=>({...c,w:2.6,d:2.7,y:0,h:3.7})),
 ];
 export const ARCHITECTURE = [BALCONY,...BALCONY_POSTS,...BALCONY_RAILS,...LOUNGE_SOLIDS,
   ...BALCONY_SEATS.map(c=>({...c,w:4.5,d:4.5,y:24,h:3.5})),

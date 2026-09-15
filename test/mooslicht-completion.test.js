@@ -35,6 +35,13 @@ test('Mooslicht: new room blocks glass and rear wall while its open door admits 
   const wall={x:-37,z:50,y:0,vx:0,vz:-1};resolveWalls(wall);assert.notEqual(wall.z,50);
   assert.equal(surfaceAt(-42,56.5,0,3).height,2.35);assert.equal(surfaceAt(-42,56.5,0,1).height,.08);
 });
+test('Mooslicht: projecting gable blocks its wall and roof while the lowered house end opens the sky',()=>{
+  assert.ok(cameraFraction({x:-18,y:12,z:42},{x:-25,y:12,z:42})<1);
+  assert.ok(cameraFraction({x:-18,y:30,z:42},{x:-25,y:30,z:42})<1);
+  assert.equal(cameraFraction({x:-18,y:34,z:49},{x:-28,y:34,z:49}),1);
+  assert.equal(cameraFraction({x:-45,y:32,z:54},{x:-45,y:32,z:46}),1);
+  const p={x:-21,z:42,y:0,vx:-1,vz:0};resolveWalls(p);assert.ok(p.x>-20.8);
+});
 test('Mooslicht: football rests on the new rear deck and returns after its new cliff',()=>{
   const ball=new GardenBall(),player={x:-40,z:67,y:.08,vx:0,vz:0,facing:0};Object.assign(ball,{x:-40,z:65,y:.83});
   for(let i=0;i<120;i++)ball.update(player,STEP);assert.equal(ball.y,.83);assert.equal(ball.resetIn,0);
