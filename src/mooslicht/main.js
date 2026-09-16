@@ -45,11 +45,11 @@ function toast(text){$('toast').textContent=text;$('toast').classList.add('visib
 function anyDialog(){return !!document.querySelector('dialog[open]');}
 function pauseGame(){game.pause();controls.setActive(false);clock.reset();sound.playing=false;save();}
 function resumeGame(){
-  if(!started||winning||arriving||anyDialog()||document.hidden||!$('error').hidden)return;
+  if(!started||winning||arriving||view.lounge||anyDialog()||document.hidden||!$('error').hidden)return;
   game.start();controls.setActive(true);clock.reset();last=performance.now();canvas.focus({preventScroll:true});
   sound.unlock();sound.playing=true;
 }
-function openPause(){if(!started||winning||arriving||anyDialog())return;pauseGame();$('pause-dialog').showModal();}
+function openPause(){if(!started||winning||arriving||view.lounge||anyDialog())return;pauseGame();$('pause-dialog').showModal();}
 function start(){
   started=true;document.body.dataset.screen='play';$('intro').hidden=true;$('hud').hidden=false;$('controls-hint').hidden=false;$('touch-controls').hidden=!coarse.matches;
   sound.unlock();
@@ -142,7 +142,27 @@ function drawMap(){
   const p=game.player;c.save();c.translate(sx(p.x),sz(p.z));c.rotate(-p.facing);c.fillStyle='#ffe4a1';c.beginPath();c.moveTo(0,9);c.lineTo(-6,-6);c.lineTo(0,-3);c.lineTo(6,-6);c.closePath();c.fill();c.restore();
 }
 function toggleMap(){if(!started)return;map.hidden=!map.hidden;document.body.classList.toggle('show-hints',!map.hidden);$('map-toggle').setAttribute('aria-pressed',String(!map.hidden));}
-function toggleOverview(){if(!started||view.cinematic)return;view.overview=!view.overview;$('overview').setAttribute('aria-pressed',String(view.overview));}
+function toggleOverview(){if(!started||view.cinematic||view.lounge)return;view.overview=!view.overview;$('overview').setAttribute('aria-pressed',String(view.overview));}
+function closeLounge(){
+  if(!view.lounge)return;
+  view.lounge=null;view.started=false;view.transition=0;document.body.classList.remove('is-lounge');
+  $('lounge-inspection').hidden=true;$('lounge-view').setAttribute('aria-pressed','false');
+  resumeGame();
+}
+$('lounge-view').addEventListener('click',()=>{
+  if(view.lounge){closeLounge();return;}
+  if(!started||view.cinematic||anyDialog()||!game.running)return;
+  pauseGame();document.body.classList.add('is-lounge');view.overview=false;$('overview').setAttribute('aria-pressed','false');view.lounge='room';
+  $('lounge-inspection').hidden=false;$('lounge-view').setAttribute('aria-pressed','true');
+  for(const b of document.querySelectorAll('[data-lounge-view]'))b.setAttribute('aria-pressed',String(b.dataset.loungeView==='room'));
+  $('lounge-close').focus();
+});
+for(const button of document.querySelectorAll('[data-lounge-view]'))button.addEventListener('click',()=>{
+  view.lounge=button.dataset.loungeView;
+  for(const b of document.querySelectorAll('[data-lounge-view]'))b.setAttribute('aria-pressed',String(b===button));
+});
+$('lounge-close').addEventListener('click',closeLounge);
+window.addEventListener('keydown',e=>{if(e.code==='Escape'&&view.lounge&&!anyDialog()){e.preventDefault();closeLounge();}});
 $('map-toggle').addEventListener('click',()=>{toggleMap();canvas.focus();});
 $('overview').addEventListener('click',()=>{toggleOverview();canvas.focus();});
 $('skip-intro').addEventListener('click',()=>view.skipCinematic());

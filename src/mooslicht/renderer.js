@@ -1,5 +1,6 @@
 import * as T from 'three';
 import { buildScene } from './scene.js';
+import {LOUNGE_VIEWS} from './lounge-views.js';
 import { STONES, SEEDS, SHRINES, FLOWERS, ISLANDS, stonePosition, surfaceAt, random, clamp, TAU, TREE, SATELLITES, GUIDE, CHECKPOINTS, cameraFraction } from './world.js';
 const CAMERA_ORBIT_OFFSETS=[-.16,-.08,.08,.16],CAMERA_PITCH_OFFSETS=[-.10,.10];
 const CAMERA_ESCAPE_OFFSETS=[-.65,.65,-1.3,1.3,-2.1,2.1,Math.PI];
@@ -101,7 +102,7 @@ export class WorldView {
     this.world.sun.castShadow=!low;this.fireflies.material.uniforms.pixelRatio.value=ratio;
   }
   orbit(dx,dy) { this.yaw-=dx*.006;this.pitch=clamp(this.pitch+dy*.003,-.10,1.15); }
-  resetCamera() { this.yaw=0;this.pitch=.30;this.distance=7.4;this.overview=false;this.avoidYaw=0; }
+  resetCamera() { this.yaw=0;this.pitch=.30;this.distance=7.4;this.overview=false;this.lounge=null;this.avoidYaw=0; }
   zoom(delta) { this.distance=clamp(this.distance+delta*.012,4.5,14); }
   beginCinematic(kind){this.cinematic=kind;this.cineTime=0;}
   skipCinematic(){if(this.cinematic==='finale'){this.world.sky.state.finalAge=12;this.world.sky.state.phase=5;}this.cinematic=null;this.cineTime=0;this.started=false;this.transition=0;}
@@ -171,6 +172,8 @@ export class WorldView {
     this.fireflies.material.uniforms.awake.value=game.finished?Math.max(0,finalAge-4):0;
     this.fireflies.material.uniforms.time.value=this.motion?0:time;this.effects.update(dt);
     this.shake=Math.max(0,this.shake-dt);
+    const fov=this.lounge?LOUNGE_VIEWS[this.lounge].fov+(this.camera.aspect<.75?12:0):this.camera.aspect<.75?58:50;
+    if(this.camera.fov!==fov){this.camera.fov=fov;this.camera.updateProjectionMatrix();}
     if(this.cinematic){
       this.cineTime+=dt;const t=this.cineTime;
       if(this.cinematic==='arrival'){
@@ -185,6 +188,9 @@ export class WorldView {
         this.camera.lookAt(TREE.x*(1-k),10*(1-k)+k,-19);
         if(t>=11)this.skipCinematic();
       }
+    } else if(this.lounge) {
+      const shot=LOUNGE_VIEWS[this.lounge];
+      this.camera.position.set(...shot.eye);this.camera.lookAt(...shot.target);
     } else if(intro || this.overview) {
       this.camera.position.set(72,142,152);this.camera.lookAt(-10,0,8);
       if(this.camera.aspect<.75){this.camera.position.set(34,186,195);this.camera.lookAt(-10,0,8);}

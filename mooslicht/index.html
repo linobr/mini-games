@@ -17,7 +17,7 @@
       <a class="back-link" href="../" aria-label="Zurück zu Mini Games"><span aria-hidden="true">‹</span> Mini Games</a>
       <div class="game-brand" aria-hidden="true"><span>✧</span> MOOSLICHT</div>
       <div class="top-actions">
-        <button class="icon-button" id="overview" aria-label="Garten von oben ansehen" aria-pressed="false" title="Garten von oben · V">⌘</button><button class="icon-button" id="map-toggle" aria-label="Karte und Hinweise anzeigen" aria-pressed="false" title="Karte &amp; Hinweise · M">◈</button><button class="icon-button" id="sound" aria-label="Ton einschalten" aria-pressed="false" title="Ton ein/aus">♪</button>
+        <button class="icon-button" id="lounge-view" aria-label="Sitzecke im Anbau ansehen" aria-pressed="false" title="Sitzecke im Anbau ansehen">⌂</button><button class="icon-button" id="overview" aria-label="Garten von oben ansehen" aria-pressed="false" title="Garten von oben · V">⌘</button><button class="icon-button" id="map-toggle" aria-label="Karte und Hinweise anzeigen" aria-pressed="false" title="Karte &amp; Hinweise · M">◈</button><button class="icon-button" id="sound" aria-label="Ton einschalten" aria-pressed="false" title="Ton ein/aus">♪</button>
         <button class="icon-button" id="fullscreen" aria-label="Vollbild" title="Vollbild">⛶</button>
         <button class="icon-button" id="pause" aria-label="Pause und Einstellungen" title="Pause · Esc">Ⅱ</button>
       </div>
@@ -57,6 +57,7 @@
       <div class="touch-actions"><button id="touch-roll" aria-label="Ausweichen">↝</button><button id="touch-attack" aria-label="Schwert">⚔</button><button id="touch-interact" aria-label="Interagieren">E</button><button id="touch-jump" aria-label="Springen">↑</button></div>
     </div>
     <div id="cinema" class="cinema" hidden><span id="cinema-title">MOOSLICHT<small>Der Garten erwacht</small></span><button id="skip-intro" class="text-button">Überspringen</button></div><output id="performance" hidden></output>
+    <section id="lounge-inspection" class="lounge-inspection" aria-label="Sitzecke ansehen" hidden><span>Die Sitzecke <small>Das Abenteuer pausiert.</small></span><div><button data-lounge-view="room" aria-pressed="true">Raum</button><button data-lounge-view="chairs" aria-pressed="false">Sessel</button><button data-lounge-view="hide" aria-pressed="false">Kuhfell</button><button id="lounge-close">Zurück zum Spiel</button></div></section>
     <div class="damage-flash" id="damage-flash" aria-hidden="true"></div>
 
     <dialog id="pause-dialog" class="game-dialog" aria-labelledby="pause-title">

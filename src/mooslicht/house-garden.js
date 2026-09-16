@@ -1,6 +1,7 @@
 import * as T from 'three';
+import {buildLoungeInterior} from './lounge-interior.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
-import {HOUSE_RETURN,HOUSE_GABLE,REAR_OUTLINE,LAWN_CURVE,LOUNGE,LOUNGE_CHAIRS,BALCONY,BALCONY_POSTS,BALCONY_RAILS,BALCONY_SEATS,BALCONY_LOUNGERS} from './garden-layout.js';
+import {HOUSE_RETURN,HOUSE_GABLE,REAR_OUTLINE,LAWN_CURVE,LOUNGE,BALCONY,BALCONY_POSTS,BALCONY_RAILS,BALCONY_SEATS,BALCONY_LOUNGERS} from './garden-layout.js';
 
 // Architecture shares its footprint with movement, the camera and the map.
 export function buildHouseGarden(scene,batch,{ground,patterned}){
@@ -93,65 +94,16 @@ export function buildHouseGarden(scene,batch,{ground,patterned}){
     }
     g.setAttribute('position',new T.Float32BufferAttribute(vertices,3));g.setIndex(indices);g.computeVertexNormals();curtains.push(g);
   }
-  const cloth=new T.Mesh(mergeGeometries(curtains),new T.MeshStandardMaterial({color:'#ece8dc',roughness:1,side:T.DoubleSide}));cloth.receiveShadow=true;scene.add(cloth);curtains.forEach(g=>g.dispose());
+  buildLoungeInterior(scene,batch,curtains);
   const glass=new T.Mesh(mergeGeometries(panes),new T.MeshStandardMaterial({color:'#c4d7d5',transparent:true,opacity:.13,roughness:.2,metalness:.1,side:T.DoubleSide,depthWrite:false}));
   glass.name='lounge-window-glass';scene.add(glass);panes.forEach(g=>g.dispose());unit.dispose();
   // IMG_4280/4281: stacked pale stone, a framed house window and gilt mirror.
-  // Thin, staggered stones stay on the existing solid wall, outside the route.
-  for(let row=0;row<22;row++)for(let col=0;col<10;col++){
-    const x=-50.8+col*2.25+(row%2)*.9,y=.4+row*.68;
-    if(x>-28.6||(x<-43&&y<4)||(x>-39.8&&x<-32.2&&y>5.2&&y<13.5))continue;
-    box(['#d7d2c5','#e6e0d4','#c8c5bb'][(row*7+col)%3],x,y,50.32,2.16,.61,.10+(row+col)%3*.025);
-  }
   box('#dedbd1',-36,9.4,50.65,7.6,8.4,.28);box('#708585',-36,9.4,50.83,6.9,7.7,.1);
   for(const x of [-39.5,-36,-32.5])box(cream,x,9.4,50.94,.14,7.8,.12);
   box(cream,-36,9.4,50.94,7,.13,.12);box('#c5c3b8',-36,5.2,50.85,8,.25,.65);
   box('#aa8846',-46.7,10.5,50.7,4.7,6.3,.22);box('#d0b370',-46.7,10.5,50.86,4.35,5.95,.12);
   box('#aab8b4',-46.7,10.5,50.95,3.7,5.3,.06);
   for(const x of [-48.85,-44.55])for(const y of [7.6,8.8,10.5,12.2,13.4])add('grit','#bc9a53',[x,y,51.04],[.22,.3,.12]);
-  // Two irregular hide outlines, one mesh and a procedural brown/ivory pattern.
-  const hide=[[-.7,-1],[-.25,-.87],[.15,-.91],[.75,-1],[.66,-.55],[.94,-.3],[.76,.12],[.98,.7],[.64,.62],[.35,.95],[0,.82],[-.38,.97],[-.66,.62],[-.98,.7],[-.78,.12],[-.95,-.28],[-.64,-.57]];
-  const rugParts=[];
-  for(const [x,z,sx,sz,angle] of [[-43.5,57.3,4.4,3.4,-.12],[-40.2,59,3.8,3.3,.22]]){
-    const shape=new T.Shape(hide.map(([a,b])=>new T.Vector2(a*sx,-b*sz))),g=new T.ShapeGeometry(shape);g.rotateX(-Math.PI/2);g.rotateY(angle);g.translate(x,.105+rugParts.length*.012,z);rugParts.push(g);
-  }
-  const rugMaterial=new T.MeshStandardMaterial({color:'#e3ded0',roughness:1});
-  rugMaterial.onBeforeCompile=shader=>{
-    shader.vertexShader='varying vec3 hidePosition;\n'+shader.vertexShader;
-    shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nhidePosition=position;');
-    shader.fragmentShader='varying vec3 hidePosition;\n'+shader.fragmentShader;
-    shader.fragmentShader=shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
-      vec2 p=hidePosition.xz;
-      float mottling=sin(p.x*2.1+sin(p.y*3.7)*.8)*sin(p.y*2.8+sin(p.x*4.3)*.7);
-      float edge=max(fwidth(mottling),.03);
-      float spot=smoothstep(.10-edge,.10+edge,mottling+.17*sin(p.x*8.+p.y*9.));
-      diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.11,.066,.037),spot);
-    `);
-  };
-  rugMaterial.customProgramCacheKey=()=> 'lounge-hide';
-  const rug=new T.Mesh(mergeGeometries(rugParts),rugMaterial);rug.name='lounge-hide-rugs';rug.receiveShadow=true;scene.add(rug);rugParts.forEach(g=>g.dispose());
-  // Low corner sofa; clear central route through the doorway.
-  for(const [x,z,w,d] of [[-47,53,8,4],[-49,56.5,4,5]]){
-    box('#353d3e',x,.9,z,w,1.3,d);box('#565d5e',x,1.8,z,w-.2,.6,d-.2);
-  }
-  box('#444b4e',-47,3.1,51.3,8,2.8,.65);box('#444b4e',-50.6,3.1,56, .65,2.8,7);
-  for(const [x,z,w,d] of [[-48.8,53,3.8,3.7],[-44.9,53,3.7,3.7],[-49,56.3,3.7,2],[-49,58.4,3.7,1.8]])box('#62696a',x,2.12,z,w,.24,d);
-  for(const [x,z,yaw,color] of [[-49,52.2,0,'#e1ddd1'],[-47,52.2,.2,'#bbb9af'],[-44.6,52.2,-.1,'#dad5c8'],[-49.7,55.4,1.4,'#dfddd4'],[-49.7,58,1.5,'#92948f']]){
-    add('bud',color,[x,3,z],[.95,.9,.35],[-.16,yaw,.06]);
-  }
-  // Narrow oak boards, grain and dark sled legs match the rectangular low table.
-  for(let i=0;i<4;i++)box(['#ac9473','#b6a080','#ad9578','#baa383'][i],-44.25+i*1.5,2.22,56.5,1.48,.25,4);
-  for(const x of [-44.6,-39.4]){
-    for(const z of [54.9,58.1])box(dark,x,1.13,z,.14,2.1,.14);
-    box(dark,x,.13,56.5,.14,.14,3.35);
-  }
-  for(let i=0;i<3;i++)box('#948063',-43.8+i*1.5,2.351,56.4,.014,.003,3.5-i*.3);
-  add('grit','#767775',[-42,2.57,56.5],[.48,.25,.34]);
-  // Shag-covered chairs sit against the house, leaving the central doorway clear.
-  for(const c of LOUNGE_CHAIRS){
-    for(const dx of [-.9,.9])for(const dz of [-.9,.9])beam([c.x+dx,.1,c.z+dz],[c.x+dx*.8,1.5,c.z+dz*.8],.1,'#b6a080');
-    add('bud','#dedbd0',[c.x,1.6,c.z],[1.3,.45,1.35]);add('bud','#dedbd0',[c.x,2.65,c.z-1],[1.3,1.1,.4],[-.2,0,0]);
-  }
   // Tall silver candleholders at the glazing, as in the interior garden view.
   for(const x of [-50.8,-29.5]){
     add('disk',metal,[x,.22,61],[.55,.18,.55]);beam([x,.3,61],[x,5.2,61],.085,metal);

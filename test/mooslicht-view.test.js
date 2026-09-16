@@ -4,6 +4,7 @@ import * as T from 'three';
 import {buildScene} from '../src/mooslicht/scene.js';
 import {WorldView,Effects} from '../src/mooslicht/renderer.js';
 import {Adventure} from '../src/mooslicht/game.js';
+import {LOUNGE_VIEWS} from '../src/mooslicht/lounge-views.js';
 import {CHECKPOINTS} from '../src/mooslicht/world.js';
 
 // This exercises the real animation / camera path without claiming a GPU render.
@@ -25,6 +26,24 @@ test('Mooslicht: real scene animation and cinematics remain finite through every
   view.motion=true;view.overview=true;view.camera.aspect=.55;view.render(game,1/60);assert.ok(submitted>1500);
   // Restart clears the finale growth without rebuilding or leaking scene nodes.
   const count=world.scene.children.length;view.render(new Adventure(),1/60);assert.equal(world.garden.roots.visible,false);assert.equal(world.scene.children.length,count);
+  // Inspection uses the real camera path, leaves the paused player/save untouched,
+  // and restores the normal follow camera without allocating another scene.
+  const inspected=new Adventure();inspected.start();inspected.pause();const saved=inspected.snapshot(),player={...inspected.player};
+  view.overview=false;
+  for(const shot of Object.keys(LOUNGE_VIEWS)){
+    view.lounge=shot;
+    for(const aspect of [16/9,.55]){
+      view.camera.aspect=aspect;view.render(inspected,1/60);
+      assert.ok(view.camera.position.y>.08&&view.camera.position.y<16);
+      assert.ok(view.camera.position.x>-52&&view.camera.position.x<-28);
+      assert.ok(view.camera.position.z>50&&view.camera.position.z<62);
+      for(const n of [...view.camera.projectionMatrix.elements,...view.camera.quaternion.toArray()])assert.ok(Number.isFinite(n));
+    }
+  }
+  assert.deepEqual(inspected.snapshot(),saved);assert.deepEqual(inspected.player,player);
+  assert.equal(world.scene.children.length,count);
+  view.resetCamera();assert.equal(view.lounge,null);view.render(inspected,1/60);assert.equal(view.camera.fov,58);
+
 });
 test('Mooslicht: quality settings reduce grass while preserving landmarks and traversal geometry',()=>{
   const w=buildScene(),platformCount=w.stones.length;
