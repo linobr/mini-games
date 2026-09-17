@@ -1,4 +1,5 @@
 # Mini Games
+<img width="285" height="708" alt="image" src="https://github.com/user-attachments/assets/e0e6beaf-5041-4d30-a897-e921674037a7" />
 
 Eine kleine, erweiterbare Browser-Spielesammlung mit Spielen und einem interaktiven Lernmodul:
 
@@ -25,6 +26,7 @@ Nach der ersten erfolgreichen GitHub-Pages-Veröffentlichung ist die Seite unter
 - Startseite als Basis für weitere Spiele
 
 ## Mooslicht
+<img width="309" height="297" alt="image" src="https://github.com/user-attachments/assets/178d6478-bd40-4fed-a228-4bdf334a8e76" />
 
 Ein kleines 3D-Fantasy-Abenteuer unter `/mini-games/mooslicht/`: frei erkunden,
 die Palme und das Hüttendach erklimmen, Klangobjekte spielen und Mooswächter besiegen.
@@ -34,6 +36,7 @@ Die Geometrie und die Klänge entstehen im Spiel; Three.js wird lokal mitgebaut.
 Weitere Details: [`mooslicht/README.md`](mooslicht/README.md).
 
 ## RIFT//RELAY
+<img width="193" height="300" alt="image" src="https://github.com/user-attachments/assets/0a926092-f515-47e2-8423-022b8f673a9d" />
 
 Ein eigenständiges Canvas-Spiel unter `public/rift-relay/`, erreichbar über
 die Spieleübersicht und nach Veröffentlichung unter `/mini-games/rift-relay/`.
