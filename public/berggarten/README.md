@@ -1,5 +1,5 @@
 # Berggarten Tycoon
-Eigenständiger 3D Abbau-, Produktions- und Garten-Tycoon. Die Grafik ist mit Three.js aus prozeduralen Low-Poly-Modellen gebaut; Web Audio erzeugt alle Sounds. Keine fremden Spielassets, kein Backend, keine Echtgeldkäufe.
+Eigenständiger 3D Abbau-, Produktions- und Garten-Tycoon. Die Grafik ist mit Three.js aus prozeduralen Low-Poly-Modellen gebaut; Web Audio erzeugt alle Sounds. Auf Geräten ohne WebGL übernimmt eine Canvas-Ansicht dieselbe vollständige Spielmechanik. Keine fremden Spielassets, kein Backend, keine Echtgeldkäufe.
 
 Klicken auf Ressourcen: automatisch hinlaufen und abbauen. Der Weg wird um lebende Ressourcen herum gesucht; das Freiräumen erschliesst neue Wege. WASD/Pfeile bewegen, Leertaste abbauen, R einlagern, F verkaufen. Auto sucht selbst erreichbare Ressourcen. Kamera drehen und zoomen mit den sichtbaren Buttons. Touch-Steuerung auf Mobilgeräten.
 
