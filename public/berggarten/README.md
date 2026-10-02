@@ -1,8 +1,10 @@
-# Berggarten
-Eigenständiges, entspanntes Abbau- und Garten-Spiel. Alle Grafiken werden direkt mit Canvas gezeichnet, alle Sounds mit Web Audio synthetisiert. Keine heruntergeladenen Spielassets, kein Backend und kein Energie-Limit.
+# Berggarten Tycoon
+Eigenständiger 3D Abbau-, Produktions- und Garten-Tycoon. Die Grafik ist mit Three.js aus prozeduralen Low-Poly-Modellen gebaut; Web Audio erzeugt alle Sounds. Keine fremden Spielassets, kein Backend, keine Echtgeldkäufe.
 
-Klicken: zu einer Ressource laufen und einmal schlagen. Halten: automatisch weiter abbauen. WASD/Pfeile: bewegen. Leertaste: nächste Ressource in Reichweite abbauen. E oder Verkaufsbutton: gesamtes Inventar verkaufen. Touch-Steuerung auf schmalen Bildschirmen.
+Klicken auf Ressourcen: automatisch hinlaufen und abbauen. Der Weg wird um lebende Ressourcen herum gesucht; das Freiräumen erschliesst neue Wege. WASD/Pfeile bewegen, Leertaste abbauen, R einlagern, F verkaufen. Auto sucht selbst erreichbare Ressourcen. Kamera drehen und zoomen mit den sichtbaren Buttons. Touch-Steuerung auf Mobilgeräten.
 
-Drei Regionen, acht Werkzeugstufen, sieben Rucksackgrössen, drei sichtbare Gartenrestaurierungen. Ressourcen wachsen nach 45 Sekunden nach. Fortschritt wird lokal unter `berggarten-save-v1` gespeichert; Neu anfangen fragt vor dem Zurücksetzen nach.
+Wirtschaft: drei Regionen, acht Werkzeugstufen, sieben Rucksackgrössen, drei Helfer, drei Manufakturstufen und drei sichtbare Gartenrestaurierungen. Rohstoffe können direkt verkauft, eingelagert, zu Brettern/Bausteinen/Schmucksteinen verarbeitet oder für besser bezahlte Handelsaufträge verwendet werden. Helfer liefern alle zehn Sekunden ins Lager. Jedes Gartenprojekt bringt 2 Münzen pro 15 Sekunden. Offlineproduktion ist auf fünf Minuten pro Abwesenheit beschränkt. Fünf einmalige Meilenstein-Belohnungen und XP-Level.
 
-Tests: `npm test`. Deployment: vorhandene GitHub Pages Pipeline; `public/berggarten/` wird von Vite unverändert übernommen.
+Spielstände unter `berggarten-save-v1` werden auf Version 2 migriert und behalten Münzen, Werkzeug, Rucksack, Inventar, Gebiete und Gartenprojekte. Neu anfangen fragt vor dem Zurücksetzen nach.
+
+Quellcode: `src/berggarten/`; HTML: `berggarten/index.html`. Tests: `npm test`. Build und Deployment über die bestehende GitHub-Pages-Pipeline. Inspiration für den eigenen Spielkreislauf: Forager (Ressourcen/Expansion) und Outpath (Automatisierung).
