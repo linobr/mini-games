@@ -21,8 +21,11 @@ const liveCard = match[0]
   .replace('<strong>Mooslicht</strong>', '<strong>KI-Mooslicht</strong>')
   .replace('<small>1 Spieler · Dein Garten als magische Miniaturwelt</small>', '<small>Live · autonom vom Jetson weiterentwickelt</small>');
 
-const gridMarker = '<div class="game-grid" aria-label="Verfügbare Spiele">';
-if (!html.includes(gridMarker)) {
+// Match the game grid by its purpose, regardless of extra attributes or their order.
+const gridMarker = html.match(
+  /<div\b(?=[^>]*\bclass="game-grid")(?=[^>]*\baria-label="Verfügbare Spiele")[^>]*>/,
+)?.[0];
+if (!gridMarker) {
   throw new Error("Main game grid not found in built index.html");
 }
 
