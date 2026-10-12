@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="de">
+<html lang="de" data-interface="nexus">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -9,6 +9,15 @@
     />
     <meta name="theme-color" content="#17221d" />
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2317221d'/%3E%3Cpath d='m13 23 12 18m0-18L13 41' stroke='%23cfff69' stroke-width='5' stroke-linecap='round'/%3E%3Ccircle cx='43' cy='32' r='9' fill='none' stroke='%23cfff69' stroke-width='5'/%3E%3C/svg%3E" />
+    <script>
+      // Apply the stored preference before the styles load, avoiding a theme flash.
+      try {
+        document.documentElement.dataset.interface =
+          localStorage.getItem("mini-games:interface") === "original" ? "original" : "nexus";
+      } catch {
+        document.documentElement.dataset.interface = "nexus";
+      }
+    </script>
     <title>Mini Games</title>
   </head>
   <body>
@@ -18,13 +27,31 @@
           <span class="brand-mark" aria-hidden="true">XO</span>
           <span>Mini Games</span>
         </button>
-        <span class="online-pill">
-          <span class="online-dot"></span>
-          Kostenlos &amp; ohne Anmeldung
-        </span>
+        <div class="header-actions">
+          <span class="online-pill">
+            <span class="online-dot"></span>
+            Kostenlos &amp; ohne Anmeldung
+          </span>
+          <div class="theme-switch" role="group" aria-label="Ansicht wählen">
+            <button type="button" data-interface-option="nexus" aria-pressed="true">NEXUS</button>
+            <button type="button" data-interface-option="original" aria-pressed="false">Original</button>
+          </div>
+        </div>
       </header>
 
       <section class="home-view view" id="home-view">
+        <div class="nexus-hero nexus-only">
+          <div class="nexus-hero-content">
+            <span class="nexus-kicker"><span class="nexus-kicker-dot" aria-hidden="true"></span>NEXUS ARCADE // MINI GAMES</span>
+            <h1>Next level.<br /><span>Instant play.</span></h1>
+            <p>Dein Spiele-Hub im Browser. Entdecke 3D-Abenteuer, Arcade-Games und Multiplayer – direkt starten, ohne Installation.</p>
+            <div class="nexus-hero-actions">
+              <a class="nexus-cta" href="./berggarten/">Berggarten spielen <span aria-hidden="true">↗</span></a>
+              <a class="nexus-secondary" href="#game-grid">Alle Spiele <span aria-hidden="true">↓</span></a>
+            </div>
+          </div>
+          <div class="nexus-orbit" aria-hidden="true"></div>
+        </div>
         <div class="hero-copy">
           <span class="eyebrow">Spieleabend, direkt im Browser</span>
           <h1>Kleine Spiele.<br />Grosse Revanchen.</h1>
@@ -43,7 +70,7 @@
           </p>
         </aside>
 
-        <div class="game-grid" aria-label="Verfügbare Spiele">
+        <div class="game-grid" id="game-grid" aria-label="Verfügbare Spiele">
           <a class="game-card game-card-active" href="./berggarten/" style="color:inherit;text-decoration:none" aria-label="Berggarten Tycoon spielen">
             <span class="card-topline"><span class="game-icon" style="background:#c6dca4;color:#355442;font-size:36px" aria-hidden="true">⛏</span><span class="available-badge">Solo · Neu</span></span>
             <span class="game-card-copy"><strong>Berggarten Tycoon</strong><small>3D · Abbauen, veredeln &amp; deinen Gartenbetrieb aufbauen</small></span><span class="card-arrow" aria-hidden="true">→</span>

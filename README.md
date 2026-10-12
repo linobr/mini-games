@@ -16,6 +16,18 @@ Eine kleine, erweiterbare Browser-Spielesammlung mit Spielen und einem interakti
 Nach der ersten erfolgreichen GitHub-Pages-Veröffentlichung ist die Seite unter
 `https://linobr.github.io/mini-games/` erreichbar.
 
+## Zwei Ansichten
+
+Der Spiele-Hub bietet zwei umschaltbare Oberflächen:
+
+- **NEXUS**: neues, dunkles Arcade-Design mit überarbeiteter Startseite.
+- **Original**: bisherige helle Startseite und Gestaltung.
+
+Der Umschalter befindet sich oben rechts (auch auf Smartphones). Die Einstellung
+bleibt über `localStorage` nach einem Neuladen erhalten, sofern der Browser
+lokalen Speicher erlaubt. Beide Ansichten nutzen dieselben Spiele, Links und
+Mehrspieler-Funktionen. NEXUS ist die Standardansicht für neue Besucher.
+
 ## Funktionen
 
 - Online-Räume mit sechsstelligen Einladungscodes
