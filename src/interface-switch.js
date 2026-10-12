@@ -1,11 +1,15 @@
-const PREFERENCE_KEY = "mini-games:interface";
+export const PREFERENCE_KEY = "mini-games:interface";
+
+export const normalizeInterface = value => value === "original" ? "original" : "nexus";
 
 export function setupInterfaceSwitch() {
+  if (document.documentElement.dataset.switchReady) return;
+  document.documentElement.dataset.switchReady = "true";
   const buttons = [...document.querySelectorAll("[data-interface-option]")];
   if (buttons.length !== 2) return;
 
   function applyInterface(option, persist = false) {
-    const next = option === "original" ? "original" : "nexus";
+    const next = normalizeInterface(option);
     document.documentElement.dataset.interface = next;
 
     for (const button of buttons) {
@@ -30,6 +34,6 @@ export function setupInterfaceSwitch() {
   }
 
   window.addEventListener("storage", (event) => {
-    if (event.key === PREFERENCE_KEY) applyInterface(event.newValue);
+    if (event.key === PREFERENCE_KEY || event.key === null) applyInterface(event.newValue);
   });
 }

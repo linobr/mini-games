@@ -5,15 +5,18 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && node scripts/inject-live-game.mjs",
+    "build": "vite build && node scripts/inject-live-game.mjs && node scripts/build-pwa.mjs",
     "test": "node --test",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:browser": "node qa/browser.mjs",
+    "test:smoke": "node qa/smoke.mjs"
   },
   "dependencies": {
     "peerjs": "1.5.5",
     "three": "0.180.0"
   },
   "devDependencies": {
+    "playwright": "1.58.2",
     "vite": "8.0.13"
   },
   "engines": {

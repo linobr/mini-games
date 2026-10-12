@@ -1,3 +1,6 @@
+// Storage may be disabled (for example in a restricted browser session).
+const readPreference = key => { try { return localStorage.getItem(key); } catch { return null; } };
+const writePreference = (key, value) => { try { localStorage.setItem(key, value); } catch {} };
 import Peer from "peerjs";
 import "./color-clash.css";
 import {
@@ -197,8 +200,8 @@ class ColorClash {
     this.connectionTimer = null;
     this.passCovered = false;
     this.lastRenderedEvent = -1;
-    this.difficulty = localStorage.getItem("color-clash-difficulty") === "easy" ? "easy" : "normal";
-    this.muted = localStorage.getItem("color-clash-muted") === "true";
+    this.difficulty = readPreference("color-clash-difficulty") === "easy" ? "easy" : "normal";
+    this.muted = readPreference("color-clash-muted") === "true";
     this.audio = new ClashAudio(this.muted);
     this.elements.difficulty.value = this.difficulty;
     this.elements.lobbyDifficulty.value = this.difficulty;
@@ -256,7 +259,7 @@ class ColorClash {
     this.difficulty = value === "easy" ? "easy" : "normal";
     this.elements.difficulty.value = this.difficulty;
     this.elements.lobbyDifficulty.value = this.difficulty;
-    localStorage.setItem("color-clash-difficulty", this.difficulty);
+    writePreference("color-clash-difficulty", this.difficulty);
   }
 
   rememberName() {
@@ -762,7 +765,7 @@ class ColorClash {
   toggleSound() {
     this.muted = !this.muted;
     this.audio.muted = this.muted;
-    localStorage.setItem("color-clash-muted", String(this.muted));
+    writePreference("color-clash-muted", String(this.muted));
     this.renderSound();
     if (!this.muted) this.audio.unlock();
   }

@@ -17,6 +17,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -35,6 +36,30 @@ jobs:
 
       - name: Build website
         run: npm run build
+
+      - name: Install browser test engines
+        run: npx playwright install --with-deps chromium webkit
+
+      - name: Test mobile browsers and offline play
+        run: npm run test:browser
+        env:
+          NEXUS_QA_SERVE: '1'
+
+      - name: Smoke-test all game entries
+        run: npm run test:smoke
+        env:
+          NEXUS_QA_SERVE: '1'
+
+      - name: Keep browser review screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-review
+          path: |
+            /tmp/nexus-*.png
+            /tmp/berggarten-*.png
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5

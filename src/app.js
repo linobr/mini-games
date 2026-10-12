@@ -1,3 +1,5 @@
+import { setupNexus } from './nexus.js';
+import { setupPwa } from './pwa.js';
 import Peer from "peerjs";
 import "./styles.css";
 import "./nexus.css";
@@ -581,3 +583,6 @@ if (invitedGame === "color-clash" && invitedRoom.length === 6) {
 }
 
 renderGame();
+
+setupNexus();
+setupPwa();

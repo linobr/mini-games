@@ -1,3 +1,4 @@
+import { loadProfile } from './nexus-model.js';
 import Peer from "peerjs";
 import "./turbo-bump.css";
 
@@ -125,6 +126,8 @@ class TurboAudio {
   constructor() {
     this.context = null;
     this.lastSound = new Map();
+    try { this.muted = loadProfile(localStorage).muted; } catch { this.muted = false; }
+    window.addEventListener('nexus-profile-change', e => { this.muted = e.detail.muted; });
   }
 
   unlock() {
@@ -136,7 +139,7 @@ class TurboAudio {
   }
 
   play(type, intensity = 1) {
-    if (!this.context || this.context.state !== "running") return;
+    if (this.muted || !this.context || this.context.state !== "running") return;
     const now = this.context.currentTime;
     const minimumGap = type === "collision" ? 0.08 : 0.02;
     if (now - (this.lastSound.get(type) ?? 0) < minimumGap) return;

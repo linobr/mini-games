@@ -176,3 +176,16 @@ in `src/turbo-bump.js`. Color Clash trennt die reine Regelengine
 (`src/color-clash-engine.js`) von Oberfläche und Netzwerk
 (`src/color-clash.js`). Weitere Spiele können nach dem gleichen Muster ergänzt
 und als zusätzliche Karten freigeschaltet werden.
+
+## NEXUS 2.0 und Berggarten Evolution
+
+Die Startseite bietet NEXUS und die erhaltene Originalansicht. Favoriten, Name,
+Öffnungsstatistik und Entdecker-XP bleiben auf dem aktuellen Gerät. Die PWA kann
+nach dem vollständigen ersten Laden auch offline starten; Multiplayer benötigt Internet.
+Updates werden nach Schliessen aller alten App-Tabs aktiv.
+
+Berggarten umfasst fünf Regionen, feste Bauplätze, vier Produktionsbetriebe,
+Auftragsautomatik, Quests und JSON-Sicherungen. Alte Spielstände werden gesichert
+und migriert. Öffne Berggarten nur in einem schreibenden Tab.
+
+[Architektur, Änderungen, Prüfungen und bekannte Grenzen](docs/nexus-evolution.md)
