@@ -1,5 +1,7 @@
 import Peer from "peerjs";
 import "./styles.css";
+import "./nexus.css";
+import { setupInterfaceSwitch } from "./interface-switch.js";
 import { createTurboBump } from "./turbo-bump.js";
 import { createColorClash } from "./color-clash.js";
 
@@ -511,6 +513,7 @@ async function shareRoom() {
   }
 }
 
+setupInterfaceSwitch();
 elements.brand.addEventListener("click", returnHome);
 elements.openTicTacToe.addEventListener("click", openSetup);
 elements.openTurbo.addEventListener("click", () => {
