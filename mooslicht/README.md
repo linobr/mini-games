@@ -1,8 +1,21 @@
 # Mooslicht – Der schwebende Garten
 
-Die Garten-Erweiterung des bestehenden Three.js-Abenteuers unter
-`/mini-games/mooslicht/`. Spielkern, Steuerung, Rätsel, Kampf, Touch-Eingaben,
-24 Glühlichter, Truhe und lokale Spielstände bleiben erhalten.
+Ein Three.js-Abenteuer in einem schwebenden Garten: erkunden, Klangrätsel lösen, Mooswächter besiegen und den Herzbaum erwecken. Tastatur, Maus und Touch werden unterstützt; der Fortschritt bleibt lokal im Browser.
+
+**[Spielen](https://linobr.github.io/mini-games/mooslicht/)** · [Spieleübersicht](../README.md) · [Garten und Steuerung](#garten-und-abenteuer) · [Technik](#technik) · [Prüfung](#prüfung)
+
+## Lokal starten
+
+Node.js 22.13.0 oder neuer und npm verwenden. Vom Repository-Stamm:
+
+```bash
+npm ci
+npm run dev
+```
+
+`http://localhost:5173/mini-games/mooslicht/` öffnen, sofern Vite den Standardport verwendet. Für einen Produktionsbuild `npm run build` und danach `npm run preview` ausführen.
+
+Der Spieleinstieg liegt in [index.html](index.html), die Implementierung in [src/mooslicht/](../src/mooslicht/). Die getrennte [KI-Live-Kopie](../ki-mooslicht/README.md) hat eigene Dateien und Spielstände.
 
 ## Garten und Abenteuer
 
@@ -96,13 +109,13 @@ passenden Himmel. Ein Neustart setzt die Welt auf Tag zurück.
 `npm test` prüft Spielablauf, alle Palmensprünge, Dach- und Segelaufstieg,
 Kampf, Speicherung, Kamera-Kollision, steigende Platten, Touch-Eingaben,
 Szenenanimationen und Geometriebudget. `npm run build` erzeugt die gesamte Seite.
-Die 64 Tests umfassen ausserdem komplette Hin- und Rückwege zu allen Nebeninseln,
+Die vorhandenen Tests umfassen ausserdem komplette Hin- und Rückwege zu allen Nebeninseln,
 Sturzblende, alte/neue Spielstände, Himmelsübergänge, Finale, Kartenränder und
 Qualitätsbudgets. Der Pages-Workflow führt vor dem Build die Tests aus.
 
-Die Browserumgebung blockiert lokale URLs und hat WebGL deaktiviert. Deshalb
-sind ein gerenderter Browser-Spieltest, endgültige Schatten-/Shaderkontrolle
-und reale Desktop-/Mobile-FPS hier **nicht bestätigt**. Separate CPU-Projektionen
+Bei der bisherigen dokumentierten Prüfung blockierte die Browserumgebung lokale URLs und WebGL. Ein gerenderter Browser-Spieltest, die endgültige Schatten-/Shaderkontrolle und reale Desktop-/Mobile-FPS sind in diesem Prüfstand **nicht bestätigt**. Separate CPU-Projektionen
 der tatsächlichen Szenengeometrie wurden auf Gartenanordnung, Palmenform und
 Bodenperspektive sowie Gartenhaus, Inselränder und Nebeninseln geprüft. Sie ersetzen keinen WebGL-Test. Die Tests der
 Szenenanimation verwenden einen Renderer-Stub und messen keine Bildrate.
+
+Lizenzhinweise für Three.js: [THIRD-PARTY-LICENSES.txt](../public/mooslicht/THIRD-PARTY-LICENSES.txt). Details zur vorhandenen Produktionsprüfung stehen in [docs/mooslicht-production-review.md](../docs/mooslicht-production-review.md).

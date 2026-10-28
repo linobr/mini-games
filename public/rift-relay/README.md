@@ -1,9 +1,10 @@
 # RIFT//RELAY
 
-Ihre Energie. Dein Gegenschlag. Ein Solo-Arcade-Spiel, in dem ein Dash
-gegnerische Kugeln in zielsuchende Gegenangriffe umwandelt.
+Ein Solo-Arcade-Spiel, in dem ein Dash gegnerische Kugeln in zielsuchende Gegenangriffe umwandelt. Ein Durchlauf dauert höchstens drei Minuten.
 
-## Controls
+**[Spielen](https://linobr.github.io/mini-games/rift-relay/)** · [Spieleübersicht](../../README.md) · [Steuerung](#steuerung) · [Spielregeln](#spielregeln) · [Lokal starten](#lokal-starten)
+
+## Steuerung
 
 | Aktion | Steuerung |
 | --- | --- |
@@ -15,7 +16,7 @@ gegnerische Kugeln in zielsuchende Gegenangriffe umwandelt.
 | Vollbild | F |
 | Touch | Linker Joystick + DASH rechts |
 
-## Gameplay
+## Spielregeln
 
 - Drei Hüllenpunkte, 180 Sekunden bis zum Abschluss.
 - Dash in Bewegungsrichtung: 170 ms Unverwundbarkeit, Umwandlungsradius 52,
@@ -35,31 +36,37 @@ gegnerische Kugeln in zielsuchende Gegenangriffe umwandelt.
 - Abgebrochene Runs werden nicht gewertet. Rekorde werden am Ergebnisbildschirm
   gespeichert, Einstellungen sofort. Bei blockiertem Speicher gilt Sitzungsmodus.
 
-## Running locally
+## Lokal starten
 
-Im Repository: `npm install`, danach `npm run dev` und `/mini-games/rift-relay/`
-öffnen. `npm run build` kopiert das eigenständige Spiel unverändert nach
+Mit Node.js 22.13.0 oder neuer vom Repository-Stamm:
+
+```bash
+npm ci
+npm run dev
+```
+
+Die lokale Adresse öffnen, normalerweise `http://localhost:5173/mini-games/rift-relay/`. `npm run build` kopiert das eigenständige Spiel unverändert nach
 `dist/rift-relay/`. Der bestehende Pages-Workflow veröffentlicht `dist`.
 
 Alternativ aus diesem Ordner: `python3 -m http.server 8080` und
 `http://localhost:8080/` öffnen. Ohne Build oder npm verwendbar. Der Link
 «Mini Games» setzt voraus, dass das Spiel unterhalb der Spieleübersicht liegt.
 
-## Technology
+## Technik
 
 Vanilla ES-Module, Canvas 2D, Web Audio und localStorage. Keine neuen
 Abhängigkeiten oder externen Anfragen. Schriften verwenden eine bewusst
 gewählte lokale Font-Kombination. Arena, Geometrie, Symbole, Partikel und
 Sounds werden prozedural erzeugt. UI und Simulation sind getrennt.
 
-- `engine.js`: reine Simulation ohne DOM oder Audio, Seed und Kollisionsprüfung
-- `renderer.js`: Canvas, vorberechneter Arenaboden, Glow-Sprites, Effekte
-- `input.js`: Tastenzustände und Pointer-Steuerung
-- `audio.js`: kurze synthetische Sounds und adaptiver Sequencer
-- `storage.js`: validierte lokale Einstellungen, Erfolge und Statistiken
-- `main.js`: Zustandswechsel, UI, fester Simulationsschritt und Lifecycle
+- [`engine.js`](src/engine.js): reine Simulation ohne DOM oder Audio, Seed und Kollisionsprüfung
+- [`renderer.js`](src/renderer.js): Canvas, vorberechneter Arenaboden, Glow-Sprites, Effekte
+- [`input.js`](src/input.js): Tastenzustände und Pointer-Steuerung
+- [`audio.js`](src/audio.js): kurze synthetische Sounds und adaptiver Sequencer
+- [`storage.js`](src/storage.js): validierte lokale Einstellungen, Erfolge und Statistiken
+- [`main.js`](src/main.js): Zustandswechsel, UI, fester Simulationsschritt und Lifecycle
 
-## Performance
+## Leistung
 
 Ziel sind 60 FPS; die tatsächliche Rate hängt von Gerät und Browser ab.
 120-Hz-Simulation mit Akkumulator, höchstens 100 ms nachzuholender Frame-Zeit.
@@ -76,13 +83,12 @@ Effekte und erholt sich bei stabiler Framerate. Spielregeln bleiben gleich.
 `?debug=1` zeigt FPS, Frame-Zeit, Objektzahlen, Qualität und Spielerposition.
 Grafik-, Audio-, Bewegungs- und Shake-Einstellungen sind im Menü erreichbar.
 
-## Validation
+## Prüfung
 
 `npm test` führt die vorhandenen Kartenspieltests sowie die RIFT//RELAY-Tests
 aus: deterministische Simulation, framerateunabhängige Bewegung, Dash- und
 Trefferkollisionen, Kombos, Arenaereignisse, Neustarts, Speicherfehler und
 vollständige Runs mit begrenzten Pools. `npm run build` prüft die Integration.
 
-Die Browser-Vorschau war in der Erstellungsumgebung durch deren URL-Richtlinie
-blockiert. Eine echte Browser-, Touch-, Audio- und Sichtprüfung sowie eine
+Die Browser-Vorschau war bei der ursprünglichen Prüfung in der Erstellungsumgebung durch deren URL-Richtlinie blockiert. Eine echte Browser-, Touch-, Audio- und Sichtprüfung sowie eine
 60-FPS-Messung auf Endgeräten sind deshalb noch offen.
