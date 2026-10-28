@@ -1,20 +1,28 @@
 # Mini Games
-<img width="285" height="708" alt="image" src="https://github.com/user-attachments/assets/e0e6beaf-5041-4d30-a897-e921674037a7" />
 
-Eine kleine, erweiterbare Browser-Spielesammlung mit Spielen und einem interaktiven Lernmodul:
+Browser-Spielesammlung mit lokalen und Online-Spielen sowie einem interaktiven Atom-Labor. Gebaut mit JavaScript, Vite, Three.js und PeerJS.
 
-- **Mooslicht** – 3D-Miniatur-Abenteuer in einem nach Gartenfotos gestalteten Garten mit Klangrätsel, Schwertkampf und Sprungpassagen
-- **Tic-Tac-Toe** für zwei Personen, online oder am gleichen Gerät
-- **Turbo Bump** für zwei bis vier Personen – Autoscooter trifft Sumo
-- **Color Clash Flip** für eine bis vier Personen – ein eigenes doppelseitiges
-  Kartenspiel mit Bots, lokalen und Online-Runden
-- **Atom-Labor** zum interaktiven Nachbauen von Atomen im Bohrschen Schalenmodell
-- **RIFT//RELAY** – Solo-Arcade: gegnerische Energie mit einem Dash in Gegenangriffe umwandeln
+**[Spieleübersicht öffnen](https://linobr.github.io/mini-games/)** · [Lokal starten](#lokal-starten) · [Spiele](#spiele) · [Technik](#technik) · [Weiterentwickeln](#weiterentwickeln)
 
-## Spielen
+## Spiele
 
-Nach der ersten erfolgreichen GitHub-Pages-Veröffentlichung ist die Seite unter
-`https://linobr.github.io/mini-games/` erreichbar.
+| Spiel oder Modul | Schwerpunkt | Dokumentation |
+| --- | --- | --- |
+| Mooslicht | 3D-Gartenabenteuer mit Rätseln und Kampf | [Anleitung](mooslicht/README.md) |
+| KI-Mooslicht | Separate Live-Kopie für begrenzte Agent-Weiterentwicklung | [Anleitung und Scope](ki-mooslicht/README.md) |
+| Berggarten | Ressourcen, Produktion und Gartenaufbau | [Anleitung](public/berggarten/README.md) |
+| Tic-Tac-Toe | Zwei Personen, lokal oder online | Spieleübersicht |
+| Turbo Bump | Autoscooter gegen zwei bis vier Personen | [Steuerung](#steuerung) |
+| Color Clash Flip | Kartenspiel mit Bots und Mehrspielerbetrieb | [Spielmodi](#spielmodi) |
+| RIFT//RELAY | Solo-Arcade mit Dash und Gegenangriff | [Anleitung](public/rift-relay/README.md) |
+| Atom-Labor | Atome und Elektronenschalen für 118 Elemente | [Überblick](#atom-labor) |
+
+<details>
+<summary>Vorschau der Spieleübersicht</summary>
+
+<img width="285" height="708" alt="Spieleübersicht auf einem schmalen Bildschirm" src="https://github.com/user-attachments/assets/e0e6beaf-5041-4d30-a897-e921674037a7" />
+
+</details>
 
 ## Zwei Ansichten
 
@@ -38,7 +46,8 @@ Mehrspieler-Funktionen. NEXUS ist die Standardansicht für neue Besucher.
 - Startseite als Basis für weitere Spiele
 
 ## Mooslicht
-<img width="309" height="297" alt="image" src="https://github.com/user-attachments/assets/178d6478-bd40-4fed-a228-4bdf334a8e76" />
+
+<img width="309" height="297" alt="Spielvorschau" src="https://github.com/user-attachments/assets/178d6478-bd40-4fed-a228-4bdf334a8e76" />
 
 Ein kleines 3D-Fantasy-Abenteuer unter `/mini-games/mooslicht/`: frei erkunden,
 die Palme und das Hüttendach erklimmen, Klangobjekte spielen und Mooswächter besiegen.
@@ -48,6 +57,7 @@ Die Geometrie und die Klänge entstehen im Spiel; Three.js wird lokal mitgebaut.
 Weitere Details: [`mooslicht/README.md`](mooslicht/README.md).
 
 ## RIFT//RELAY
+
 <img width="193" height="300" alt="image" src="https://github.com/user-attachments/assets/0a926092-f515-47e2-8423-022b8f673a9d" />
 
 Ein eigenständiges Canvas-Spiel unter `public/rift-relay/`, erreichbar über
@@ -139,7 +149,7 @@ damit das Lernmodul ohne externe API funktioniert.
 
 - JavaScript und Vite
 - PeerJS/WebRTC für die direkte Verbindung zwischen den Spielern
-- Keine Anmeldung und keine Speicherung persönlicher Daten
+- Keine Anmeldung; Spielstände, Einstellungen und einzelne Hub-Daten werden lokal im Browser gespeichert
 - GitHub Actions veröffentlicht Änderungen an `main` automatisch über Pages
 
 PeerJS Cloud wird für den Verbindungsaufbau verwendet. Danach kommunizieren die
@@ -155,12 +165,16 @@ der Onlinemodus in einzelnen restriktiven Netzwerken ohne TURN-Relay scheitern.
 
 ## Lokal starten
 
-Voraussetzung ist Node.js 22 oder neuer.
+Voraussetzung ist Node.js **22.13.0 oder neuer** und npm, gemäss [package.json](package.json).
 
 ```bash
-npm install
+git clone https://github.com/linobr/mini-games.git
+cd mini-games
+npm ci
 npm run dev
 ```
+
+Die Vite-Adresse mit dem Projektpfad öffnen, normalerweise `http://localhost:5173/mini-games/`.
 
 Regeltests und Produktionsbuild:
 
@@ -177,7 +191,7 @@ in `src/turbo-bump.js`. Color Clash trennt die reine Regelengine
 (`src/color-clash.js`). Weitere Spiele können nach dem gleichen Muster ergänzt
 und als zusätzliche Karten freigeschaltet werden.
 
-## NEXUS 2.0 und Berggarten Evolution
+## Lokale Daten, PWA und Berggarten
 
 Die Startseite bietet NEXUS und die erhaltene Originalansicht. Favoriten, Name,
 Öffnungsstatistik und Entdecker-XP bleiben auf dem aktuellen Gerät. Die PWA kann
@@ -189,3 +203,19 @@ Auftragsautomatik, Quests und JSON-Sicherungen. Alte Spielstände werden gesiche
 und migriert. Öffne Berggarten nur in einem schreibenden Tab.
 
 [Architektur, Änderungen, Prüfungen und bekannte Grenzen](docs/nexus-evolution.md)
+
+## Projektstruktur und Beiträge
+
+| Pfad | Aufgabe |
+| --- | --- |
+| `index.html`, `src/` | Spiele-Hub, gemeinsame Oberflächen und Spielmodule |
+| `mooslicht/` | Einstieg des Original-Abenteuers |
+| `ki-mooslicht/` | Getrennte Live-Kopie mit eigenem Quellcode |
+| `berggarten/` | Einstieg für Berggarten |
+| `public/rift-relay/` | Eigenständige Arcade-Dateien |
+| `test/`, `qa/` | Regeltests und Browser-Prüfwerkzeuge |
+| `.github/workflows/pages.yml` | Build und GitHub-Pages-Veröffentlichung |
+
+Für Änderungen zuerst den betroffenen Spielkern und dessen Tests prüfen. Der autonome Jetson-Agent hat einen engeren Arbeitsbereich; siehe [AGENT_SCOPE.md](AGENT_SCOPE.md). Eine Änderung an der Dokumentation erweitert diesen Agent-Scope nicht.
+
+Quellen und Hinweise stehen in [DATA_SOURCES.md](DATA_SOURCES.md) und den Lizenzdateien der jeweiligen Komponenten.
