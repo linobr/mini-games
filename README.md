@@ -1,171 +1,196 @@
-# Mini Games
+# Mini Games · NEXUS
 
-Browser-Spielesammlung mit lokalen und Online-Spielen sowie einem interaktiven Atom-Labor. Gebaut mit JavaScript, Vite, Three.js und PeerJS.
+<p align="center">
+  <img src="docs/assets/mini-games-hero.svg" width="100%" alt="Mini Games: ein Hub, viele Spielwelten. Zehn Einträge in fünf Kategorien mit Solo-, lokalen und Online-Modi." />
+</p>
 
-**[Spieleübersicht öffnen](https://linobr.github.io/mini-games/)** · [Lokal starten](#lokal-starten) · [Spiele](#spiele) · [Technik](#technik) · [Weiterentwickeln](#weiterentwickeln)
+<p align="center">
+  <strong>Abenteuer, Arcade, Strategie und ein Atom-Labor direkt im Browser.</strong><br />
+  Ein gemeinsamer Hub für eigene Spielideen, lokale Fortschritte und Runden mit Freunden.
+</p>
 
-## Spiele
+<p align="center">
+  <a href="https://linobr.github.io/mini-games/"><strong>Jetzt spielen ↗</strong></a>
+  &nbsp;·&nbsp; <a href="#spielbibliothek">Spiele entdecken</a>
+  &nbsp;·&nbsp; <a href="#spielmodi">Modi vergleichen</a>
+  &nbsp;·&nbsp; <a href="#lokal-starten">Lokal starten</a>
+  &nbsp;·&nbsp; <a href="docs/TECHNICAL_GUIDE.md">Detailanleitungen</a>
+</p>
 
-| Spiel oder Modul | Schwerpunkt | Dokumentation |
-| --- | --- | --- |
-| Mooslicht | 3D-Gartenabenteuer mit Rätseln und Kampf | [Anleitung](mooslicht/README.md) |
-| KI-Mooslicht | Separate Live-Kopie für begrenzte Agent-Weiterentwicklung | [Anleitung und Scope](ki-mooslicht/README.md) |
-| Berggarten | Ressourcen, Produktion und Gartenaufbau | [Anleitung](public/berggarten/README.md) |
-| Tic-Tac-Toe | Zwei Personen, lokal oder online | Spieleübersicht |
-| Turbo Bump | Autoscooter gegen zwei bis vier Personen | [Steuerung](#steuerung) |
-| Color Clash Flip | Kartenspiel mit Bots und Mehrspielerbetrieb | [Spielmodi](#spielmodi) |
-| RIFT//RELAY | Solo-Arcade mit Dash und Gegenangriff | [Anleitung](public/rift-relay/README.md) |
-| Atom-Labor | Atome und Elektronenschalen für 118 Elemente | [Überblick](#atom-labor) |
+<p align="center">
+  <a href="https://github.com/linobr/mini-games/actions/workflows/pages.yml"><img src="https://github.com/linobr/mini-games/actions/workflows/pages.yml/badge.svg" alt="Status von Tests, Build und GitHub-Pages-Veröffentlichung" /></a>
+  <img src="https://img.shields.io/badge/Katalog-10%20Eintr%C3%A4ge-56e4cf?labelColor=101827" alt="Produktionskatalog mit zehn Einträgen" />
+  <img src="https://img.shields.io/badge/Node.js-22.13.0%2B-8b9dff?labelColor=101827" alt="Node.js 22.13.0 oder neuer" />
+  <img src="https://img.shields.io/badge/App-NEXUS%20%2B%20PWA-56e4cf?labelColor=101827" alt="NEXUS-Oberfläche und installierbare PWA" />
+</p>
+
+<table>
+  <tr>
+    <td width="33%" valign="top"><strong>01 · Direkt entdecken</strong><br /><br />Spiele durchsuchen, Kategorien filtern und Favoriten setzen. NEXUS und Originalansicht greifen auf dieselben Spiele zu.</td>
+    <td width="33%" valign="top"><strong>02 · Gemeinsam spielen</strong><br /><br />Lokal ein Gerät teilen oder einen Raum mit sechsstelligen alphanumerischen Codes öffnen. Verbindungen laufen über PeerJS und WebRTC.</td>
+    <td width="33%" valign="top"><strong>03 · Lokal weitermachen</strong><br /><br />Profil, ausgewählte Einstellungen und Spielstände bleiben im Browser. Berggarten bietet zusätzlich JSON-Sicherungen.</td>
+  </tr>
+</table>
+
+**Navigation:** [Bibliothek](#spielbibliothek) · [Katalog-Charts](#katalog-in-zahlen) · [Spielmodi](#spielmodi) · [Multiplayer](#multiplayer-architektur) · [Berggarten](#berggarten-fünf-regionen) · [RIFT//RELAY](#riftrelay-in-drei-minuten) · [PWA und Daten](#lokale-daten-und-pwa) · [Entwicklung](#entwicklung)
+
+<a id="spiele"></a>
+
+## Spielbibliothek
+
+Die Cover stammen aus dem vorhandenen Projekt. Karte öffnen und bei einer NEXUS-Detailansicht **Jetzt spielen** wählen.
+
+<table>
+  <tr>
+    <td width="33%" align="center" valign="top"><a href="https://linobr.github.io/mini-games/berggarten/"><img src="public/covers/berggarten.svg" width="240" alt="Berggarten – Covergrafik" /><br /><strong>Berggarten</strong></a><br /><sub>Ressourcen, Produktion und Gartenaufbau</sub></td>
+    <td width="33%" align="center" valign="top"><a href="https://linobr.github.io/mini-games/mooslicht/"><img src="public/covers/mooslicht.svg" width="240" alt="Mooslicht – Covergrafik" /><br /><strong>Mooslicht</strong></a><br /><sub>Schwebender Garten, Rätsel und Kampf</sub></td>
+    <td width="33%" align="center" valign="top"><a href="https://linobr.github.io/mini-games/rift-relay/"><img src="public/covers/rift.svg" width="240" alt="RIFT//RELAY – Covergrafik" /><br /><strong>RIFT//RELAY</strong></a><br /><sub>Dash, Gegenangriffe und Drei-Minuten-Run</sub></td>
+  </tr>
+  <tr>
+    <td width="33%" align="center" valign="top"><a href="https://linobr.github.io/mini-games/#spiel/tictactoe"><img src="public/covers/tictactoe.svg" width="240" alt="Tic-Tac-Toe – Covergrafik" /><br /><strong>Tic-Tac-Toe</strong></a><br /><sub>Zwei Personen, lokal oder online</sub></td>
+    <td width="33%" align="center" valign="top"><a href="https://linobr.github.io/mini-games/#spiel/turbo"><img src="public/covers/turbo.svg" width="240" alt="Turbo Bump – Covergrafik" /><br /><strong>Turbo Bump</strong></a><br /><sub>Autoscooter-Sumo für 2–4 Personen</sub></td>
+    <td width="33%" align="center" valign="top"><a href="https://linobr.github.io/mini-games/#spiel/color"><img src="public/covers/color.svg" width="240" alt="Color Clash Flip – Covergrafik" /><br /><strong>Color Clash Flip</strong></a><br /><sub>Kartenspiel mit Bots und Mehrspielermodi</sub></td>
+  </tr>
+  <tr>
+    <td width="33%" align="center" valign="top"><a href="https://linobr.github.io/mini-games/meteor-run.html"><img src="public/covers/meteor.svg" width="240" alt="Meteor Run – Covergrafik" /><br /><strong>Meteor Run</strong></a><br /><sub>Meteoren ausweichen und überleben</sub></td>
+    <td width="33%" align="center" valign="top"><a href="https://linobr.github.io/mini-games/neon-defender.html"><img src="public/covers/neon.svg" width="240" alt="Neon Defender – Covergrafik" /><br /><strong>Neon Defender</strong></a><br /><sub>Wellen, Upgrades und Bosskämpfe</sub></td>
+    <td width="33%" align="center" valign="top"><a href="https://linobr.github.io/mini-games/atom-lab.html"><img src="public/covers/atom.svg" width="240" alt="Atom-Labor – Covergrafik" /><br /><strong>Atom-Labor</strong></a><br /><sub>Atome und Elektronenschalen erkunden</sub></td>
+  </tr>
+</table>
+
+### Separater Live-Ableger
+
+<table>
+  <tr>
+    <td width="33%" align="center"><a href="https://linobr.github.io/mini-games/ki-mooslicht/"><img src="public/covers/ki-mooslicht.svg" width="240" alt="KI-Mooslicht – Cover des separaten Live-Ablegers" /><br /><strong>KI-Mooslicht</strong></a></td>
+    <td valign="top"><strong>Eigener Arbeitsbereich, eigener Spielstand.</strong><br /><br />Der Produktionsbuild ergänzt KI-Mooslicht als getrennten Live-Eintrag. Das Original bleibt unter <code>mooslicht/</code>. Die Regeln für den autonomen Jetson-Agenten stehen in <a href="AGENT_SCOPE.md">AGENT_SCOPE.md</a>.</td>
+  </tr>
+</table>
 
 <details>
-<summary>Vorschau der Spieleübersicht</summary>
+<summary>Vorhandene Projektaufnahmen ansehen</summary>
 
-<img width="285" height="708" alt="Spieleübersicht auf einem schmalen Bildschirm" src="https://github.com/user-attachments/assets/e0e6beaf-5041-4d30-a897-e921674037a7" />
+<table>
+  <tr>
+    <td align="center"><img src="https://github.com/user-attachments/assets/e0e6beaf-5041-4d30-a897-e921674037a7" height="260" alt="Dokumentierte Spieleübersicht auf einem schmalen Bildschirm" /><br />Spieleübersicht</td>
+    <td align="center"><img src="https://github.com/user-attachments/assets/178d6478-bd40-4fed-a228-4bdf334a8e76" height="260" alt="Dokumentierte Mooslicht-Spielansicht" /><br />Mooslicht</td>
+    <td align="center"><img src="https://github.com/user-attachments/assets/0a926092-f515-47e2-8423-022b8f673a9d" height="260" alt="Dokumentierte RIFT-RELAY-Spielansicht" /><br />RIFT//RELAY</td>
+  </tr>
+</table>
+
+Die Aufnahmen stammen aus der bisherigen Dokumentation. Sie sind kein neuer Abnahmebeleg des aktuellen Builds.
 
 </details>
 
-## Zwei Ansichten
+## Katalog in Zahlen
 
-Der Spiele-Hub bietet zwei umschaltbare Oberflächen:
+![Zwei Charts: Verteilung der zehn Katalogeinträge auf fünf Kategorien sowie maximale Teilnehmerplätze der drei Online-Angebote.](docs/assets/catalog-charts.svg)
 
-- **NEXUS**: neues, dunkles Arcade-Design mit überarbeiteter Startseite.
-- **Original**: bisherige helle Startseite und Gestaltung.
+Der **Produktionskatalog** umfasst zehn Einträge: vier Arcade, zwei Abenteuer, zwei Strategie, ein Aufbauangebot und ein Lernmodul. Mitgezählt werden der separate KI-Mooslicht-Ableger und das Atom-Labor. Die Zahl beschreibt keine zehn voneinander unabhängigen Spiele.
 
-Der Umschalter befindet sich oben rechts (auch auf Smartphones). Die Einstellung
-bleibt über `localStorage` nach einem Neuladen erhalten, sofern der Browser
-lokalen Speicher erlaubt. Beide Ansichten nutzen dieselben Spiele, Links und
-Mehrspieler-Funktionen. NEXUS ist die Standardansicht für neue Besucher.
+Die Daten stammen aus [GAME_META](src/nexus-model.js) und den Spielimplementierungen. Sie sind **keine Nutzer-, Beliebtheits- oder Leistungsstatistik**. Werte, Definitionen und Quellencommit stehen in [visualization-data.json](docs/assets/visualization-data.json).
 
-## Funktionen
+## Spielmodi
 
-- Online-Räume mit sechsstelligen Einladungscodes
-- Direkter Einladungslink und Teilen-Funktion
-- Lokaler Modus für zwei Spieler am gleichen Gerät
-- Synchronisiertes Spielfeld, Rundenzähler und Punktestand
-- Responsive Oberfläche für Smartphone und Desktop
-- Startseite als Basis für weitere Spiele
+![Matrix der Solo-, lokalen und Online-Modi aller zehn Katalogeinträge.](docs/assets/game-modes.svg)
 
-## Mooslicht
+- **Solo:** ein Mensch; Color Clash Flip ergänzt Bots.
+- **Gleiches Gerät:** mehrere Menschen teilen ein Gerät.
+- **Online:** mehrere Browser verbinden sich über WebRTC. Netzwerk und Signalisierung müssen erreichbar sein.
 
-<img width="309" height="297" alt="Spielvorschau" src="https://github.com/user-attachments/assets/178d6478-bd40-4fed-a228-4bdf334a8e76" />
+Die Gruppen überschneiden sich. Color Clash Flip unterstützt alle drei Modusarten; Turbo Bump ist für verbundene Browser ausgelegt.
 
-Ein kleines 3D-Fantasy-Abenteuer unter `/mini-games/mooslicht/`: frei erkunden,
-die Palme und das Hüttendach erklimmen, Klangobjekte spielen und Mooswächter besiegen.
-Die drei Lichter erwecken am Schluss den Herzbaum. Tastatur/Maus und Touch,
-Rücksetzpunkte, lokale Spielstände und anpassbare Grafik sind enthalten.
-Die Geometrie und die Klänge entstehen im Spiel; Three.js wird lokal mitgebaut.
-Weitere Details: [`mooslicht/README.md`](mooslicht/README.md).
+<details>
+<summary>Alle Modi und Teilnehmergrenzen als Tabelle</summary>
 
-## RIFT//RELAY
+| Angebot | Solo | Gleiches Gerät | Online | Max. Plätze |
+| --- | :---: | :---: | :---: | ---: |
+| Berggarten | Ja | — | — | 1 |
+| Mooslicht | Ja | — | — | 1 |
+| KI-Mooslicht | Ja | — | — | 1 |
+| Tic-Tac-Toe | — | Ja | Ja | 2 |
+| Turbo Bump | — | — | Ja | 4 |
+| Color Clash Flip | Ja | Ja | Ja | 4 |
+| Meteor Run | Ja | — | — | 1 |
+| Neon Defender | Ja | — | — | 1 |
+| Atom-Labor | Ja | — | — | 1 |
+| RIFT//RELAY | Ja | — | — | 1 |
 
-<img width="193" height="300" alt="image" src="https://github.com/user-attachments/assets/0a926092-f515-47e2-8423-022b8f673a9d" />
+Die Obergrenze bei Color Clash umfasst die Plätze der Runde. Diese können je nach Modus Menschen oder Bots belegen.
 
-Ein eigenständiges Canvas-Spiel unter `public/rift-relay/`, erreichbar über
-die Spieleübersicht und nach Veröffentlichung unter `/mini-games/rift-relay/`.
-WASD oder Pfeiltasten bewegen das Schiff, Leertaste oder Shift lösen den Dash
-aus. Im Dash werden nahe gegnerische Kugeln in zielsuchende eigene Geschosse
-umgewandelt. Risikoreiche Manöver, Trefferketten und zerstörte Sender bringen
-Punkte; reines Überleben bringt keine laufenden Punkte.
+</details>
 
-Ein Run dauert maximal drei Minuten. Kernereignisse nach 60 und 120 Sekunden,
-Pulsringe, Kombos bis ×16, ein Daily-Seed, zwölf Erfolge und drei freischaltbare
-Signalfarben sorgen für Variation. Highscores, Statistik und Einstellungen
-bleiben ausschliesslich auf dem Gerät. Das Spiel benötigt keine zusätzlichen
-Pakete, externen Assets, Accounts oder Server. Details und Steuerung stehen in
-[`public/rift-relay/README.md`](public/rift-relay/README.md).
+## Multiplayer-Architektur
 
-## Color Clash Flip
+![Host-Modell für Turbo Bump und Color Clash: PeerJS unterstützt den Verbindungsaufbau; Eingaben und Spielzustände laufen anschliessend über WebRTC.](docs/assets/multiplayer-network.svg)
 
-Color Clash Flip ist ein eigenständiges Kartenspiel mit eigenen Farben,
-Symbolen und Kartengrafiken. Eine Karte passt, wenn Farbe, Zahl oder Symbol mit
-der obersten Ablage übereinstimmt. Prisma-Karten erlauben eine freie Farbwahl.
-Wer zuerst keine Karten mehr besitzt, gewinnt.
+1. Der Host erstellt einen Raum und teilt Code oder Einladungslink.
+2. Gäste treten bei. PeerJS Cloud unterstützt die Signalisierung.
+3. Im Host-Modell berechnet bzw. prüft der Host den Spielzustand.
+4. Gäste senden Aktionen und erhalten die für sie vorgesehene Ansicht.
 
-Jede physische Karte hat eine helle und eine dunkle Seite. Eine Flip-Karte
-wechselt die aktive Seite aller Hände und Stapel, ohne Karten neu zu mischen.
-Die helle Seite enthält Pause, Wende, +2, Prisma und Flip. Auf der dunklen Seite
-warten Alle Pause, Wende, +5, Prisma, Prisma +3 und Flip. Strafkarten werden
-sofort gezogen und nicht gestapelt.
+Color Clash überträgt Gästen nur deren eigene Handkarten. Turbo Bump berechnet die Physik beim Host. Tic-Tac-Toe verwendet ebenfalls PeerJS und bietet zusätzlich einen lokalen Modus.
 
-### Spielmodi
+Es gibt keinen eigenen Backend-Spielserver und keine Accounts. Ohne erreichbare Signalisierung, bei restriktiven Netzen oder nach einem Host-Ausfall kann der Online-Modus nicht fortgesetzt werden. Ein eigener TURN-Relay ist nicht konfiguriert.
 
-- **Solo:** ein Mensch gegen 1–3 Bots; nach dem Laden der Seite ohne
-  Internetverbindung spielbar
-- **Online:** 2–4 Freunde per Raumcode oder Einladungslink
-- **Gemischt:** der Online-Host kann freie Plätze mit Bots füllen
-- **Pass & Play:** 2–4 Personen an einem Gerät mit Sichtschutz beim Wechsel
+## Berggarten: fünf Regionen
 
-Bots gibt es in den Stufen Einfach und Normal. Einfache Bots wählen zufällig
-aus erlaubten Karten. Normale Bots priorisieren Aktionen, reagieren auf kleine
-gegnerische Hände und wählen bevorzugt eine häufige Farbe aus ihrer eigenen
-Hand. Sie kennen keine fremden Handkarten.
+![Balkendiagramm mit den einzelnen Freischaltpreisen der fünf Berggarten-Regionen sowie Angaben zu Produktion und Offline-Fortschritt.](docs/assets/berggarten-progression.svg)
 
-### Bedienung
+| Region | Einzelpreis der Freischaltung |
+| --- | ---: |
+| Sonnenwiese | Startgebiet |
+| Steinbruch | 180 Münzen |
+| Kristallhöhen | 650 Münzen |
+| Waldtal | 1’100 Münzen |
+| Schneegipfel und Alpendorf | 1’800 Münzen |
 
-Spielbare Karten leuchten. Einmal antippen wählt eine Karte, ein zweites
-Antippen oder **Karte spielen** legt sie ab. Der Nachziehstapel ist direkt in
-der Tischmitte erreichbar. Nach einer spielbaren gezogenen Karte kann sie
-sofort gelegt oder der Zug beendet werden. Bei nur noch einer Handkarte muss
-innerhalb von drei Sekunden **Letzte Karte!** gedrückt werden, sonst folgen
-zwei Strafkarten.
+Diese Werte sind **Preise der jeweils nächsten Region**, keine kumulierten Ausgaben. Die Produktion umfasst Sägewerk, Steinwerk, Kristallschleiferei und Alpenwerkstatt. Vier Betriebstypen können bis Stufe drei ausgebaut werden.
 
-Die Hand ist auf Smartphones als horizontal wischbarer Kartenfächer am unteren
-Rand angeordnet. Hochformat, iPhone-Safe-Areas und grosse Touch-Ziele werden
-unterstützt. Ton und Bot-Schwierigkeit werden lokal als Einstellungen
-gespeichert; Namen und Spielverläufe werden nicht dauerhaft gespeichert.
+Steuerung: Ressource anklicken oder antippen, **WASD/Pfeile** bewegen, **Leertaste** abbauen, **R** einlagern und **F** verkaufen. Berggarten nur in einem schreibenden Tab öffnen.
 
-## Turbo Bump
+[Spielanleitung](public/berggarten/README.md) · [Engine und Preise](src/berggarten/engine.js) · [Produktion](src/berggarten/evolution.js)
 
-Alle Fahrer bewegen sich gleichzeitig in einer schwebenden Arena. Ramme die
-anderen Autos über den Rand, behalte deine drei Leben und überlebe als letzter
-Fahrer. Nach 30 Sekunden beginnt die Arena zu schrumpfen. Einsammelbare
-Blitz-Symbole liefern neue Boost-Ladungen.
+<a id="riftrelay"></a>
 
-### Steuerung
+## RIFT//RELAY in drei Minuten
 
-| Aktion | Desktop | Smartphone |
+![Zeitachse für einen überlebten RIFT-RELAY-Run: Start, Kernereignisse bei 60 und 120 Sekunden sowie Abschluss bei 180 Sekunden.](docs/assets/rift-timeline.svg)
+
+**WASD/Pfeile** bewegen das Schiff. **Leertaste/Shift** löst den Dash aus und wandelt nahe gegnerische Kugeln in Gegenangriffe um. Ein Run beginnt mit drei Hüllenpunkten und kann bei einer Niederlage vorzeitig enden.
+
+Die Zeitachse beschreibt Spielregeln, keine gemessene Spieldauer einzelner Nutzer und keinen FPS-Benchmark.
+
+[Regeln und Steuerung](public/rift-relay/README.md) · [Spielengine](public/rift-relay/src/engine.js)
+
+## NEXUS-Profil und Entdecker-XP
+
+![Regelkurve der Entdecker-XP: 25 XP pro erstmals geöffnetem Eintrag, bis 250 XP bei zehn verschiedenen Einträgen.](docs/assets/nexus-discovery.svg)
+
+NEXUS speichert Name, Avatar, Favoriten, letzte Öffnungen und ausgewählte Einstellungen lokal. Pro erstmals aus dem Hub geöffnetem Eintrag gibt es **25 XP**. Wiederholte Starts geben keine zusätzlichen XP.
+
+Level zwei beginnt bei vier verschiedenen Einträgen, Level drei bei acht. Das misst **Öffnungen**, keine Siege, absolvierte Runs oder Spielminuten. Direkte Aufrufe einzelner Spiel-URLs werden nicht als Hub-Öffnung gezählt.
+
+Quelle: [src/nexus-model.js](src/nexus-model.js).
+
+## Lokale Daten und PWA
+
+![Übersicht über getrennte Speicherung von Profil und Spielständen in localStorage sowie versionierten App-Dateien im PWA-Cache.](docs/assets/pwa-data.svg)
+
+| Speicherbereich | Inhalt | Verhalten |
 | --- | --- | --- |
-| Gas | `W` oder `↑` | Taste `▲` |
-| Bremsen / rückwärts | `S` oder `↓` | Taste `▼` |
-| Lenken | `A` / `D` oder `←` / `→` | Tasten `←` / `→` |
-| Boost | Leertaste | Taste `BOOST` |
+| NEXUS-Profil | Name, Favoriten, Öffnungen, Einstellungen | Lokal im aktuellen Browser; kein Cloud-Sync |
+| Spielstände | Spielabhängige Fortschritte und Rekorde | Eigene Schlüssel je Spiel |
+| Berggarten-Sicherung | Exportierter JSON-Spielstand | Vom Benutzer separat aufbewahren |
+| PWA-Cache | Eigene Dateien eines vollständigen Builds | Offline erst nach erfolgreichem vollständigem Caching |
 
-Der Host erstellt den Raum und kann das Match ab zwei verbundenen Fahrern
-starten. Die Lobby ist bei vier Fahrern voll. Der Host berechnet die Physik und
-verteilt den Spielzustand; die übrigen Browser senden nur ihre Eingaben. Damit
-bleibt das Match ohne eigenen Spielserver synchron.
+Ein Update wartet, bis die Tabs des alten Builds geschlossen sind. Der Service Worker verwaltet eigene Build-Caches und verändert keine Spielstände in localStorage. Online-Multiplayer benötigt weiterhin Netzwerk.
 
-## Atom-Labor
-
-Das Atom-Labor ist ein interaktives Chemie-Lernmodul für alle 118 bekannten
-Elemente. Elemente können über Suche, Dropdown oder ein anklickbares
-Periodensystem gewählt werden. Protonen, Neutronen und Elektronen lassen sich
-einzeln verändern. Die Seite zeigt Element, Isotop, Massenzahl, Ionenladung,
-Periode, Gruppe, Elektronenkonfiguration und die Elektronenverteilung im
-vereinfachten Bohrschen Schalenmodell. Die Elementdaten liegen lokal im Projekt,
-damit das Lernmodul ohne externe API funktioniert.
-
-## Technik
-
-- JavaScript und Vite
-- PeerJS/WebRTC für die direkte Verbindung zwischen den Spielern
-- Keine Anmeldung; Spielstände, Einstellungen und einzelne Hub-Daten werden lokal im Browser gespeichert
-- GitHub Actions veröffentlicht Änderungen an `main` automatisch über Pages
-
-PeerJS Cloud wird für den Verbindungsaufbau verwendet. Danach kommunizieren die
-Browser über WebRTC direkt miteinander. Turbo Bump nutzt den Raum-Ersteller als
-autoritativen Host; wenn dessen Browser geschlossen wird, endet der Raum.
-
-Color Clash Flip verwendet dasselbe Host-Prinzip: Nur der Host erstellt und
-verwaltet den Kartenstapel, prüft Züge und steuert Bots. Gäste senden lediglich
-gewünschte Aktionen. Jeder Gast erhält nur seine eigene Hand; von Gegnern wird
-nur die Kartenanzahl übertragen. Es gibt keinen eigenen Backend-Server, keine
-Datenbank und keine Accounts. Da WebRTC eine direkte Verbindung aufbaut, kann
-der Onlinemodus in einzelnen restriktiven Netzwerken ohne TURN-Relay scheitern.
+Berggarten migriert ältere Spielstände in Format drei und legt vor der Migration eine Sicherung an. Bei unbekanntem oder beschädigtem Speicherformat wird nicht automatisch überschrieben. Blockierter oder gelöschter Browserspeicher kann Fortschritt und einzelne Funktionen einschränken.
 
 ## Lokal starten
 
-Voraussetzung ist Node.js **22.13.0 oder neuer** und npm, gemäss [package.json](package.json).
+**Voraussetzungen:** Node.js **22.13.0 oder neuer** und npm.
 
 ```bash
 git clone https://github.com/linobr/mini-games.git
@@ -174,48 +199,67 @@ npm ci
 npm run dev
 ```
 
-Die Vite-Adresse mit dem Projektpfad öffnen, normalerweise `http://localhost:5173/mini-games/`.
+Normalerweise **http://localhost:5173/mini-games/** öffnen. Falls Vite einen anderen Port meldet, diesen mit dem Pfad `/mini-games/` verwenden.
 
-Regeltests und Produktionsbuild:
+Der Dev-Hub kann neun Einträge zeigen: Die separate KI-Live-Karte wird erst im Produktionsbuild ergänzt.
+
+## Entwicklung
+
+![Build-Landkarte: fünf Vite-Einstiege und Public-Dateien werden gebaut, um die Live-Karte und PWA ergänzt und nach den Actions-Prüfungen veröffentlicht.](docs/assets/build-map.svg)
 
 ```bash
 npm test
 npm run build
+npm run preview
 ```
 
-## Weiterentwickeln
+Die Vorschau liegt normalerweise unter **http://localhost:4173/mini-games/**. `npm run build` führt Vite, die Live-Karten-Injektion und die Erzeugung des PWA-Caches aus.
 
-Die Startseite ist als Spiele-Hub aufgebaut. Turbo Bump liegt als eigenes Modul
-in `src/turbo-bump.js`. Color Clash trennt die reine Regelengine
-(`src/color-clash-engine.js`) von Oberfläche und Netzwerk
-(`src/color-clash.js`). Weitere Spiele können nach dem gleichen Muster ergänzt
-und als zusätzliche Karten freigeschaltet werden.
+| Baustein | Aufgabe | Version im Projekt |
+| --- | --- | --- |
+| Vite | Mehrseitiger Build und Entwicklungsserver | `8.0.13` |
+| Three.js | 3D-Spielwelten | `0.180.0` |
+| PeerJS | Verbindungsaufbau und WebRTC-Datenverbindungen | `1.5.5` |
+| Playwright | Browser-Prüfungen | `1.58.2` |
 
-## Lokale Daten, PWA und Berggarten
+<details>
+<summary>Browser-Prüfungen und Projektstruktur</summary>
 
-Die Startseite bietet NEXUS und die erhaltene Originalansicht. Favoriten, Name,
-Öffnungsstatistik und Entdecker-XP bleiben auf dem aktuellen Gerät. Die PWA kann
-nach dem vollständigen ersten Laden auch offline starten; Multiplayer benötigt Internet.
-Updates werden nach Schliessen aller alten App-Tabs aktiv.
+```bash
+npx playwright install chromium webkit
+NEXUS_QA_SERVE=1 npm run test:browser
+NEXUS_QA_SERVE=1 npm run test:smoke
+```
 
-Berggarten umfasst fünf Regionen, feste Bauplätze, vier Produktionsbetriebe,
-Auftragsautomatik, Quests und JSON-Sicherungen. Alte Spielstände werden gesichert
-und migriert. Öffne Berggarten nur in einem schreibenden Tab.
-
-[Architektur, Änderungen, Prüfungen und bekannte Grenzen](docs/nexus-evolution.md)
-
-## Projektstruktur und Beiträge
+Diese Befehle setzen den zuvor erzeugten Produktionsbuild voraus. Der [Pages-Workflow](.github/workflows/pages.yml) führt Regeltests, Build, Browserabläufe und Prüfungen aller Spieleinstiege vor der Veröffentlichung aus. Sein Badge zeigt den Workflow-Status; es ersetzt keine Abnahme beliebiger Geräte.
 
 | Pfad | Aufgabe |
 | --- | --- |
-| `index.html`, `src/` | Spiele-Hub, gemeinsame Oberflächen und Spielmodule |
-| `mooslicht/` | Einstieg des Original-Abenteuers |
-| `ki-mooslicht/` | Getrennte Live-Kopie mit eigenem Quellcode |
-| `berggarten/` | Einstieg für Berggarten |
-| `public/rift-relay/` | Eigenständige Arcade-Dateien |
-| `test/`, `qa/` | Regeltests und Browser-Prüfwerkzeuge |
-| `.github/workflows/pages.yml` | Build und GitHub-Pages-Veröffentlichung |
+| `index.html`, `src/nexus*.js` | Originalkarten und NEXUS-Hub |
+| `src/app.js` | Tic-Tac-Toe und gemeinsame Einstiege |
+| `src/color-clash*.js` | Kartenspiel-Engine, Oberfläche und Netzwerk |
+| `src/turbo-bump.js` | Turbo Bump |
+| `src/berggarten/`, `berggarten/` | Aufbau-Spiel und Einstieg |
+| `src/mooslicht/`, `mooslicht/` | Original-Abenteuer |
+| `ki-mooslicht/` | Getrennter Live-Ableger |
+| `public/` | Standalone-Spiele, Cover und statische Assets |
+| `test/`, `qa/` | Regel- und Browserprüfungen |
 
-Für Änderungen zuerst den betroffenen Spielkern und dessen Tests prüfen. Der autonome Jetson-Agent hat einen engeren Arbeitsbereich; siehe [AGENT_SCOPE.md](AGENT_SCOPE.md). Eine Änderung an der Dokumentation erweitert diesen Agent-Scope nicht.
+</details>
 
-Quellen und Hinweise stehen in [DATA_SOURCES.md](DATA_SOURCES.md) und den Lizenzdateien der jeweiligen Komponenten.
+Die [Scope-Regeln](AGENT_SCOPE.md) gelten für den autonomen Jetson-Agenten. Dieser arbeitet ausschliesslich unter `ki-mooslicht/**`. Die hier dargestellte Dokumentation erweitert diese Rechte nicht.
+
+## Dokumentation und Grenzen
+
+| Du suchst … | Einstieg |
+| --- | --- |
+| Detaillierte Spielregeln, Steuerung und bisherige Projektaufnahmen | [Technische Referenz](docs/TECHNICAL_GUIDE.md) |
+| Zahlen und Quellen hinter allen Charts | [Visualisierungsdaten](docs/assets/visualization-data.json) |
+| Original-Abenteuer | [Mooslicht](mooslicht/README.md) |
+| Separater Live-Ableger | [KI-Mooslicht](ki-mooslicht/README.md) |
+| Aufbau-Spiel | [Berggarten](public/berggarten/README.md) |
+| Arcade-Run | [RIFT//RELAY](public/rift-relay/README.md) |
+| Architektur, PWA und bisherige Prüfungen | [NEXUS Evolution](docs/nexus-evolution.md) |
+| Elementdaten und Quellen | [DATA_SOURCES.md](DATA_SOURCES.md) |
+
+Die Charts zeigen den dokumentierten Code-Stand. Für diese README wurden keine neuen Nutzungsstatistiken, FPS-Werte, Browser-Abnahmen oder Spielerzahlen gemessen. Reale Bildrate, WebGL-Unterstützung und Verbindungsqualität hängen vom jeweiligen Gerät und Netzwerk ab.

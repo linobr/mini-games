@@ -1,0 +1,313 @@
+{
+  "source": {
+    "repository": "linobr/mini-games",
+    "commit": "55a40d9fb694764b357b901005f5cf25411db800",
+    "verified_at": "2026-10-28",
+    "kind": "source_definitions",
+    "live_usage_measured": false
+  },
+  "catalog": {
+    "production_entries": 10,
+    "included_live_forks": 1,
+    "included_learning_modules": 1,
+    "categories": {
+      "Aufbau": 1,
+      "Abenteuer": 2,
+      "Strategie": 2,
+      "Arcade": 4,
+      "Lernen": 1
+    },
+    "games": [
+      {
+        "id": "berggarten",
+        "title": "Berggarten",
+        "category": "Aufbau",
+        "mode_label": "Solo",
+        "color": "#478e74",
+        "url": "https://linobr.github.io/mini-games/berggarten/",
+        "cover": "public/covers/berggarten.svg",
+        "solo": true,
+        "same_device": false,
+        "online": false,
+        "max_participants": 1,
+        "kind": "game"
+      },
+      {
+        "id": "mooslicht",
+        "title": "Mooslicht",
+        "category": "Abenteuer",
+        "mode_label": "Solo",
+        "color": "#567a96",
+        "url": "https://linobr.github.io/mini-games/mooslicht/",
+        "cover": "public/covers/mooslicht.svg",
+        "solo": true,
+        "same_device": false,
+        "online": false,
+        "max_participants": 1,
+        "kind": "game"
+      },
+      {
+        "id": "ki-mooslicht",
+        "title": "KI-Mooslicht",
+        "category": "Abenteuer",
+        "mode_label": "Solo · Live",
+        "color": "#a45e91",
+        "url": "https://linobr.github.io/mini-games/ki-mooslicht/",
+        "cover": "public/covers/ki-mooslicht.svg",
+        "solo": true,
+        "same_device": false,
+        "online": false,
+        "max_participants": 1,
+        "kind": "live_fork"
+      },
+      {
+        "id": "tictactoe",
+        "title": "Tic-Tac-Toe",
+        "category": "Strategie",
+        "mode_label": "2 · Lokal / WLAN",
+        "color": "#4d789f",
+        "url": "https://linobr.github.io/mini-games/#spiel/tictactoe",
+        "cover": "public/covers/tictactoe.svg",
+        "solo": false,
+        "same_device": true,
+        "online": true,
+        "max_participants": 2,
+        "kind": "game"
+      },
+      {
+        "id": "turbo",
+        "title": "Turbo Bump",
+        "category": "Arcade",
+        "mode_label": "2–4 · WLAN",
+        "color": "#8465c1",
+        "url": "https://linobr.github.io/mini-games/#spiel/turbo",
+        "cover": "public/covers/turbo.svg",
+        "solo": false,
+        "same_device": false,
+        "online": true,
+        "max_participants": 4,
+        "kind": "game"
+      },
+      {
+        "id": "color",
+        "title": "Color Clash Flip",
+        "category": "Strategie",
+        "mode_label": "1–4 · Solo / WLAN",
+        "color": "#af5c88",
+        "url": "https://linobr.github.io/mini-games/#spiel/color",
+        "cover": "public/covers/color.svg",
+        "solo": true,
+        "same_device": true,
+        "online": true,
+        "max_participants": 4,
+        "kind": "game"
+      },
+      {
+        "id": "meteor",
+        "title": "Meteor Run",
+        "category": "Arcade",
+        "mode_label": "Solo",
+        "color": "#7f914e",
+        "url": "https://linobr.github.io/mini-games/meteor-run.html",
+        "cover": "public/covers/meteor.svg",
+        "solo": true,
+        "same_device": false,
+        "online": false,
+        "max_participants": 1,
+        "kind": "game"
+      },
+      {
+        "id": "neon",
+        "title": "Neon Defender",
+        "category": "Arcade",
+        "mode_label": "Solo",
+        "color": "#29899e",
+        "url": "https://linobr.github.io/mini-games/neon-defender.html",
+        "cover": "public/covers/neon.svg",
+        "solo": true,
+        "same_device": false,
+        "online": false,
+        "max_participants": 1,
+        "kind": "game"
+      },
+      {
+        "id": "atom",
+        "title": "Atom-Labor",
+        "category": "Lernen",
+        "mode_label": "Solo",
+        "color": "#578c80",
+        "url": "https://linobr.github.io/mini-games/atom-lab.html",
+        "cover": "public/covers/atom.svg",
+        "solo": true,
+        "same_device": false,
+        "online": false,
+        "max_participants": 1,
+        "kind": "learning_module"
+      },
+      {
+        "id": "rift",
+        "title": "RIFT//RELAY",
+        "category": "Arcade",
+        "mode_label": "Solo",
+        "color": "#6265a5",
+        "url": "https://linobr.github.io/mini-games/rift-relay/",
+        "cover": "public/covers/rift.svg",
+        "solo": true,
+        "same_device": false,
+        "online": false,
+        "max_participants": 1,
+        "kind": "game"
+      }
+    ],
+    "source": "src/nexus-model.js",
+    "production_injection": "scripts/inject-live-game.mjs"
+  },
+  "modes": {
+    "definitions": {
+      "solo": "Ein Mensch; bei Color Clash gegen Bots",
+      "same_device": "Mehrere Menschen am selben Gerät",
+      "online": "Mehrere Browser über WebRTC"
+    },
+    "counts": {
+      "solo": 8,
+      "same_device": 2,
+      "online": 3
+    },
+    "counts_overlap": true,
+    "sources": [
+      "src/nexus-model.js",
+      "src/app.js",
+      "src/turbo-bump.js",
+      "src/color-clash.js"
+    ]
+  },
+  "berggarten": {
+    "regions": [
+      {
+        "name": "Sonnenwiese",
+        "unlock_cost": 0
+      },
+      {
+        "name": "Steinbruch",
+        "unlock_cost": 180
+      },
+      {
+        "name": "Kristallhöhen",
+        "unlock_cost": 650
+      },
+      {
+        "name": "Waldtal",
+        "unlock_cost": 1100
+      },
+      {
+        "name": "Schneegipfel & Alpendorf",
+        "unlock_cost": 1800
+      }
+    ],
+    "unit": "coins",
+    "costs_are": "individual_next_region_unlock_prices_not_cumulative",
+    "offline_progress_max_seconds": 300,
+    "production_buildings": 4,
+    "source": "src/berggarten/engine.js"
+  },
+  "rift_relay": {
+    "run_seconds": 180,
+    "core_events_seconds": [
+      60,
+      120
+    ],
+    "starting_hull_points": 3,
+    "source": "public/rift-relay/src/engine.js"
+  },
+  "discovery": {
+    "xp_per_unique_open": 25,
+    "level_rule": "1 + floor(unique_entries / 4)",
+    "max_unique_entries": 10,
+    "curve": [
+      {
+        "unique_entries": 0,
+        "xp": 0,
+        "level": 1
+      },
+      {
+        "unique_entries": 1,
+        "xp": 25,
+        "level": 1
+      },
+      {
+        "unique_entries": 2,
+        "xp": 50,
+        "level": 1
+      },
+      {
+        "unique_entries": 3,
+        "xp": 75,
+        "level": 1
+      },
+      {
+        "unique_entries": 4,
+        "xp": 100,
+        "level": 2
+      },
+      {
+        "unique_entries": 5,
+        "xp": 125,
+        "level": 2
+      },
+      {
+        "unique_entries": 6,
+        "xp": 150,
+        "level": 2
+      },
+      {
+        "unique_entries": 7,
+        "xp": 175,
+        "level": 2
+      },
+      {
+        "unique_entries": 8,
+        "xp": 200,
+        "level": 3
+      },
+      {
+        "unique_entries": 9,
+        "xp": 225,
+        "level": 3
+      },
+      {
+        "unique_entries": 10,
+        "xp": 250,
+        "level": 3
+      }
+    ],
+    "is": "rule_curve_not_usage_or_wins",
+    "source": "src/nexus-model.js"
+  },
+  "build": {
+    "node_min": "22.13.0",
+    "entries": 5,
+    "runtime_dependencies": 2,
+    "scripts": {
+      "dev": "vite",
+      "build": "vite build && node scripts/inject-live-game.mjs && node scripts/build-pwa.mjs",
+      "test": "node --test",
+      "preview": "vite preview",
+      "test:browser": "node qa/browser.mjs",
+      "test:smoke": "node qa/smoke.mjs"
+    },
+    "sources": [
+      "package.json",
+      "vite.config.js",
+      ".github/workflows/pages.yml",
+      "scripts/build-pwa.mjs",
+      "scripts/sw-template.js"
+    ]
+  },
+  "notes": [
+    "Catalog entries are not all independent games: one live fork and one learning module are included.",
+    "Mode counts overlap and are not percentages of exclusive categories.",
+    "Berggarten prices are individual unlock prices, not total spending.",
+    "The RIFT timeline describes a successfully survived run; defeat can end it earlier.",
+    "All charts describe code or configuration, not FPS, traffic, players, popularity or newly executed tests."
+  ]
+}

@@ -1,0 +1,251 @@
+# Mini Games – technische Referenz
+
+[← Zur Projektübersicht](../README.md)
+
+Diese Referenz erhält die bisherigen Detailbeschreibungen und Projektaufnahmen. Die neue Übersicht, Spielbibliothek und Visualisierungen stehen in der [README](../../README.md). Alle Shell-Befehle werden vom Repository-Stamm ausgeführt.
+
+Browser-Spielesammlung mit lokalen und Online-Spielen sowie einem interaktiven Atom-Labor. Gebaut mit JavaScript, Vite, Three.js und PeerJS.
+
+**[Spieleübersicht öffnen](https://linobr.github.io/mini-games/)** · [Lokal starten](#lokal-starten) · [Spiele](#spiele) · [Technik](#technik) · [Weiterentwickeln](#weiterentwickeln)
+
+## Spiele
+
+| Spiel oder Modul | Schwerpunkt | Dokumentation |
+| --- | --- | --- |
+| Mooslicht | 3D-Gartenabenteuer mit Rätseln und Kampf | [Anleitung](../mooslicht/README.md) |
+| KI-Mooslicht | Separate Live-Kopie für begrenzte Agent-Weiterentwicklung | [Anleitung und Scope](../ki-mooslicht/README.md) |
+| Berggarten | Ressourcen, Produktion und Gartenaufbau | [Anleitung](../public/berggarten/README.md) |
+| Tic-Tac-Toe | Zwei Personen, lokal oder online | Spieleübersicht |
+| Turbo Bump | Autoscooter gegen zwei bis vier Personen | [Steuerung](#steuerung) |
+| Color Clash Flip | Kartenspiel mit Bots und Mehrspielerbetrieb | [Spielmodi](#spielmodi) |
+| RIFT//RELAY | Solo-Arcade mit Dash und Gegenangriff | [Anleitung](../public/rift-relay/README.md) |
+| Atom-Labor | Atome und Elektronenschalen für 118 Elemente | [Überblick](#atom-labor) |
+| Meteor Run | Meteoren ausweichen und möglichst lange überleben | `public/meteor-run.html` |
+| Neon Defender | Gegnerwellen, Upgrades und Bosskämpfe | `public/neon-defender.html` |
+
+<details>
+<summary>Vorschau der Spieleübersicht</summary>
+
+<img width="285" height="708" alt="Spieleübersicht auf einem schmalen Bildschirm" src="https://github.com/user-attachments/assets/e0e6beaf-5041-4d30-a897-e921674037a7" />
+
+</details>
+
+## Zwei Ansichten
+
+Der Spiele-Hub bietet zwei umschaltbare Oberflächen:
+
+- **NEXUS**: neues, dunkles Arcade-Design mit überarbeiteter Startseite.
+- **Original**: bisherige helle Startseite und Gestaltung.
+
+Der Umschalter befindet sich oben rechts (auch auf Smartphones). Die Einstellung
+bleibt über `localStorage` nach einem Neuladen erhalten, sofern der Browser
+lokalen Speicher erlaubt. Beide Ansichten nutzen dieselben Spiele, Links und
+Mehrspieler-Funktionen. NEXUS ist die Standardansicht für neue Besucher.
+
+## Funktionen
+
+- Online-Räume mit sechsstelligen alphanumerischen Einladungscodes
+- Direkter Einladungslink und Teilen-Funktion
+- Lokaler Modus für zwei Spieler am gleichen Gerät
+- Synchronisiertes Spielfeld, Rundenzähler und Punktestand
+- Responsive Oberfläche für Smartphone und Desktop
+- Startseite als Basis für weitere Spiele
+
+## Mooslicht
+
+<img width="309" height="297" alt="Spielvorschau" src="https://github.com/user-attachments/assets/178d6478-bd40-4fed-a228-4bdf334a8e76" />
+
+Ein kleines 3D-Fantasy-Abenteuer unter `/mini-games/mooslicht/`: frei erkunden,
+die Palme und das Hüttendach erklimmen, Klangobjekte spielen und Mooswächter besiegen.
+Die drei Lichter erwecken am Schluss den Herzbaum. Tastatur/Maus und Touch,
+Rücksetzpunkte, lokale Spielstände und anpassbare Grafik sind enthalten.
+Die Geometrie und die Klänge entstehen im Spiel; Three.js wird lokal mitgebaut.
+Weitere Details: [`mooslicht/README.md`](../mooslicht/README.md).
+
+## RIFT//RELAY
+
+<img width="193" height="300" alt="image" src="https://github.com/user-attachments/assets/0a926092-f515-47e2-8423-022b8f673a9d" />
+
+Ein eigenständiges Canvas-Spiel unter `public/rift-relay/`, erreichbar über
+die Spieleübersicht und nach Veröffentlichung unter `/mini-games/rift-relay/`.
+WASD oder Pfeiltasten bewegen das Schiff, Leertaste oder Shift lösen den Dash
+aus. Im Dash werden nahe gegnerische Kugeln in zielsuchende eigene Geschosse
+umgewandelt. Risikoreiche Manöver, Trefferketten und zerstörte Sender bringen
+Punkte; reines Überleben bringt keine laufenden Punkte.
+
+Ein Run dauert maximal drei Minuten. Kernereignisse nach 60 und 120 Sekunden,
+Pulsringe, Kombos bis ×16, ein Daily-Seed, zwölf Erfolge und drei freischaltbare
+Signalfarben sorgen für Variation. Highscores, Statistik und Einstellungen
+bleiben ausschliesslich auf dem Gerät. Das Spiel benötigt keine zusätzlichen
+Pakete, externen Assets, Accounts oder Server. Details und Steuerung stehen in
+[`public/rift-relay/README.md`](../public/rift-relay/README.md).
+
+## Color Clash Flip
+
+Color Clash Flip ist ein eigenständiges Kartenspiel mit eigenen Farben,
+Symbolen und Kartengrafiken. Eine Karte passt, wenn Farbe, Zahl oder Symbol mit
+der obersten Ablage übereinstimmt. Prisma-Karten erlauben eine freie Farbwahl.
+Wer zuerst keine Karten mehr besitzt, gewinnt.
+
+Jede physische Karte hat eine helle und eine dunkle Seite. Eine Flip-Karte
+wechselt die aktive Seite aller Hände und Stapel, ohne Karten neu zu mischen.
+Die helle Seite enthält Pause, Wende, +2, Prisma und Flip. Auf der dunklen Seite
+warten Alle Pause, Wende, +5, Prisma, Prisma +3 und Flip. Strafkarten werden
+sofort gezogen und nicht gestapelt.
+
+### Spielmodi
+
+- **Solo:** ein Mensch gegen 1–3 Bots; nach dem Laden der Seite ohne
+  Internetverbindung spielbar
+- **Online:** 2–4 Freunde per Raumcode oder Einladungslink
+- **Gemischt:** der Online-Host kann freie Plätze mit Bots füllen
+- **Pass & Play:** 2–4 Personen an einem Gerät mit Sichtschutz beim Wechsel
+
+Bots gibt es in den Stufen Einfach und Normal. Einfache Bots wählen zufällig
+aus erlaubten Karten. Normale Bots priorisieren Aktionen, reagieren auf kleine
+gegnerische Hände und wählen bevorzugt eine häufige Farbe aus ihrer eigenen
+Hand. Sie kennen keine fremden Handkarten.
+
+### Bedienung
+
+Spielbare Karten leuchten. Einmal antippen wählt eine Karte, ein zweites
+Antippen oder **Karte spielen** legt sie ab. Der Nachziehstapel ist direkt in
+der Tischmitte erreichbar. Nach einer spielbaren gezogenen Karte kann sie
+sofort gelegt oder der Zug beendet werden. Bei nur noch einer Handkarte muss
+innerhalb von drei Sekunden **Letzte Karte!** gedrückt werden, sonst folgen
+zwei Strafkarten.
+
+Die Hand ist auf Smartphones als horizontal wischbarer Kartenfächer am unteren
+Rand angeordnet. Hochformat, iPhone-Safe-Areas und grosse Touch-Ziele werden
+unterstützt. Ton und Bot-Schwierigkeit werden lokal als Einstellungen
+gespeichert; Namen und Spielverläufe werden nicht dauerhaft gespeichert.
+
+## Turbo Bump
+
+Alle Fahrer bewegen sich gleichzeitig in einer schwebenden Arena. Ramme die
+anderen Autos über den Rand, behalte deine drei Leben und überlebe als letzter
+Fahrer. Nach 30 Sekunden beginnt die Arena zu schrumpfen. Einsammelbare
+Blitz-Symbole liefern neue Boost-Ladungen.
+
+### Steuerung
+
+| Aktion | Desktop | Smartphone |
+| --- | --- | --- |
+| Gas | `W` oder `↑` | Taste `▲` |
+| Bremsen / rückwärts | `S` oder `↓` | Taste `▼` |
+| Lenken | `A` / `D` oder `←` / `→` | Tasten `←` / `→` |
+| Boost | Leertaste | Taste `BOOST` |
+
+Der Host erstellt den Raum und kann das Match ab zwei verbundenen Fahrern
+starten. Die Lobby ist bei vier Fahrern voll. Der Host berechnet die Physik und
+verteilt den Spielzustand; die übrigen Browser senden nur ihre Eingaben. Damit
+bleibt das Match ohne eigenen Spielserver synchron.
+
+## Atom-Labor
+
+Das Atom-Labor ist ein interaktives Chemie-Lernmodul für alle 118 bekannten
+Elemente. Elemente können über Suche, Dropdown oder ein anklickbares
+Periodensystem gewählt werden. Protonen, Neutronen und Elektronen lassen sich
+einzeln verändern. Die Seite zeigt Element, Isotop, Massenzahl, Ionenladung,
+Periode, Gruppe, Elektronenkonfiguration und die Elektronenverteilung im
+vereinfachten Bohrschen Schalenmodell. Die Elementdaten liegen lokal im Projekt,
+damit das Lernmodul ohne externe API funktioniert.
+
+## Technik
+
+- JavaScript und Vite
+- PeerJS/WebRTC für die direkte Verbindung zwischen den Spielern
+- Keine Anmeldung; Spielstände, Einstellungen und einzelne Hub-Daten werden lokal im Browser gespeichert
+- GitHub Actions veröffentlicht Änderungen an `main` automatisch über Pages
+
+PeerJS Cloud wird für den Verbindungsaufbau verwendet. Danach kommunizieren die
+Browser über WebRTC direkt miteinander. Turbo Bump nutzt den Raum-Ersteller als
+autoritativen Host; wenn dessen Browser geschlossen wird, endet der Raum.
+
+Color Clash Flip verwendet dasselbe Host-Prinzip: Nur der Host erstellt und
+verwaltet den Kartenstapel, prüft Züge und steuert Bots. Gäste senden lediglich
+gewünschte Aktionen. Jeder Gast erhält nur seine eigene Hand; von Gegnern wird
+nur die Kartenanzahl übertragen. Es gibt keinen eigenen Backend-Server, keine
+Datenbank und keine Accounts. Da WebRTC eine direkte Verbindung aufbaut, kann
+der Onlinemodus in einzelnen restriktiven Netzwerken ohne TURN-Relay scheitern.
+
+## Lokal starten
+
+Voraussetzung ist Node.js **22.13.0 oder neuer** und npm, gemäss [package.json](../package.json).
+
+```bash
+git clone https://github.com/linobr/mini-games.git
+cd mini-games
+npm ci
+npm run dev
+```
+
+Die Vite-Adresse mit dem Projektpfad öffnen, normalerweise `http://localhost:5173/mini-games/`.
+
+Regeltests und Produktionsbuild:
+
+```bash
+npm test
+npm run build
+```
+
+## Weiterentwickeln
+
+Die Startseite ist als Spiele-Hub aufgebaut. Turbo Bump liegt als eigenes Modul
+in `src/turbo-bump.js`. Color Clash trennt die reine Regelengine
+(`src/color-clash-engine.js`) von Oberfläche und Netzwerk
+(`src/color-clash.js`). Weitere Spiele können nach dem gleichen Muster ergänzt
+und als zusätzliche Karten freigeschaltet werden.
+
+## Lokale Daten, PWA und Berggarten
+
+Die Startseite bietet NEXUS und die erhaltene Originalansicht. Favoriten, Name,
+Öffnungsstatistik und Entdecker-XP bleiben auf dem aktuellen Gerät. Die PWA kann
+nach dem vollständigen ersten Laden auch offline starten; Multiplayer benötigt Internet.
+Updates werden nach Schliessen aller alten App-Tabs aktiv.
+
+Berggarten umfasst fünf Regionen, feste Bauplätze, vier Produktionsbetriebe,
+Auftragsautomatik, Quests und JSON-Sicherungen. Alte Spielstände werden gesichert
+und migriert. Öffne Berggarten nur in einem schreibenden Tab.
+
+[Architektur, Änderungen, Prüfungen und bekannte Grenzen](../docs/nexus-evolution.md)
+
+## Projektstruktur und Beiträge
+
+| Pfad | Aufgabe |
+| --- | --- |
+| `index.html`, `src/` | Spiele-Hub, gemeinsame Oberflächen und Spielmodule |
+| `mooslicht/` | Einstieg des Original-Abenteuers |
+| `ki-mooslicht/` | Getrennte Live-Kopie mit eigenem Quellcode |
+| `berggarten/` | Einstieg für Berggarten |
+| `public/rift-relay/` | Eigenständige Arcade-Dateien |
+| `test/`, `qa/` | Regeltests und Browser-Prüfwerkzeuge |
+| `.github/workflows/pages.yml` | Build und GitHub-Pages-Veröffentlichung |
+
+Für Änderungen zuerst den betroffenen Spielkern und dessen Tests prüfen. Der autonome Jetson-Agent hat einen engeren Arbeitsbereich; siehe [AGENT_SCOPE.md](../AGENT_SCOPE.md). Eine Änderung an der Dokumentation erweitert diesen Agent-Scope nicht.
+
+Quellen und Hinweise stehen in [DATA_SOURCES.md](../DATA_SOURCES.md) und den Lizenzdateien der jeweiligen Komponenten.
+
+## Ergänzungen zur neuen Übersicht
+
+Der Produktionskatalog enthält zehn Einträge gemäss `src/nexus-model.js`. Dazu gehören ein eigener Lernbaustein und der separat entwickelte KI-Mooslicht-Ableger. Der lokale Dev-Hub kann vor der Live-Karten-Injektion neun Einträge zeigen.
+
+Die Root-README ergänzt auch Meteor Run und Neon Defender. Beide liegen als eigenständige HTML-Spiele unter `public/` und sind im Katalog als Solo-Arcade eingeordnet.
+
+Die fünf Berggarten-Preise sind Einzelpreise der jeweils nächsten Region. Die Entdecker-XP sind eine Regel auf Basis erstmals geöffneter Katalogeinträge, keine Nutzungsanalyse oder Siegstatistik.
+
+Die Werte, Kategorien, Modusdefinitionen und Quellen stehen in [visualization-data.json](assets/visualization-data.json).
+
+## Meteor Run
+
+Solo-Ausweichspiel im Weltraumkorridor. WASD oder Pfeiltasten bewegen das Schiff. Auf Mobilgeräten sind sichtbare Tasten und direktes Ziehen über das Spielfeld vorgesehen. Längeres Überleben erhöht die Schwierigkeit; ein Highscore wird lokal gespeichert.
+
+Quellcode: [public/meteor-run.html](../public/meteor-run.html).
+
+## Neon Defender
+
+Solo-Survival mit Gegnerwellen, XP und wählbaren Upgrades. Am Desktop bewegen WASD oder Pfeiltasten die Figur; die Maus zielt, Halten schiesst. Leertaste oder Shift löst den Dash aus. Auf Mobilgeräten gibt es einen Stick sowie Auto-Aim, Auto-Fire und eine Dash-Taste.
+
+Alle fünf Wellen erscheint ein Boss. Highscores liegen lokal im Browser.
+
+Quellcode: [public/neon-defender.html](../public/neon-defender.html).
