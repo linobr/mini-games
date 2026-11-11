@@ -68,10 +68,20 @@ for (const engine of (process.env.NEXUS_QA_ENGINES === 'chromium' ? [chromium] :
   await page.locator('#auto').click();
   await page.locator('#stop-gathering').click();
   assert.equal(await page.locator('#auto').getAttribute('aria-pressed'), 'false');
+  await page.locator('#open-warehouse').click();
+  assert.equal(await page.locator('#panel-storage').isVisible(), true);
+  assert.equal(await page.locator('#order-title').isVisible(), true);
+  await page.locator('#tab-work').click();
   await page.locator('#tab-work').focus();
   await page.keyboard.press('ArrowRight');
   assert.equal(await page.locator('#tab-business').getAttribute('aria-selected'), 'true');
   assert.equal(await page.locator('#panel-business').isVisible(), true);
+  await page.locator('#building-kind').selectOption('alpineworks');
+  assert.equal(await page.locator('#building-plot').isDisabled(), true);
+  assert.equal(await page.locator('#building-plot option:checked').textContent(), 'Region noch gesperrt');
+  assert.match(await page.locator('#building-availability').textContent(), /Schneegipfel/);
+  await page.locator('#building-kind').selectOption('sawmill');
+  assert.equal(await page.locator('#building-plot').isEnabled(), true);
   await page.locator('#build-place').click(); await page.locator('[data-auto]').click();
   await page.waitForFunction(() => JSON.parse(localStorage.getItem('berggarten-save-v1')).stock.plank >= 1, { timeout: 15000 });
   await page.locator('[data-auto]').click();
@@ -97,6 +107,7 @@ for (const engine of (process.env.NEXUS_QA_ENGINES === 'chromium' ? [chromium] :
     const fallback = await browser.newContext({ viewport: { width: 1280, height: 800 }, serviceWorkers: 'block' });
     await fallback.addInitScript(() => { const original = HTMLCanvasElement.prototype.getContext; HTMLCanvasElement.prototype.getContext = function (kind, ...args) { return kind.includes('webgl') ? null : original.call(this, kind, ...args); }; });
     const p = await fallback.newPage(); p.on('pageerror', e => errors.push(e.message)); await p.goto(`${base}berggarten/`); await p.locator('#loading').waitFor({ state: 'hidden' }); await p.locator('#start-playing').click(); await p.locator('#game').click({ position: { x: 350, y: 200 } });
+    assert.equal(await p.locator('.play').evaluate(node => getComputedStyle(node).position), 'sticky');
     await p.screenshot({ path: '/tmp/berggarten-canvas.png' }); assert.deepEqual(errors, []); await fallback.close(); results.push('Canvas fallback PASS');
     const offline = await browser.newContext(); const pwa = await offline.newPage(); await pwa.goto(base); await pwa.evaluate(() => navigator.serviceWorker.ready); await pwa.reload(); await pwa.waitForFunction(() => !!navigator.serviceWorker.controller); await offline.setOffline(true); await pwa.reload(); await pwa.locator('#nx-cards .nx-card').first().waitFor(); await pwa.goto(`${base}berggarten/`); await pwa.locator('#loading').waitFor({ state: 'hidden' }); await offline.close(); results.push('PWA precache, offline reload and offline Berggarten PASS');
   }

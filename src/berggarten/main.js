@@ -32,8 +32,8 @@ for(const k of GOODS)$('stock-'+k).textContent=state.stock[k];$('sell-stock').di
 for(const[k,r]of Object.entries(RECIPES).filter(([k])=>k!=='kit'))$('craft-'+k).disabled=!state.workshop||!!state.job||Object.entries(r.input).some(([k,n])=>state.stock[k]<n)||k==='gem'&&state.zones<3;
 $('job-status').textContent=state.job?`${RECIPES[state.job.kind].name} · ${Math.ceil(state.job.remaining)} s`:state.workshop?'Bereit':'Manufaktur bauen';$('job-fill').style.width=state.job?`${(1-state.job.remaining/state.job.total)*100}%`:'0%';
 const o=order(state);$('order-title').textContent=o.title;$('order-desc').textContent=`${state.stock[o.kind]} / ${o.amount} ${NAMES[o.kind]} im Lager`;$('order-number').textContent=`#${state.orders+1}`;$('fulfill').textContent=`Liefern · +${o.reward} ● · +20 XP`;$('fulfill').disabled=state.stock[o.kind]<o.amount;
-const m=MILESTONES.find(m=>!state.claimed.includes(m.id));if(m){$('quest-title').textContent=`${m.title} · ${Math.min(state[m.stat],m.goal)} / ${m.goal}`;$('quest-fill').style.width=`${Math.min(1,state[m.stat]/m.goal)*100}%`;$('claim').textContent=state[m.stat]>=m.goal?`+${m.reward} ● abholen`:`Belohnung: ${m.reward} ●`;$('claim').disabled=state[m.stat]<m.goal;}else{$('quest-title').textContent='Alle Meilensteine erreicht. Dein Tal wächst weiter.';$('quest-fill').style.width='100%';$('claim').textContent='Talmeister ✓';$('claim').disabled=true;}
-$('business-status').textContent=state.workers||state.projects?`${state.workers} Helfer · ${state.projects*8} ● Besuchereinnahmen / Min.`:'Ein gutes Werkzeug ist der Anfang.';
+const m=MILESTONES.find(m=>!state.claimed.includes(m.id));if(m){$('quest-title').textContent=`${m.title} · ${Math.min(state[m.stat],m.goal)} / ${m.goal}`;$('quest-fill').style.width=`${Math.min(1,state[m.stat]/m.goal)*100}%`;$('claim').textContent=state[m.stat]>=m.goal?`+${m.reward} ● abholen`:`Belohnung: ${m.reward} ●`;$('claim').disabled=state[m.stat]<m.goal;}else{$('quest-title').textContent='Alle Meilensteine erreicht';$('quest-fill').style.width='100%';$('claim').textContent='Talmeister ✓';$('claim').disabled=true;}
+$('business-status').textContent=state.workers||state.projects?`${state.workers} Helfer · ${state.projects*8} ● Besuchereinnahmen / Min.`:`${state.zones} / ${ZONES.length} Regionen erschlossen`;
 crystalButton.disabled = state.zones < 3;
 $('crystal-availability').textContent = crystalButton.disabled ? 'Ab Kristallhöhen' : '15 Münzen';
 updateGatherStatus();
@@ -46,7 +46,7 @@ $('sell').onclick=doSell;$('deposit').onclick=doDeposit;$('sell-stock').onclick=
 for(const k of Object.keys(RECIPES).filter(k=>k!=='kit'))$('craft-'+k).onclick=()=>{audio.start();if(craft(state,k)){audio.tone(340,.15,'triangle');updateUI(true);}};
 $('fulfill').onclick=()=>{audio.start();const v=fulfill(state);if(v){audio.chime();toast(`Auftrag geliefert: +${v} Münzen, +20 XP`);updateUI(true);}};
 $('claim').onclick=()=>{const m=MILESTONES.find(m=>!state.claimed.includes(m.id));if(m){const v=claim(state,m.id);if(v){audio.start();audio.chime();toast(`${m.title}: +${v} Münzen!`);updateUI(true);}}};
-const tabs = ['work', 'business', 'world'];
+const tabs = ['work', 'business', 'world', 'storage'];
 function selectTab(selected) {
   for (const name of tabs) {
     const active = name === selected;
@@ -72,6 +72,15 @@ for (const [index, name] of tabs.entries()) {
     $('tab-' + selected).focus();
   };
 }
+$('open-warehouse').onclick = () => {
+  selectTab('storage');
+  const tab = $('tab-storage');
+  tab.focus({ preventScroll: true });
+  const bounds = tab.getBoundingClientRect();
+  if (bounds.top < 0 || bounds.bottom > window.innerHeight) {
+    $('management').scrollIntoView({ block: 'start' });
+  }
+};
 const dialog = $('help-dialog');
 $('help').onclick = () => {
   clearInput();

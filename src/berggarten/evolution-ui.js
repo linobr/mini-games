@@ -1,5 +1,5 @@
 import { BUILDINGS, PLOTS, QUESTS, costFor, placeBuilding, upgradeBuilding, startProduction, claimQuest, questProgress } from './evolution.js';
-import { NAMES, RECIPES, exportSave, importSave } from './engine.js';
+import { NAMES, RECIPES, ZONES, exportSave, importSave } from './engine.js';
 export function setupEvolution({ state, changed, toast, backup, replace }) {
   const $ = id => document.getElementById(id);
   const costText = cost => Object.entries(cost).map(([k, n]) => `${n} ${k === 'coins' ? '●' : NAMES[k]}`).join(' · ');
@@ -8,14 +8,40 @@ export function setupEvolution({ state, changed, toast, backup, replace }) {
   let signature = '';
   function render() {
     const kind = $('building-kind').value;
-    $('building-cost').textContent = `${costText(costFor(kind))} · ab ${BUILDINGS[kind].zone + 1}. Region`;
-    const plots = PLOTS.filter(p => p.zone < state.zones && !state.buildings.some(b => b.plot === p.id));
-    const previous = $('building-plot').value;
-    if ([...$('building-plot').options].map(o => o.value).join() !== plots.map(p => p.id).join()) {
-      $('building-plot').replaceChildren(...plots.map(p => new Option(`${p.name} (${p.x}, ${p.y})`, p.id)));
-      if (plots.some(p => p.id === previous)) $('building-plot').value = previous;
+    const building = BUILDINGS[kind];
+    const cost = costFor(kind);
+    $('building-cost').textContent = `Baukosten: ${costText(cost)}`;
+    const unlocked = building.zone < state.zones;
+    const plots = unlocked ? PLOTS.filter(p => p.zone < state.zones && !state.buildings.some(b => b.plot === p.id)) : [];
+    const plotSelect = $('building-plot');
+    const emptyLabel = unlocked ? 'Kein freier Bauplatz' : 'Region noch gesperrt';
+    const previous = plotSelect.value;
+    const plotValues = plots.length ? plots.map(p => p.id) : [''];
+    const optionsChanged = plotSelect.options.length !== plotValues.length ||
+      plotValues.some((value, index) => plotSelect.options[index]?.value !== value);
+    if (optionsChanged || (!plots.length && plotSelect.options[0]?.text !== emptyLabel)) {
+      const options = plots.length ? plots.map(p => new Option(p.name, p.id)) : [new Option(emptyLabel, '')];
+      plotSelect.replaceChildren(...options);
+      if (plots.some(p => p.id === previous)) plotSelect.value = previous;
     }
-    $('build-place').disabled = !plots.length || BUILDINGS[kind].zone >= state.zones;
+    plotSelect.disabled = !plots.length;
+
+    const missing = Object.fromEntries(Object.entries(cost).flatMap(([key, amount]) => {
+      const balance = key === 'coins' ? state.coins : state.stock[key];
+      return balance < amount ? [[key, amount - balance]] : [];
+    }));
+    const affordable = !Object.keys(missing).length;
+    let availability = '';
+    if (!unlocked) {
+      availability = `Erschliesse zuerst «${ZONES[building.zone].name}» im Tab Tal.`;
+    } else if (!plots.length) {
+      availability = state.zones < ZONES.length ? 'Weitere Bauplätze schaltest du im Tab Tal frei.' : 'Alle Bauplätze sind belegt.';
+    } else if (!affordable) {
+      availability = `Es fehlen ${costText(missing)}.`;
+    }
+    const feedback = $('building-availability');
+    if (feedback.textContent !== availability) feedback.textContent = availability;
+    $('build-place').disabled = !plots.length || !affordable;
     const next = JSON.stringify([state.buildings.map(b => [b.kind, b.plot, b.level, b.auto]), state.quests]);
     if (signature !== next) {
       signature = next;
