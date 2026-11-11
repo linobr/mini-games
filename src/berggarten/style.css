@@ -215,3 +215,80 @@ main { align-items: start; }
   #management { margin-top: 14px; padding: 12px; }
   #inventory { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+/* Readable over the valley in both daylight and dusk. */
+.top-hud { right: auto; max-width: calc(100% - 28px); gap: 0; }
+.wallet, .level-pill, .bag-pill {
+  min-height: 49px;
+  min-width: 0;
+  width: auto;
+  margin: 0;
+  padding: 8px 13px;
+  border: 1px solid #eaf3d03d;
+  border-radius: 0;
+  background: #1c3934ed;
+  color: #f6f0dc;
+  box-shadow: none;
+}
+.wallet { min-width: 92px; grid-template-columns: 16px 1fr; border-radius: 12px 0 0 12px; }
+.wallet strong { font-size: 20px; font-variant-numeric: tabular-nums; }
+.wallet small { color: #d6dcbf; }
+.coin { color: #e4ba71; font-size: 16px; }
+.level-pill, .bag-pill { border-left: 0; min-width: 77px; }
+.bag-pill { min-width: 102px; border-radius: 0 12px 12px 0; }
+.bag-pill b { margin-left: 6px; font-variant-numeric: tabular-nums; }
+.top-hud .progress { background: #65827673; }
+.top-hud .progress i { background: #a6c27c; }
+.area-chip {
+  top: 80px;
+  left: 19px;
+  align-items: center;
+  gap: 2px 6px;
+  padding: 6px 9px;
+  border: 1px solid #eaf3d03d;
+  border-radius: 8px;
+  background: #1d3835d9;
+}
+.area-chip > span:not(.area-dot) { color: #f4efdb; font-size: 12px; }
+.area-chip small { color: #d1ddce; }
+.area-dot { border: 0; background: #bcd592; }
+
+@media (max-width: 860px) {
+  .wallet, .level-pill, .bag-pill { min-height: 44px; padding-inline: 8px; }
+  .wallet { min-width: 76px; }
+  .level-pill { min-width: 60px; }
+  .bag-pill { min-width: 93px; }
+  .area-chip { top: 64px; left: 12px; }
+}
+.bag-mark {
+  display: inline-block;
+  position: relative;
+  width: 12px;
+  height: 12px;
+  margin-top: 1px;
+  border: 1.5px solid #e3e9c7;
+  border-radius: 4px 4px 3px 3px;
+  vertical-align: -2px;
+}
+.bag-mark::before {
+  content: "";
+  position: absolute;
+  inset: -4px 3px auto;
+  height: 3px;
+  border: 1px solid #e3e9c7;
+  border-radius: 3px 3px 0 0;
+}
+.bag-mark::after {
+  content: "";
+  position: absolute;
+  inset: auto 1px 2px;
+  border-top: 1px solid #e3e9c7;
+}
+.gather-icon.wood::before {
+  content: "";
+  width: 12px;
+  height: 15px;
+  border-radius: 1px 85% 35% 85%;
+  background: #628153;
+  transform: rotate(38deg);
+}
