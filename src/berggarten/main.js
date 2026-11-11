@@ -3,14 +3,16 @@ import { buildingAt } from './evolution.js';
 import { loadGarden, acquireSaveLock, hasSaveLock, SAVE_KEY } from './storage.js';
 import { loadProfile } from '../nexus-model.js';
 import './style.css';
-import {TYPES,ZONES,PROJECTS,RECIPES,GOODS,NAMES,MILESTONES,fresh,restore,hit,sell,buy,count,value,capacity,toolCost,bagCost,workerCost,workshopCost,deposit,sellStock,stockValue,craft,tick,order,fulfill,claim,level,findPath} from './engine.js';
+import {TYPES,ZONES,PROJECTS,RECIPES,GOODS,NAMES,MILESTONES,fresh,restore,hit,sell,buy,count,value,capacity,toolCost,bagCost,workerCost,workshopCost,deposit,sellStock,stockValue,craft,tick,order,fulfill,claim,level,findPath,findHarvestRoute} from './engine.js';
 import {GardenWorld} from './world.js';import {CanvasGardenWorld} from './canvas-world.js';import {GardenAudio} from './audio.js';
 const exclusive = await acquireSaveLock();
 if (!exclusive) { document.getElementById('loading').textContent = 'Berggarten ist bereits in einem anderen Tab geöffnet oder dein Browser unterstützt keine sichere Tab-Sperre. Schliesse den anderen Tab und lade neu.'; }
 if (exclusive) {
 const $=id=>document.getElementById(id),KEY=SAVE_KEY,canvas=$('game'),audio=new GardenAudio(),reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 let storage;try{storage=localStorage;}catch{}const loaded=loadGarden(storage),raw=loaded.raw,state=loaded.state;let writable=loaded.writable;const elapsed=(Date.now()-state.lastSeen)/1000,offline=tick(state,elapsed);audio.muted=loadProfile(storage).muted;$('sound').setAttribute('aria-pressed',String(!audio.muted));$('sound').textContent=audio.muted?'♪':'♫';
-let world,target=null,path=[],hover=null,auto=false,held=false,last=0,lastHit=0,clock=0,streak=0,lastBreak=0,toastTimer,saveTimer,uiClock=0,lastWall=Date.now(),floating=[],blockedTip=0;
+let world,target=null,path=[],hover=null,auto=false,held=false,last=0,lastHit=0,clock=0,streak=0,lastBreak=0,toastTimer,saveTimer,uiClock=0,lastWall=Date.now(),floating=[],blockedTip=0,nextAutoSearch=0;
+const gatherButtons = [...document.querySelectorAll('[data-gather]')];
+const crystalButton = gatherButtons.find(b => b.dataset.gather === 'crystal');
 const player={x:4,y:7,moving:false,facing:0},keys=new Set();
 function toast(t){$('toast').textContent=t;$('toast').classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('visible'),3200);}
 function save(){if(!hasSaveLock())return;state.lastSeen=Date.now();try{if(!writable)throw Error('read only');storage.setItem(KEY,JSON.stringify(state));$('save-status').textContent='Automatisch auf diesem Gerät gespeichert';}catch{$('save-status').textContent='Speichern nicht verfügbar – nur diese Sitzung';}}
@@ -32,7 +34,9 @@ $('job-status').textContent=state.job?`${RECIPES[state.job.kind].name} · ${Math
 const o=order(state);$('order-title').textContent=o.title;$('order-desc').textContent=`${state.stock[o.kind]} / ${o.amount} ${NAMES[o.kind]} im Lager`;$('order-number').textContent=`#${state.orders+1}`;$('fulfill').textContent=`Liefern · +${o.reward} ● · +20 XP`;$('fulfill').disabled=state.stock[o.kind]<o.amount;
 const m=MILESTONES.find(m=>!state.claimed.includes(m.id));if(m){$('quest-title').textContent=`${m.title} · ${Math.min(state[m.stat],m.goal)} / ${m.goal}`;$('quest-fill').style.width=`${Math.min(1,state[m.stat]/m.goal)*100}%`;$('claim').textContent=state[m.stat]>=m.goal?`+${m.reward} ● abholen`:`Belohnung: ${m.reward} ●`;$('claim').disabled=state[m.stat]<m.goal;}else{$('quest-title').textContent='Alle Meilensteine erreicht. Dein Tal wächst weiter.';$('quest-fill').style.width='100%';$('claim').textContent='Talmeister ✓';$('claim').disabled=true;}
 $('business-status').textContent=state.workers||state.projects?`${state.workers} Helfer · ${state.projects*8} ● Besuchereinnahmen / Min.`:'Ein gutes Werkzeug ist der Anfang.';
-if(count(state)>=capacity(state))$('tip').textContent='Rucksack voll! Verkaufen für Münzen oder einlagern für Aufträge.';else if(state.broken<5)$('tip').textContent='Klicke einen Busch am Weg an. Deine Figur erledigt den Rest.';else if(!state.workshop)$('tip').textContent='Im Tab Betrieb: Manufaktur bauen und Waren veredeln.';else if(!state.workers)$('tip').textContent='Der erste Helfer sammelt für dich – auch bis zu 5 Minuten offline.';else $('tip').textContent=auto?'Auto-Abbau aktiv. Einlagern schafft Platz für die nächste Tour.':'Tipp: Aufträge zahlen mehr als der normale Verkauf.';
+crystalButton.disabled = state.zones < 3;
+$('crystal-availability').textContent = crystalButton.disabled ? 'Ab Kristallhöhen' : '15 Münzen';
+updateGatherStatus();
 evolution();if(saveIt)queueSave();}
 function change(kind){audio.start();if(!buy(state,kind))return;audio.chime();const messages={tool:'Ein kräftigerer Schlag. Deine Hacke wurde aufgewertet.',bag:'Mehr Platz für deine nächste Tour.',worker:'Willkommen im Team! Dein Helfer liefert direkt ins Lager.',workshop:'Die Manufaktur ist bereit. Lagere Rohstoffe ein und starte die Produktion.',zone:'Ein neues Gebiet ist offen. Wege frei machen und weiterbauen!',project:'Dein Garten lockt die ersten Besucher an.'};toast(messages[kind]);if(['zone','project','worker','workshop'].includes(kind))world?.rebuild();updateUI(true);}
 for(const k of['tool','bag','worker','workshop','zone','project'])$('buy-'+k).onclick=()=>change(k);
@@ -42,35 +46,243 @@ $('sell').onclick=doSell;$('deposit').onclick=doDeposit;$('sell-stock').onclick=
 for(const k of Object.keys(RECIPES).filter(k=>k!=='kit'))$('craft-'+k).onclick=()=>{audio.start();if(craft(state,k)){audio.tone(340,.15,'triangle');updateUI(true);}};
 $('fulfill').onclick=()=>{audio.start();const v=fulfill(state);if(v){audio.chime();toast(`Auftrag geliefert: +${v} Münzen, +20 XP`);updateUI(true);}};
 $('claim').onclick=()=>{const m=MILESTONES.find(m=>!state.claimed.includes(m.id));if(m){const v=claim(state,m.id);if(v){audio.start();audio.chime();toast(`${m.title}: +${v} Münzen!`);updateUI(true);}}};
-for(const tab of['work','business','world'])$('tab-'+tab).onclick=()=>{for(const k of['work','business','world']){$('tab-'+k).setAttribute('aria-selected',String(k===tab));$('panel-'+k).hidden=k!==tab;}};
-const dialog=$('help-dialog');$('help').onclick=()=>dialog.showModal();$('close-help').onclick=$('start-playing').onclick=()=>{dialog.close();audio.start();};
+const tabs = ['work', 'business', 'world'];
+function selectTab(selected) {
+  for (const name of tabs) {
+    const active = name === selected;
+    $('tab-' + name).setAttribute('aria-selected', String(active));
+    $('tab-' + name).tabIndex = active ? 0 : -1;
+    $('panel-' + name).hidden = !active;
+  }
+}
+for (const [index, name] of tabs.entries()) {
+  const tab = $('tab-' + name);
+  tab.onclick = () => selectTab(name);
+  tab.onkeydown = event => {
+    const destinations = {
+      ArrowLeft: (index + tabs.length - 1) % tabs.length,
+      ArrowRight: (index + 1) % tabs.length,
+      Home: 0,
+      End: tabs.length - 1,
+    };
+    if (!Object.hasOwn(destinations, event.key)) return;
+    event.preventDefault();
+    const selected = tabs[destinations[event.key]];
+    selectTab(selected);
+    $('tab-' + selected).focus();
+  };
+}
+const dialog = $('help-dialog');
+$('help').onclick = () => {
+  clearInput();
+  dialog.showModal();
+};
+$('close-help').onclick = $('start-playing').onclick = () => {
+  dialog.close();
+  audio.start();
+  canvas.focus({ preventScroll: true });
+};
 $('sound').onclick=()=>{audio.start();audio.muted=!audio.muted;try{const p=loadProfile(storage);p.muted=audio.muted;storage.setItem('mini-games:nexus-profile:v1',JSON.stringify(p));}catch{}$('sound').setAttribute('aria-pressed',String(!audio.muted));$('sound').textContent=audio.muted?'♪':'♫';toast(audio.muted?'Sound ausgeschaltet':'Sound eingeschaltet');};
 $('reset').onclick=()=>{if(confirm('Alle Ressourcen, Helfer, Upgrades und Gartenprojekte löschen und neu beginnen?')){Object.assign(state,fresh());writable=true;player.x=4;player.y=7;target=null;path=[];world?.rebuild();updateUI();save();toast('Ein neues Tal. Ein neuer Anfang.');}};
-$('auto').onclick=()=>{audio.start();auto=!auto;$('auto').setAttribute('aria-pressed',String(auto));$('auto').textContent=auto?'⛏ Auto an':'⛏ Auto aus';if(!auto){target=null;path=[];}updateUI();};
+function updateGatherStatus() {
+  let message = 'Wähle einen Rohstoff oder tippe auf die Karte.';
+  if (count(state) >= capacity(state)) {
+    message = 'Rucksack voll. Lagere Rohstoffe ein oder verkaufe sie.';
+  } else if (target) {
+    message = `${path.length ? 'Unterwegs' : 'Abbau'}: ${NAMES[target.type]}`;
+  } else if (auto) {
+    message = 'Auto sucht erreichbare Rohstoffe.';
+  } else if (path.length) {
+    message = 'Unterwegs zum gewählten Punkt.';
+  }
+  const status = $('gather-status');
+  if (status.textContent !== message) status.textContent = message;
+  $('stop-gathering').disabled = !auto && !target && !path.length;
+}
+function setAuto(enabled) {
+  auto = enabled;
+  nextAutoSearch = 0;
+  $('auto').setAttribute('aria-pressed', String(auto));
+  $('auto').textContent = auto ? '⛏ Auto an' : '⛏ Auto aus';
+}
+function stopGathering() {
+  clearInput();
+  target = null;
+  path = [];
+  setAuto(false);
+  updateGatherStatus();
+}
+$('stop-gathering').onclick = stopGathering;
+$('auto').onclick = () => {
+  audio.start();
+  if (auto) stopGathering();
+  else setAuto(true);
+  updateGatherStatus();
+};
+for (const button of gatherButtons) {
+  button.onclick = () => {
+    if (!world || !hasBagSpace()) return;
+    audio.start();
+    const type = button.dataset.gather;
+    const route = findHarvestRoute(state, player, type);
+    if (!route) {
+      toast(`Gerade kein ${NAMES[type]} erreichbar. Räume den Weg frei oder warte, bis Rohstoffe zurückkehren.`);
+      return;
+    }
+    target = route.node;
+    path = route.path;
+    updateGatherStatus();
+  };
+}
 $('rotate-left').onclick=()=>world&&(world.angle-=Math.PI/4);$('rotate-right').onclick=()=>world&&(world.angle+=Math.PI/4);$('zoom-in').onclick=()=>world&&(world.zoom=Math.min(1.9,world.zoom+.15));$('zoom-out').onclick=()=>world&&(world.zoom=Math.max(.7,world.zoom-.15));
-function go(p){if(!p)return false;if(p.node?.zone>=state.zones){toast(`${ZONES[p.node.zone].name} im Tab Tal erschliessen.`);return false;}
-const dest={x:Math.max(0,Math.min(state.zones*6-1,p.x)),y:Math.max(0,Math.min(14,p.y))};const route=findPath(state,player,dest,p.node?.id??null);if(!route){toast('Noch kein freier Weg. Baue zuerst die Ressourcen am Rand ab.');return false;}target=p.node||null;path=route;return true;}
+function hasBagSpace() {
+  if (count(state) < capacity(state)) return true;
+  toast('Rucksack voll. Lagere Rohstoffe ein oder verkaufe sie.');
+  return false;
+}
+function go(p) {
+  if (!p) return;
+  if (p.node?.zone >= state.zones) {
+    toast(`${ZONES[p.node.zone].name} im Tab Tal erschliessen.`);
+    return;
+  }
+  if (p.node && !hasBagSpace()) return;
+  const dest = {
+    x: Math.max(0, Math.min(state.zones * 6 - 1, p.x)),
+    y: Math.max(0, Math.min(14, p.y)),
+  };
+  const route = findPath(state, player, dest, p.node?.id ?? null);
+  if (!route) {
+    toast('Noch kein freier Weg. Baue zuerst die Ressourcen am Rand ab.');
+    return;
+  }
+  target = p.node || null;
+  path = route;
+  updateGatherStatus();
+}
 canvas.onpointerdown=e=>{if(!world)return;e.preventDefault();audio.start();canvas.focus();canvas.setPointerCapture(e.pointerId);go(world.pick(e.clientX,e.clientY));};canvas.onpointermove=e=>{if(world)hover=world.pick(e.clientX,e.clientY)?.node||null;};canvas.onpointerleave=()=>hover=null;
-function moveKey(e,down){if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)||dialog.open)return;const k=e.key.toLowerCase();if(k===' '&&document.activeElement.tagName==='BUTTON')return;if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k))e.preventDefault();if(down){keys.add(k);if(k===' '){audio.start();held=true;}if(!e.repeat&&k==='r')doDeposit();if(!e.repeat&&k==='f')doSell();}else{keys.delete(k);if(k===' ')held=false;}}
-window.addEventListener('keydown',e=>moveKey(e,true));window.addEventListener('keyup',e=>moveKey(e,false));window.addEventListener('blur',()=>{keys.clear();held=false;});
-for(const b of document.querySelectorAll('[data-dir]')){const k={left:'arrowleft',up:'arrowup',right:'arrowright',down:'arrowdown'}[b.dataset.dir];b.onpointerdown=e=>{e.preventDefault();b.setPointerCapture(e.pointerId);keys.add(k);};b.onpointerup=b.onpointercancel=()=>keys.delete(k);}
-$('chop').onpointerdown=e=>{e.preventDefault();audio.start();$('chop').setPointerCapture(e.pointerId);held=true;};$('chop').onpointerup=$('chop').onpointercancel=()=>held=false;
+const movementKeys = new Set(['w', 'a', 's', 'd', 'arrowup', 'arrowleft', 'arrowdown', 'arrowright']);
+function clearInput() {
+  keys.clear();
+  held = false;
+}
+canvas.addEventListener('keydown', event => {
+  if (event.ctrlKey || event.metaKey || event.altKey) return;
+  const key = event.key.toLowerCase();
+  if (movementKeys.has(key)) {
+    event.preventDefault();
+    keys.add(key);
+  } else if (key === ' ') {
+    event.preventDefault();
+    audio.start();
+    held = true;
+  } else if (!event.repeat) {
+    if (key === 'r') doDeposit();
+    if (key === 'f') doSell();
+    if (key === 'escape') stopGathering();
+  }
+});
+canvas.addEventListener('keyup', event => {
+  keys.delete(event.key.toLowerCase());
+  if (event.key === ' ') held = false;
+});
+canvas.addEventListener('blur', clearInput);
+window.addEventListener('blur', clearInput);
+for (const button of document.querySelectorAll('[data-dir]')) {
+  const key = { left: 'arrowleft', up: 'arrowup', right: 'arrowright', down: 'arrowdown' }[button.dataset.dir];
+  button.onpointerdown = event => {
+    event.preventDefault();
+    button.setPointerCapture(event.pointerId);
+    keys.add(key);
+  };
+  button.onlostpointercapture = () => keys.delete(key);
+}
+$('chop').onpointerdown = event => {
+  event.preventDefault();
+  audio.start();
+  $('chop').setPointerCapture(event.pointerId);
+  held = true;
+};
+$('chop').onlostpointercapture = () => { held = false; };
 function chop(n){const r=hit(state,n.id);if(!r.ok){if(r.reason==='full'){if(clock-blockedTip>2500){toast('Rucksack voll. Verkaufen oder einlagern.');blockedTip=clock;}target=null;path=[];held=false;}return;}
 world.hit(n,r.broken);player.facing=Math.atan2(n.x-player.x,n.y-player.y);world.player.rotation.y=player.facing;audio.hit(n.type,r.broken,streak);if(r.broken){streak=clock-lastBreak<4500?streak+1:1;lastBreak=clock;label(n.x,n.y,`+1 ${NAMES[n.type]}`);target=null;path=[];updateUI(true);}}
 function nearby(){return state.nodes.filter(n=>n.zone<state.zones&&n.ready<=Date.now()&&Math.hypot(n.x-player.x,n.y-player.y)<=1.15).sort((a,b)=>Math.hypot(a.x-player.x,a.y-player.y)-Math.hypot(b.x-player.x,b.y-player.y))[0];}
-function nextAuto(){const candidates=state.nodes.filter(n=>n.zone<state.zones&&n.ready<=Date.now()).sort((a,b)=>Math.hypot(a.x-player.x,a.y-player.y)-Math.hypot(b.x-player.x,b.y-player.y));for(const n of candidates.slice(0,40)){const p=findPath(state,player,n,n.id);if(p){target=n;path=p;return;}}}
+function nextAuto() {
+  const route = findHarvestRoute(state, player);
+  if (route) {
+    target = route.node;
+    path = route.path;
+  }
+}
 function free(x,y){return x>=0&&x<=state.zones*6-1&&y>=0&&y<=14&&!buildingAt(state,x,y)&&!state.nodes.some(n=>n.zone<state.zones&&n.ready<=Date.now()&&Math.hypot(n.x-x,n.y-y)<.61);}
-function frame(t){clock=t;const dt=Math.min((t-last)/1000,.04)||.016;last=t;let dx=(keys.has('d')||keys.has('arrowright')?1:0)-(keys.has('a')||keys.has('arrowleft')?1:0),dy=(keys.has('s')||keys.has('arrowdown')?1:0)-(keys.has('w')||keys.has('arrowup')?1:0);player.moving=false;
-if(dx||dy){target=null;path=[];const len=Math.hypot(dx,dy),a=world.angle,vx=(dx*Math.cos(a)+dy*Math.sin(a))/len,vy=(-dx*Math.sin(a)+dy*Math.cos(a))/len,step=dt*3.5;const x=player.x+vx*step,y=player.y+vy*step;if(free(x,player.y))player.x=x;if(free(player.x,y))player.y=y;player.facing=Math.atan2(vx,vy);player.moving=true;}
-else if(path.length){const p=path[0],d=Math.hypot(p.x-player.x,p.y-player.y);if(!free(p.x,p.y)){target=null;path=[];}else if(d<.08){player.x=p.x;player.y=p.y;path.shift();}else{const step=Math.min(d,dt*3.5);player.x+=(p.x-player.x)/d*step;player.y+=(p.y-player.y)/d*step;player.facing=Math.atan2(p.x-player.x,p.y-player.y);player.moving=true;}}
-else if(target){if(target.ready>Date.now())target=null;else if(t-lastHit>Math.max(150,430-state.tool*25)){lastHit=t;chop(target);}}
-else if(held&&t-lastHit>Math.max(150,430-state.tool*25)){const n=nearby();if(n){lastHit=t;chop(n);}}
-else if(auto&&!dialog.open&&count(state)<capacity(state)&&!dx&&!dy){nextAuto();}
+function movePlayer(t, dt) {
+  player.moving = false;
+  if (dialog.open) return;
+
+  const dx = Number(keys.has('d') || keys.has('arrowright')) - Number(keys.has('a') || keys.has('arrowleft'));
+  const dy = Number(keys.has('s') || keys.has('arrowdown')) - Number(keys.has('w') || keys.has('arrowup'));
+  if (dx || dy) {
+    target = null;
+    path = [];
+    const length = Math.hypot(dx, dy);
+    const angle = world.angle;
+    const vx = (dx * Math.cos(angle) + dy * Math.sin(angle)) / length;
+    const vy = (-dx * Math.sin(angle) + dy * Math.cos(angle)) / length;
+    const step = dt * 3.5;
+    const x = player.x + vx * step;
+    const y = player.y + vy * step;
+    if (free(x, player.y)) player.x = x;
+    if (free(player.x, y)) player.y = y;
+    player.facing = Math.atan2(vx, vy);
+    player.moving = true;
+    return;
+  }
+
+  if (path.length) {
+    const point = path[0];
+    const distance = Math.hypot(point.x - player.x, point.y - player.y);
+    if (!free(point.x, point.y)) {
+      const route = target && findPath(state, player, target, target.id);
+      path = route || [];
+      if (!route) target = null;
+    } else if (distance < .08) {
+      player.x = point.x;
+      player.y = point.y;
+      path.shift();
+    } else {
+      const step = Math.min(distance, dt * 3.5);
+      player.facing = Math.atan2(point.x - player.x, point.y - player.y);
+      player.x += (point.x - player.x) / distance * step;
+      player.y += (point.y - player.y) / distance * step;
+      player.moving = true;
+    }
+    return;
+  }
+
+  const readyToHit = t - lastHit > Math.max(150, 430 - state.tool * 25);
+  if (target) {
+    if (target.ready > Date.now()) target = null;
+    else if (readyToHit) {
+      lastHit = t;
+      chop(target);
+    }
+  } else if (held && readyToHit) {
+    const node = nearby();
+    if (node) {
+      lastHit = t;
+      chop(node);
+    }
+  } else if (auto && count(state) < capacity(state) && t >= nextAutoSearch) {
+    nextAutoSearch = t + 350;
+    nextAuto();
+  }
+}
+function frame(t){clock=t;const dt=Math.min((t-last)/1000,.04)||.016;last=t;movePlayer(t,dt);
 const wall=Date.now(),seconds=(wall-lastWall)/1000;lastWall=wall;{const r=tick(state,seconds);if(r.crafted){audio.tone(784,.22);toast(`${NAMES[r.crafted]} fertig – im Lager bereit!`);}if(r.produced||r.passive||r.crafted||r.buildings)queueSave();}
 uiClock+=dt;if(uiClock>.3){updateUI();uiClock=0;}$('combo').textContent=streak>1&&t-lastBreak<3500?`${streak} × Sauber!`:'';
 const zone=Math.min(state.zones-1,Math.floor(player.x/6));$('area').textContent=ZONES[zone].name;$('area-sub').textContent=['Dein erster kleiner Betrieb','Stein für den nächsten grossen Schritt','Hier funkelt die Zukunft','Holz für deine Produktionsketten','Alpenbausätze für neue Handelsaufträge'][zone];world.render(dt,player,target,hover,reduced);
 for(const f of floating){f.life-=dt;const p=world.screen(f.x,f.y,1.6+(1.5-f.life)*.6);f.el.style.left=`${p.x}px`;f.el.style.top=`${p.y}px`;f.el.style.transform='translate(-50%,-100%)';f.el.style.opacity=String(Math.min(1,f.life*2));}floating=floating.filter(f=>{if(f.life<=0){f.el.remove();return false;}return true;});requestAnimationFrame(frame);}
-window.addEventListener('berggarten-before-unlock',save);window.addEventListener('pagehide',save);document.addEventListener('visibilitychange',()=>{if(document.hidden){save();keys.clear();held=false;}});
+window.addEventListener('berggarten-before-unlock',save);window.addEventListener('pagehide',save);document.addEventListener('visibilitychange',()=>{if(document.hidden){save();clearInput();}});
 updateUI();try{try{world=new GardenWorld(canvas,state);}catch(error){console.warn('WebGL nicht verfügbar, Canvas-Ansicht aktiviert.');world=new CanvasGardenWorld(canvas,state);} new ResizeObserver(()=>world.resize()).observe(canvas);$('loading').hidden=true;$('loading').style.display='none';requestAnimationFrame(frame);if(offline.produced||offline.passive||offline.crafted||offline.buildings){toast(`Willkommen zurück: ${offline.produced} Rohstoffe und ${offline.passive} Münzen gesammelt.`);queueSave();}else if(!raw)dialog.showModal();}catch(error){$('loading').textContent='Dein Browser konnte die Gartenwelt nicht starten. Bitte verwende einen aktuellen Browser.';console.error('Berggarten 3D konnte nicht starten',error);}
 
 if(loaded.warning){$('save-status').textContent=loaded.warning;toast(loaded.warning);}else save();

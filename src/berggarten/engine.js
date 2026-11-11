@@ -98,11 +98,81 @@ export function importSave(text){
   // An imported backup resumes from its saved quantities; no replay of offline rewards.
   state.lastSeen=Date.now();return state;
 }
-// Walk to a free neighbouring tile, preserving cleared routes through the garden.
-export function findPath(s,from,to,nodeId=null,now=Date.now()){
-const start={x:Math.max(0,Math.min(s.zones*6-1,Math.round(from.x))),y:Math.max(0,Math.min(14,Math.round(from.y)))};
-const blocked=new Set(s.nodes.filter(n=>n.zone<s.zones&&n.ready<=now).map(n=>n.y*WORLD_WIDTH+n.x));for(const b of s.buildings){const p=PLOTS.find(p=>p.id===b.plot);blocked.add(p.y*WORLD_WIDTH+p.x);}blocked.delete(start.y*WORLD_WIDTH+start.x);
-const goals=[];if(nodeId!==null){for(const [dx,dy]of[[1,0],[-1,0],[0,1],[0,-1]])goals.push({x:to.x+dx,y:to.y+dy});}else goals.push({x:Math.round(to.x),y:Math.round(to.y)});
-const valid=p=>p.x>=0&&p.x<s.zones*6&&p.y>=0&&p.y<15&&!blocked.has(p.y*WORLD_WIDTH+p.x);const goalSet=new Set(goals.filter(valid).map(p=>p.y*WORLD_WIDTH+p.x));if(!goalSet.size)return null;
-const queue=[start],prev=new Map([[start.y*WORLD_WIDTH+start.x,null]]);for(let i=0;i<queue.length;i++){const p=queue[i],id=p.y*WORLD_WIDTH+p.x;if(goalSet.has(id)){const path=[];let k=id;while(prev.get(k)!==null){path.unshift({x:k%WORLD_WIDTH,y:Math.floor(k/WORLD_WIDTH)});k=prev.get(k);}return path;}
-for(const[dx,dy]of[[1,0],[-1,0],[0,1],[0,-1]]){const next={x:p.x+dx,y:p.y+dy},key=next.y*WORLD_WIDTH+next.x;if(valid(next)&&!prev.has(key)){prev.set(key,id);queue.push(next);}}}return null;}
+const directions = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+const tileKey = (x, y) => y * WORLD_WIDTH + x;
+
+function searchRoutes(s, from, now, getGoals) {
+  const width = s.zones * 6;
+  const start = {
+    x: Math.max(0, Math.min(width - 1, Math.round(from.x))),
+    y: Math.max(0, Math.min(14, Math.round(from.y))),
+  };
+  const active = s.nodes.filter(n => n.zone < s.zones && n.ready <= now);
+  const blocked = new Set(active.map(n => tileKey(n.x, n.y)));
+  for (const b of s.buildings) {
+    const plot = PLOTS.find(p => p.id === b.plot);
+    blocked.add(tileKey(plot.x, plot.y));
+  }
+  const origin = tileKey(start.x, start.y);
+  blocked.delete(origin);
+  const free = (x, y) => x >= 0 && x < width && y >= 0 && y < 15 && !blocked.has(tileKey(x, y));
+  const goals = getGoals(active, free);
+  if (!goals.size) return null;
+
+  const queue = [start];
+  const previous = new Map([[origin, null]]);
+  for (let i = 0; i < queue.length; i++) {
+    const { x, y } = queue[i];
+    const key = tileKey(x, y);
+    if (goals.has(key)) {
+      const path = [];
+      for (let step = key; step !== origin; step = previous.get(step)) {
+        path.push({ x: step % WORLD_WIDTH, y: Math.floor(step / WORLD_WIDTH) });
+      }
+      return { node: goals.get(key), path: path.reverse() };
+    }
+    for (const [dx, dy] of directions) {
+      const nx = x + dx, ny = y + dy;
+      const next = tileKey(nx, ny);
+      if (free(nx, ny) && !previous.has(next)) {
+        previous.set(next, key);
+        queue.push({ x: nx, y: ny });
+      }
+    }
+  }
+  return null;
+}
+
+function addNeighbours(goals, node, free) {
+  for (const [dx, dy] of directions) {
+    const x = node.x + dx, y = node.y + dy;
+    const key = tileKey(x, y);
+    if (free(x, y) && !goals.has(key)) goals.set(key, node);
+  }
+}
+
+// Walk to an open tile or to a free neighbour of the selected resource.
+export function findPath(s, from, to, nodeId = null, now = Date.now()) {
+  const route = searchRoutes(s, from, now, (_, free) => {
+    const goals = new Map();
+    if (nodeId !== null) {
+      addNeighbours(goals, to, free);
+    } else {
+      const x = Math.round(to.x), y = Math.round(to.y);
+      if (free(x, y)) goals.set(tileKey(x, y), null);
+    }
+    return goals;
+  });
+  return route?.path ?? null;
+}
+
+// One search finds the shortest walking route to any matching resource.
+export function findHarvestRoute(s, from, type = null, now = Date.now()) {
+  return searchRoutes(s, from, now, (active, free) => {
+    const goals = new Map();
+    for (const node of active) {
+      if (type === null || node.type === type) addNeighbours(goals, node, free);
+    }
+    return goals;
+  });
+}

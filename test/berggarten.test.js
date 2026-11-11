@@ -1,5 +1,5 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';
-import {fresh,hit,sell,buy,count,capacity,restore,TYPES,deposit,craft,tick,fulfill,order,claim,sellStock,findPath} from '../src/berggarten/engine.js';
+import {fresh,hit,sell,buy,count,capacity,restore,TYPES,deposit,craft,tick,fulfill,order,claim,sellStock,findPath,findHarvestRoute} from '../src/berggarten/engine.js';
 test('harvest rewards once, bag full blocks damage, cooldown regrows',()=>{const s=fresh(),n=s.nodes.find(n=>n.type==='bush'&&n.zone===0);hit(s,n.id,1000);hit(s,n.id,1100);assert.equal(hit(s,n.id,1200).broken,true);assert.equal(count(s),1);assert.equal(hit(s,n.id,1300).ok,false);assert.equal(hit(s,n.id,40000).ok,true);s.inventory.bush=capacity(s);const hp=n.hp;assert.equal(hit(s,n.id,40001).reason,'full');assert.equal(n.hp,hp);assert.equal(sell(s),60);assert.equal(sell(s),0);});
 test('purchases require money, respect caps and unlock regions',()=>{const s=fresh(),n=s.nodes.find(n=>n.zone===1);assert.equal(buy(s,'tool'),false);assert.equal(hit(s,n.id).ok,false);s.coins=1e6;assert.equal(buy(s,'zone'),true);assert.equal(hit(s,n.id).ok,true);s.tool=8;s.bag=6;s.zones=5;s.projects=3;s.workers=3;s.workshop=3;const c=s.coins;for(const k of ['tool','bag','zone','project','worker','workshop'])assert.equal(buy(s,k),false);assert.equal(s.coins,c);});
 test('deposit transfers exact quantities, crafts consume inputs once and finish once',()=>{const s=fresh();s.inventory.bush=6;assert.equal(deposit(s),6);assert.equal(deposit(s),0);assert.equal(count(s),0);assert.equal(craft(s,'plank'),false);s.workshop=1;assert.equal(craft(s,'plank'),true);assert.equal(s.stock.bush,3);assert.equal(craft(s,'plank'),false);tick(s,4);assert.equal(s.stock.plank,0);assert.equal(tick(s,1).crafted,'plank');assert.equal(s.stock.plank,1);tick(s,10);assert.equal(s.stock.plank,1);assert.equal(sellStock(s),27);assert.equal(sellStock(s),0);});
@@ -13,3 +13,25 @@ test('production save restoration continues unfinished jobs without duplicating 
 test('a complete early economy is reachable without grinding dead ends',()=>{const s=fresh();for(let i=0;i<20;i++){const n=s.nodes.find(n=>n.zone===0);n.ready=0;n.hp=1;hit(s,n.id,i*1000);}assert.equal(count(s),20);sell(s);s.broken=20;claim(s,'first');assert.ok(s.coins>=35);assert.equal(buy(s,'tool'),true);s.coins=500;assert.equal(buy(s,'workshop'),true);assert.equal(buy(s,'worker'),true);tick(s,80);assert.equal(s.stock.bush,8);assert.equal(fulfill(s),35);tick(s,30);assert.equal(craft(s,'plank'),true);tick(s,5);assert.equal(s.stock.plank,1);});
 test('production fractions survive saves and long absences are bounded',()=>{const s=fresh();s.workers=1;s.projects=1;tick(s,9);const r=restore(JSON.stringify(s));tick(r,1);assert.equal(r.stock.bush,1);tick(r,5);assert.equal(r.coins,2);});
 test('cleared resources open routes and inaccessible inner resources reject paths',()=>{const s=fresh(),n=s.nodes.find(n=>n.x===1&&n.y===1);assert.equal(findPath(s,{x:4,y:7},n,n.id,1000),null);for(const node of s.nodes)if(node.x===1||node.y===5)node.ready=50000;assert.ok(findPath(s,{x:4,y:7},n,n.id,1000));});
+
+test('harvest routing skips blocked resources and selects the shortest reachable path', () => {
+  const s = fresh();
+  s.nodes = [
+    { id: 1, x: 2, y: 2, zone: 0, type: 'bush', ready: 0 },
+    { id: 2, x: 1, y: 2, zone: 0, type: 'rock', ready: 0 },
+    { id: 3, x: 2, y: 1, zone: 0, type: 'rock', ready: 0 },
+    { id: 4, x: 3, y: 2, zone: 0, type: 'rock', ready: 0 },
+    { id: 5, x: 2, y: 3, zone: 0, type: 'rock', ready: 0 },
+    { id: 6, x: 0, y: 7, zone: 0, type: 'bush', ready: 0 },
+    { id: 7, x: 0, y: 3, zone: 0, type: 'bush', ready: 5000 },
+    { id: 8, x: 6, y: 3, zone: 1, type: 'bush', ready: 0 },
+  ];
+  const player = { x: 0, y: 2 };
+  const route = findHarvestRoute(s, player, 'bush', 1000);
+  assert.equal(route.node.id, 6);
+  assert.equal(route.path.length, 4);
+  assert.deepEqual(route.path.at(-1), { x: 0, y: 6 });
+  assert.deepEqual(findHarvestRoute(s, player, null, 1000), { node: s.nodes[1], path: [] });
+  assert.equal(findHarvestRoute(s, player, 'bush', 5000).node.id, 7);
+  assert.equal(findHarvestRoute(s, player, 'crystal', 1000), null);
+});

@@ -21,15 +21,17 @@ Helfer liefern alle zehn Sekunden ins Lager. Jedes Gartenprojekt liefert zwei M�
 
 | Eingabe | Aktion |
 | --- | --- |
-| Ressource anklicken oder antippen | Hinlaufen und abbauen |
+| Holz, Stein oder Kristall unter der Karte wählen | Zum nächsten erreichbaren Vorkommen laufen und es abbauen |
+| Ressource anklicken oder antippen | Zu diesem Vorkommen laufen und es abbauen |
 | WASD / Pfeiltasten | Figur bewegen |
 | Leertaste | Abbauen |
 | `R` | Einlagern |
 | `F` | Verkaufen |
-| Auto-Schaltfläche | Erreichbare Ressourcen automatisch suchen |
+| Auto-Schaltfläche | Laufend erreichbare Ressourcen suchen |
+| Stopp / Escape | Laufende Sammeltour und Auto-Abbau stoppen |
 | Kamera-Schaltflächen | Drehen und zoomen |
 
-Die Wegsuche berücksichtigt lebende Ressourcen. Das Freiräumen erschliesst weitere Wege. Auf Mobilgeräten stehen Touch-Eingaben bereit.
+Tastenkürzel funktionieren, wenn die Karte fokussiert ist. Auf Mobilgeräten stehen Richtungstasten und ein Abbauknopf auf der Karte bereit. Das Freiräumen von Rohstoffen erschliesst weitere Wege.
 
 ## Spielstand
 
