@@ -39,7 +39,7 @@ test('extended regions preserve old node IDs, connect paths and unlock useful re
   const s = funded(); for (let i = 0; i < 4; i++) assert.equal(buy(s, 'zone'), true);
   assert.equal(buy(s, 'zone'), false); assert.ok(findPath(s, { x: 4, y: 7 }, { x: 28, y: 7 }));
   assert.ok(s.nodes.some(n => n.zone === 3 && n.type === 'bush')); assert.ok(s.nodes.some(n => n.zone === 4 && n.type === 'crystal'));
-  for (const n of s.nodes.filter(n => n.x < 18)) assert.equal(n.id, n.y * 18 + n.x);
+  for (const n of s.nodes.filter(n => n.zone > 0 && n.x < 18)) assert.equal(n.id, n.y * 18 + n.x);
   assert.equal(new Set(s.nodes.map(n => n.id)).size, s.nodes.length);
   // The original garden keeps its old resource at the entrance; harvest it to open the route.
   s.nodes.find(n => n.x === 9 && n.y === 5).ready = Date.now() + 30000;
@@ -82,4 +82,25 @@ test('save lock writes before release and prevents stale cached pages from writi
     if (oldNavigator) Object.defineProperty(globalThis, 'navigator', oldNavigator); else delete globalThis.navigator;
     if (oldWindow) Object.defineProperty(globalThis, 'window', oldWindow); else delete globalThis.window;
   }
+});
+
+test('meadow clearings preserve every original resource and its saved progress', () => {
+  const meadow = nodes().filter(n => n.zone === 0);
+  const expected = new Map();
+  for (let y = 0; y < 15; y++) {
+    for (let x = 0; x < 6; x++) {
+      if ((y >= 6 && y <= 8) || (x < 3 && y > 8)) continue;
+      expected.set(y * 18 + x, (x * 73 + y * 137) % 11 < 5 ? 'bush' : 'rock');
+    }
+  }
+  assert.equal(meadow.length, expected.size);
+  for (const n of meadow) assert.equal(n.type, expected.get(n.id));
+  assert.equal(new Set(meadow.map(n => `${n.x},${n.y}`)).size, meadow.length);
+  assert.ok(meadow.every(n => n.y < 6 || n.y > 8));
+  const moved = meadow.find(n => n.id !== n.y * 18 + n.x);
+  const ready = Date.now() + 20000;
+  const state = restore(JSON.stringify({version: 3, nodes: [{id: moved.id, hp: 1, ready}]}));
+  assert.deepEqual(state.nodes.find(n => n.id === moved.id), { ...moved, hp: 1, ready });
+  assert.ok(findPath(state, {x: 4, y: 7}, {x: 3, y: 2}));
+  assert.ok(findPath(state, {x: 4, y: 7}, {x: 2, y: 11}));
 });

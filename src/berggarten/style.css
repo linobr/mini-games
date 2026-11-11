@@ -292,3 +292,35 @@ main { align-items: start; }
   background: #628153;
   transform: rotate(38deg);
 }
+
+.action-buttons .order-deposit:not(:disabled) {
+  background: #315846;
+  color: #fff9e6;
+}
+.action-buttons .order-deposit:not(:disabled) + #sell {
+  background: #e9edda;
+  color: #4f6945;
+}
+.garden-next {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 48px;
+  margin-top: 8px;
+  padding: 6px 9px;
+  border: 1px solid #dddcbf;
+  border-radius: 10px;
+  background: #f2efde;
+  color: #415b46;
+  text-align: left;
+}
+.garden-next[hidden] { display: none; }
+.garden-next small, .garden-next strong { display: block; }
+.garden-next small { color: #596951; font-size: 10px; }
+.garden-next strong { font-size: 12px; }
+.garden-next-icon { color: #937744; font-size: 21px; }
+#garden-next-cost { color: #6a623d; font-size: 11px; white-space: nowrap; }
+#management .save-tools { padding: 3px 8px; background: transparent; }
+#management .save-tools summary { font-size: 12px; font-weight: 650; }

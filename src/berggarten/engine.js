@@ -9,6 +9,31 @@ export const toolCost=s=>Math.round(35*1.72**(s.tool-1));export const bagCost=s=
 export const workerCost=s=>Math.round(120*2**s.workers);export const workshopCost=s=>s.workshop?Math.round(220*2**(s.workshop-1)):90;
 const empty=()=>Object.fromEntries(GOODS.map(k=>[k,0]));
 export const nodeId = (x,y) => x < 18 ? y*18+x : 1000+y*WORLD_WIDTH+x;
+// Each cell in this layout reuses an original node of the same type.
+const meadowLayout = [
+  'BBB.RR', 'BBB.RR', 'BBR.RR', 'RBB.RR', 'RRB.RR', 'B.B.RR',
+  '......', '......', '......',
+  'B...RR', 'B..BRR', '...BRR', 'B.BBRR', 'R.RBBR', 'R.RBBR',
+];
+
+function arrangeMeadow(nodes) {
+  const original = new Map(nodes.filter(n => n.zone === 0).map(n => [nodeId(n.x, n.y), n]));
+  const placements = [];
+  for (const [y, row] of meadowLayout.entries()) {
+    for (const [x, symbol] of [...row].entries()) {
+      if (symbol === '.') continue;
+      const type = symbol === 'B' ? 'bush' : 'rock';
+      const id = nodeId(x, y);
+      if (original.get(id)?.type === type) original.delete(id);
+      else placements.push({ x, y, type });
+    }
+  }
+
+  const spare = { bush: [], rock: [] };
+  for (const node of original.values()) spare[node.type].push(node);
+  for (const { x, y, type } of placements) Object.assign(spare[type].shift(), { x, y });
+}
+
 export function nodes(){
   const out=[];
   for(let y=0;y<15;y++)for(let x=0;x<WORLD_WIDTH;x++){
@@ -18,6 +43,7 @@ export function nodes(){
     const type=zone===3?'bush':zone===4?(n<7?'crystal':'rock'):zone===2&&n<6?'crystal':n<5?'bush':'rock';
     out.push({id:nodeId(x,y),x,y,zone,type,hp:TYPES[type].hp,ready:0});
   }
+  arrangeMeadow(out);
   return out;
 }
 export function fresh(){return {version:3,buildings:[],quests:[],crafted:0,buildingUpgrades:0,dayClock:0,coins:0,tool:1,bag:0,inventory:{bush:0,rock:0,crystal:0},stock:empty(),zones:1,projects:0,broken:0,earned:0,xp:0,workers:0,workshop:0,job:null,orders:0,claimed:[],workerClock:0,gardenClock:0,lastSeen:Date.now(),nodes:nodes()};}
@@ -47,7 +73,7 @@ export function tick(s,seconds){
   result.buildings=tickBuildings(s,seconds,RECIPES);
   return result;
 }
-export function order(s){const all=[{kind:'bush',amount:8,reward:35,title:'Holz fürs Berghaus'},{kind:'rock',amount:6,reward:65,title:'Ein Weg durch das Tal'},{kind:'plank',amount:3,reward:95,title:'Eine neue Gartenbank'},{kind:'brick',amount:3,reward:210,title:'Mauern für die Gärtnerei'},{kind:'gem',amount:2,reward:300,title:'Funkeln für den Markt'},{kind:'kit',amount:2,reward:750,title:'Neue Häuser im Alpendorf'}];const options=all.filter(o=>(o.kind!=='kit'||s.zones>=5)&&(!RECIPES[o.kind]||s.workshop)&&(!(o.kind==='gem')||s.zones>=3));return options[s.orders%options.length];}
+export function order(s){const all=[{kind:'bush',amount:8,reward:35,title:'Holz fürs Berghaus',dropoffLabel:'Fürs Berghaus'},{kind:'rock',amount:6,reward:65,title:'Ein Weg durch das Tal'},{kind:'plank',amount:3,reward:95,title:'Eine neue Gartenbank'},{kind:'brick',amount:3,reward:210,title:'Mauern für die Gärtnerei'},{kind:'gem',amount:2,reward:300,title:'Funkeln für den Markt'},{kind:'kit',amount:2,reward:750,title:'Neue Häuser im Alpendorf'}];const options=all.filter(o=>(o.kind!=='kit'||s.zones>=5)&&(!RECIPES[o.kind]||s.workshop)&&(!(o.kind==='gem')||s.zones>=3));return options[s.orders%options.length];}
 export function fulfill(s){const o=order(s);if(s.stock[o.kind]<o.amount)return false;s.stock[o.kind]-=o.amount;s.coins+=o.reward;s.earned+=o.reward;s.xp+=20;s.orders++;return o.reward;}
 export const MILESTONES=[{id:'first',title:'Die ersten 5 Ressourcen',goal:5,reward:20,stat:'broken'},{id:'twenty',title:'Ein fleissiger Anfang',goal:25,reward:50,stat:'broken'},{id:'trader',title:'Drei zufriedene Kunden',goal:3,reward:100,stat:'orders'},{id:'garden',title:'Ein blühendes Tal',goal:3,reward:250,stat:'projects'},{id:'master',title:'Meister des Steinbruchs',goal:150,reward:300,stat:'broken'}];
 export function claim(s,id){const m=MILESTONES.find(m=>m.id===id);if(!m||s.claimed.includes(id)||s[m.stat]<m.goal)return 0;s.claimed.push(id);s.coins+=m.reward;s.earned+=m.reward;s.xp+=15;return m.reward;}

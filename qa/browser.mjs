@@ -108,6 +108,11 @@ for (const engine of (process.env.NEXUS_QA_ENGINES === 'chromium' ? [chromium] :
     await fallback.addInitScript(() => { const original = HTMLCanvasElement.prototype.getContext; HTMLCanvasElement.prototype.getContext = function (kind, ...args) { return kind.includes('webgl') ? null : original.call(this, kind, ...args); }; });
     const p = await fallback.newPage(); p.on('pageerror', e => errors.push(e.message)); await p.goto(`${base}berggarten/`); await p.locator('#loading').waitFor({ state: 'hidden' }); await p.locator('#start-playing').click(); await p.locator('#game').click({ position: { x: 350, y: 200 } });
     assert.equal(await p.locator('.play').evaluate(node => getComputedStyle(node).position), 'sticky');
+    await p.locator('[data-gather="bush"]').click();
+    await p.waitForFunction(() => document.getElementById('deposit-count').textContent.includes('Fürs Berghaus · 1/8'));
+    await p.locator('#open-project').click();
+    assert.equal(await p.locator('#panel-world').isVisible(), true);
+    assert.equal(await p.locator('#next-project').textContent(), 'Blumengarten');
     await p.screenshot({ path: '/tmp/berggarten-canvas.png' }); assert.deepEqual(errors, []); await fallback.close(); results.push('Canvas fallback PASS');
     const offline = await browser.newContext(); const pwa = await offline.newPage(); await pwa.goto(base); await pwa.evaluate(() => navigator.serviceWorker.ready); await pwa.reload(); await pwa.waitForFunction(() => !!navigator.serviceWorker.controller); await offline.setOffline(true); await pwa.reload(); await pwa.locator('#nx-cards .nx-card').first().waitFor(); await pwa.goto(`${base}berggarten/`); await pwa.locator('#loading').waitFor({ state: 'hidden' }); await offline.close(); results.push('PWA precache, offline reload and offline Berggarten PASS');
   }

@@ -7,6 +7,17 @@ export function trailCenter(x) {
   return 7 + Math.sin(x * .76) * .44 + Math.sin(x * .36) * .17;
 }
 
+export const meadowArch = { x: 2.55, y: trailCenter(2.55), radius: .88 };
+export const meadowSpur = [
+  [meadowArch.x, meadowArch.y], [2.55, 8.15], [2.44, 8.87],
+  [2.16, 9.54], [1.78, 10.06], [1.4, 10.44], [1.1, 10.52],
+];
+export const meadowBank = [
+  [-.5, -.5, -2, -.5], [-.5, 2.3, -2.7, 2.1], [-.5, 5.7, -3.25, 5.36],
+  [-.5, 8.4, -2.85, 8.64], [-.5, 11.5, -3.15, 12.25], [-.5, 14.5, -2.2, 16.7],
+  [1.85, 14.5, 1.45, 17.05], [4.2, 14.5, 4.3, 16.65], [5.5, 14.5, 5.5, 14.5],
+];
+
 function smoothstep(value, start, end) {
   const t = Math.max(0, Math.min(1, (value - start) / (end - start)));
   return t * t * (3 - 2 * t);

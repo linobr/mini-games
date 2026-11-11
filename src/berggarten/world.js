@@ -1,11 +1,13 @@
 import { WORLD_WIDTH, PLOTS, BUILDINGS } from './evolution.js';
 import { ZONES } from './engine.js';
 import * as THREE from 'three';
-import { meadowColors, trailColor, woodColors, crystalColors, trailCenter, eveningLight, cameraFocus, paintAlpineBackdrop } from './scenery.js';
+import { meadowColors, trailColor, woodColors, crystalColors, trailCenter, eveningLight, cameraFocus, paintAlpineBackdrop, meadowArch, meadowSpur, meadowBank } from './scenery.js';
 const C = { roof: 0x426858 };
 const skyDay = new THREE.Color(0xa8c1bc), skyEvening = new THREE.Color(0x667886);
 const sunDay = new THREE.Color(0xffe0ac), sunEvening = new THREE.Color(0xffbf94);
 const ambientDay = new THREE.Color(0xc9dfdf), ambientEvening = new THREE.Color(0xa0b4d2);
+const carvingGlow = new THREE.MeshStandardMaterial({ color: 0xb8b8a0, emissive: 0x86b9b0, emissiveIntensity: 0 });
+const bankMaterial = new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, side: THREE.DoubleSide });
 const windowGlow = new THREE.MeshStandardMaterial({ color: 0xffcf7c, emissive: 0xffa444, emissiveIntensity: .24 });
 const mats=new Map();function material(c){if(!mats.has(c))mats.set(c,new THREE.MeshStandardMaterial({color:c,flatShading:true,roughness:.9}));return mats.get(c);}
 const boxGeo=new THREE.BoxGeometry(1,1,1),sphereGeo=new THREE.IcosahedronGeometry(1,0),leafGeo=new THREE.IcosahedronGeometry(1,1),cylinderGeo=new THREE.CylinderGeometry(1,1,1,8),coneGeo=new THREE.ConeGeometry(1,1,6), playerRingGeo=new THREE.RingGeometry(.48,.58,32);
@@ -40,6 +42,114 @@ export class GardenWorld{
   this.terrain.add(trail);
  }
 
+ meadowFootpath() {
+  const points = [], faces = [];
+  for (const [i, [x, y]] of meadowSpur.entries()) {
+   const width = i === 0 ? .34 : .28;
+   points.push(wx(x - width), .037, wz(y), wx(x + width), .037, wz(y));
+   if (i === meadowSpur.length - 1) continue;
+   const a = i * 2;
+   faces.push(a, a + 2, a + 1, a + 1, a + 2, a + 3);
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(points, 3));
+  geometry.setIndex(faces);
+  geometry.computeVertexNormals();
+  const path = new THREE.Mesh(geometry, material(0xb8aa7a));
+  path.receiveShadow = true;
+  this.terrain.add(path);
+ }
+
+ meadowSlope() {
+  const positions = [], colors = [];
+  const levels = [
+   { fraction: 0, height: -.025, color: 0x829954 },
+   { fraction: .41, height: -.94, color: 0x667951 },
+   { fraction: .75, height: -2.32, color: 0x69796e },
+   { fraction: 1, height: -3.12, color: 0x83978e },
+  ];
+  const corner = (edge, level) => {
+   const [x, y, outerX, outerY] = meadowBank[edge];
+   const { fraction, height } = levels[level];
+   const spread = Math.hypot(x - outerX, y - outerY);
+   return [
+    wx(x + (outerX - x) * fraction),
+    height * Math.min(1, spread),
+    wz(y + (outerY - y) * fraction),
+   ];
+  };
+  const color = new THREE.Color();
+  for (let edge = 0; edge < meadowBank.length - 1; edge++) {
+   for (let level = 0; level < levels.length - 1; level++) {
+    const triangles = [
+     [[edge, level], [edge + 1, level], [edge, level + 1]],
+     [[edge + 1, level], [edge + 1, level + 1], [edge, level + 1]],
+    ];
+    for (const [triangle, vertices] of triangles.entries()) {
+     for (const [point, band] of vertices) {
+      positions.push(...corner(point, band));
+      color.setHex(levels[band].color).multiplyScalar(.94 + (edge * 7 + level * 3 + triangle) % 7 * .022);
+      colors.push(color.r, color.g, color.b);
+     }
+    }
+   }
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  geometry.computeVertexNormals();
+  const slope = new THREE.Mesh(geometry, bankMaterial);
+  slope.receiveShadow = true;
+  this.terrain.add(slope);
+
+  const mistCanvas = document.createElement('canvas');
+  mistCanvas.width = 128;
+  mistCanvas.height = 128;
+  const ctx = mistCanvas.getContext('2d');
+  const fade = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+  fade.addColorStop(0, 'rgba(172,198,191,.38)');
+  fade.addColorStop(.45, 'rgba(172,198,191,.25)');
+  fade.addColorStop(1, 'rgba(172,198,191,0)');
+  ctx.fillStyle = fade;
+  ctx.fillRect(0, 0, 128, 128);
+  const texture = new THREE.CanvasTexture(mistCanvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  const veil = new THREE.MeshBasicMaterial({ map: texture, transparent: true, depthWrite: false, opacity: .52 });
+  for (const [x, y, width, length] of [[-2.6, 6, 6.5, 17], [-1.75, 15.6, 10, 6]]) {
+   const mist = new THREE.Mesh(new THREE.PlaneGeometry(width, length), veil);
+   mist.rotation.x = -Math.PI / 2;
+   mist.position.set(wx(x), -2.65, wz(y));
+   this.terrain.add(mist);
+  }
+ }
+
+ stoneArch() {
+  const x = wx(meadowArch.x), z = wz(meadowArch.y), radius = meadowArch.radius * 1.7;
+  const spring = 1.48;
+  const blocks = [0x788077, 0x929389, 0x717b71, 0x848778];
+  for (const side of [-1, 1]) {
+   for (let i = 0; i < 4; i++) {
+    const width = i === 0 ? .57 : .42;
+    const stone = box(this.terrain, blocks[(i + side + 4) % 4], x, .19 + i * .35, z + side * radius, .59, .35, width, true);
+    stone.rotation.y = Math.sin(i + side) * .15;
+   }
+  }
+  for (let i = 0; i <= 10; i++) {
+   const angle = i * Math.PI / 10;
+   const center = i === 5;
+   const stone = box(this.terrain, blocks[i % 4], x, spring + Math.sin(angle) * radius,
+    z + Math.cos(angle) * radius, center ? .67 : .59, center ? .49 : .43, .47, true);
+   stone.rotation.x = Math.PI / 2 - angle;
+  }
+  for (let i = 0; i < 5; i++) {
+   const angle = i * Math.PI * 2 / 5;
+   const petal = new THREE.Mesh(sphereGeo, carvingGlow);
+   petal.position.set(x + .345, spring + radius + Math.sin(angle) * .086, z + Math.cos(angle) * .086);
+   petal.scale.set(.014, .051, .043);
+   this.terrain.add(petal);
+  }
+ }
+
  spruce(group, x, z, size, shade) {
   box(group, 0x564737, x, .36 * size, z, .18 * size, .72 * size, .18 * size, true);
   for (let layer = 0; layer < 3; layer++) {
@@ -65,8 +175,11 @@ export class GardenWorld{
     tuft.rotation.y = i;
    }
   }
+  this.meadowSlope();
   this.trailRibbon(1.05, .015, 0xa49d66);
   this.trailRibbon(.84, .026, trailColor);
+  this.meadowFootpath();
+  this.stoneArch();
   for (let i = 0; i < 35; i++) {
    const x = (i * 2.37) % (WORLD_WIDTH - 1);
    const pebble = mesh(this.terrain, sphereGeo, i % 3 ? 0xac9a75 : 0xe0cda0, wx(x), .04, wz(trailCenter(x) + (i % 2 ? .68 : -.7)), .18, .025, .11);
@@ -74,19 +187,15 @@ export class GardenWorld{
   }
 
   const pines = [
-   [-.63, 3.8, 1.25], [-.94, 4.9, .93], [-.7, 6, .72], [-.68, 9.8, 1.07],
-   [-.8, 11.4, 1.38], [-.46, 12.7, .88], [.6, 14.9, 1.12], [1.7, 15.04, .8], [3.05, 14.91, 1.32],
+   [-.63, 3.8, 1.68], [-.94, 4.9, 1.02], [-.7, 6, .82], [-.68, 9.8, 1.07],
+   [-.8, 11.4, 1.64], [-.46, 12.7, .88], [.6, 14.9, 1.12], [1.7, 15.04, .8], [3.05, 14.91, 1.32],
   ];
   for (const [x, y, size] of pines) this.spruce(this.terrain, wx(x), wz(y), size, [0x31554b, 0x3a6450, 0x50785a]);
 
-  const x = wx(.25), z = wz(8.9);
-  const stone = mesh(this.terrain, leafGeo, 0x717e73, x, .45, z, .37, .66, .26, true);
-  stone.rotation.z = -.14;
-  for (let i = 0; i < 5; i++) {
-   const angle = i / 5 * Math.PI * 2;
-   const petal = mesh(this.terrain, sphereGeo, 0xc9b67f, x + .09 * Math.cos(angle), .63 + .09 * Math.sin(angle), z + .219, .035, .035, .018);
-   petal.rotation.z = angle;
-  }
+  const landmark = mesh(this.terrain, leafGeo, 0x667875, wx(-.63), .32, wz(8.36), .47, .74, .38, true);
+  landmark.rotation.set(.2, .45, -.2);
+  const moss = mesh(this.terrain, sphereGeo, 0x7e965b, wx(-.65), .85, wz(8.37), .31, .10, .24);
+  moss.rotation.y = -.25;
   for (let i = 0; i < 11; i++) this.flower(this.terrain, wx(.35 + (i * .73) % 2.25), wz(12 + (i * .47) % 2.15), i % 2 ? 0xd2bf77 : 0xe1d7ad);
 
   this.backdrop = document.createElement('canvas');
@@ -190,6 +299,7 @@ export class GardenWorld{
   this.sun.target.position.set(this.cameraTarget.x, 0, this.cameraTarget.z);
   this.sun.position.set(this.cameraTarget.x - 19, 24, this.cameraTarget.z + 12);
   windowGlow.emissiveIntensity = .25 + dusk * 1.65;
+  carvingGlow.emissiveIntensity = dusk * 1.08;
   this.chaletLight.intensity = 1.4 + dusk * 9;
  }
 

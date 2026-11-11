@@ -1,6 +1,6 @@
 import { WORLD_WIDTH, PLOTS, BUILDINGS } from './evolution.js';
 import { ZONES } from './engine.js';
-import { meadowColors, trailColor, woodColors, crystalColors, trailCenter, eveningLight, cameraFocus, paintAlpineBackdrop } from './scenery.js';
+import { meadowColors, trailColor, woodColors, crystalColors, trailCenter, eveningLight, cameraFocus, paintAlpineBackdrop, meadowArch, meadowSpur, meadowBank } from './scenery.js';
 const cssColor = value => `#${value.toString(16).padStart(6, '0')}`;
 const meadow = meadowColors.map(cssColor);
 const bushes = woodColors.map(cssColor);
@@ -30,26 +30,27 @@ garden(){const p=this.project(9,2),s=this.scale;if(this.state.projects>=1){for(l
 if(this.state.projects>=2){this.ell(p.x,p.y,32*s,16*s,'#b3c1b2');this.ell(p.x,p.y-5*s,28*s,14*s,'#d9dfd0');this.ell(p.x,p.y-7*s,21*s,10*s,'#96cfd0');this.line([{x:p.x,y:p.y-8*s},{x:p.x,y:p.y-35*s}],'#d8eee0',4*s);for(let i=0;i<4;i++)this.ell(p.x+Math.sin(this.time*3+i)*9*s,p.y-(14+i*7)*s,2*s,3*s,'#d9f1e5');}if(this.state.projects>=3)this.house(9,.2,'PAVILLON','#73926c');}
 hit(n,broken){this.hitTimes.set(n.id,.35);this.player.userData.swing=1;if(broken)for(let i=0;i<15;i++)this.effects.push({x:n.x,y:n.y,h:.8,vx:(Math.random()-.5)*2,vy:(Math.random()-.5)*2,vh:1+Math.random()*2,life:.7,color:n.type==='bush'?'#bad581':n.type==='rock'?'#c6d3d4':'#ace8ce'});}
 drawTerrain() {
-  const tiles = [];
-  for (let y = 0; y < 15; y++) {
-    for (let x = 0; x < WORLD_WIDTH; x++) {
-      const p = this.project(x, y);
-      if (p.x > -55 && p.x < this.W + 55 && p.y > -35 && p.y < this.H + 35) tiles.push({ x, y, p });
+  for (let i = 1; i < meadowBank.length; i++) {
+    const [x1, y1, outerX1, outerY1] = meadowBank[i - 1];
+    const [x2, y2, outerX2, outerY2] = meadowBank[i];
+    const top1 = this.project(x1, y1), top2 = this.project(x2, y2);
+    const bottom1 = this.project(outerX1, outerY1, -Math.min(1.7, Math.hypot(x1 - outerX1, y1 - outerY1)));
+    const bottom2 = this.project(outerX2, outerY2, -Math.min(1.7, Math.hypot(x2 - outerX2, y2 - outerY2)));
+    this.poly([top1, top2, bottom2], i % 2 ? '#708565' : '#7a8b68');
+    this.poly([top1, bottom2, bottom1], i % 2 ? '#82968a' : '#8da097');
+  }
+  for (let zone = 0; zone < ZONES.length; zone++) {
+    const start = zone * 6 - .5, end = start + 6;
+    const corners = [this.project(start, -.5), this.project(end, -.5), this.project(end, 14.5), this.project(start, 14.5)];
+    this.poly(corners, zone >= this.state.zones ? '#819487' : meadow[zone]);
+    for (let i = 0; i < 25; i++) {
+      const x = start + .25 + (i * 1.73) % 5.7, y = (i * 3.79) % 14;
+      if (Math.abs(y - trailCenter(x)) < 1.2) continue;
+      const point = this.project(x, y);
+      this.ell(point.x, point.y, 4.5 * this.scale, 2 * this.scale, zone === 4 ? '#a8bdba' : '#9fb27b');
     }
   }
-  tiles.sort((a, b) => a.p.y - b.p.y);
-  for (const { x, y, p } of tiles) {
-    const zone = Math.floor(x / 6);
-    const color = zone >= this.state.zones ? '#819487' : meadow[zone];
-    const corners = [this.project(x - .5, y - .5), this.project(x + .5, y - .5), this.project(x + .5, y + .5), this.project(x - .5, y + .5)];
-    if (y === 14 || x === WORLD_WIDTH - 1) {
-      this.poly(corners.map(q => ({ x: q.x, y: q.y + 13 * this.scale })), '#526f5b');
-    }
-    this.poly(corners, color);
-    if ((x * 7 + y * 11) % 9 === 0 && Math.abs(y - trailCenter(x)) > 1.3) {
-      this.ell(p.x, p.y, 5 * this.scale, 2 * this.scale, '#abc081');
-    }
-  }
+  this.line(meadowSpur.map(([x, y]) => this.project(x, y)), '#b8aa7a', 14 * this.scale);
   for (const [halfWidth, color] of [[1.05, '#a49d66'], [.84, cssColor(trailColor)]]) {
     const near = [], far = [];
     for (let i = 0; i <= WORLD_WIDTH * 4; i++) {
@@ -68,6 +69,28 @@ spruce(x, y, size) {
     this.poly([{ x: p.x - radius, y: base }, { x: p.x, y: base - 30 * s }, { x: p.x + radius, y: base }], ['#31554b', '#3a6450', '#50785a'][i]);
   }
 }
+drawArch(dusk) {
+  const { x, y, radius } = meadowArch;
+  const spring = .8;
+  const ring = [];
+  for (let i = 0; i <= 12; i++) {
+    const angle = i * Math.PI / 12;
+    ring.push(this.project(x, y + Math.cos(angle) * radius, spring + Math.sin(angle) * 1.12));
+  }
+  for (const side of [-1, 1]) {
+    this.line([this.project(x, y + side * radius), this.project(x, y + side * radius, spring)], '#747f76', 10 * this.scale);
+  }
+  this.line(ring, '#929789', 11 * this.scale);
+  for (let i = 1; i < ring.length - 1; i += 2) {
+    this.line([ring[i], { x: ring[i].x, y: ring[i].y + 4 * this.scale }], '#6f786e', this.scale);
+  }
+  const mark = ring[6], radiusPx = this.scale * 1.65;
+  const glow = `rgba(158,231,214,${.42 + dusk * .54})`;
+  for (let i = 0; i < 5; i++) {
+    const angle = i / 5 * Math.PI * 2;
+    this.ell(mark.x + Math.cos(angle) * radiusPx, mark.y + Math.sin(angle) * radiusPx, radiusPx * .61, radiusPx * .61, glow);
+  }
+}
 render(dt,p,selected,hover,reduced){
 this.time+=reduced?0:dt;
 this.scale=this.H/(this.W<650?335:390)*this.zoom;
@@ -84,6 +107,7 @@ const actors=this.state.nodes.filter(n=>{const q=this.project(n.x,n.y);return n.
 for(const [x,y,size] of [[-.65,4,1.05],[-.85,5,.84],[-.7,10,1.12],[-.77,11.7,1.2],[.6,14.9,1.1],[2,15,.93]]) {
   actors.push({depth:this.project(x,y).y,draw:()=>this.spruce(x,y,size)});
 }
+actors.push({depth:this.project(meadowArch.x,meadowArch.y).y,draw:()=>this.drawArch(dusk)});
 actors.sort((a,b)=>a.depth-b.depth).forEach(a=>a.draw());for(let z=this.state.zones;z<ZONES.length;z++){const q=this.project(z*6+2,7);ctx.fillStyle='#4c6b56df';ctx.beginPath();ctx.roundRect(q.x-58*this.scale,q.y-26*this.scale,116*this.scale,34*this.scale,7);ctx.fill();this.text('🔒 '+ZONES[z].name,q.x,q.y-11*this.scale,10*this.scale);this.text(ZONES[z].cost+' Münzen',q.x,q.y+2*this.scale,8*this.scale,'#f0d594');}
 for(const e of this.effects){e.life-=dt;e.x+=e.vx*dt;e.y+=e.vy*dt;e.h+=e.vh*dt;e.vh-=5*dt;const q=this.project(e.x,e.y,e.h);ctx.globalAlpha=Math.min(1,e.life*3);this.ell(q.x,q.y,3*this.scale,2*this.scale,e.color);}ctx.globalAlpha=1;ctx.fillStyle=`rgba(22,28,70,${.17*dusk})`;ctx.fillRect(0,0,this.W,this.H);this.effects=this.effects.filter(e=>e.life>0);for(const[k,t]of this.hitTimes)this.hitTimes.set(k,Math.max(0,t-dt));this.player.userData.swing=Math.max(0,(this.player.userData.swing||0)-dt*6);}
 }
