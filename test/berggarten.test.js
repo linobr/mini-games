@@ -1,6 +1,7 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';
+import { buildValley, tradeBlueprint, valleySite, collectValleySite, rollMarble } from '../src/berggarten/valley.js';
 import { equipGear } from '../src/berggarten/equipment.js';
-import {fresh,hit,sell,buy,count,capacity,restore,TYPES,TAL_FINDS,deposit,craft,tick,fulfill,order,claim,sellStock,findPath,findHarvestRoute} from '../src/berggarten/engine.js';
+import {fresh,hit,sell,buy,count,capacity,restore,TYPES,TAL_FINDS,deposit,sendCable,craft,tick,fulfill,order,claim,sellStock,findPath,findHarvestRoute} from '../src/berggarten/engine.js';
 test('harvest rewards once, bag full blocks damage, cooldown regrows',()=>{const s=fresh(),n=s.nodes.find(n=>n.type==='bush'&&n.zone===0);hit(s,n.id,1000);hit(s,n.id,1100);assert.equal(hit(s,n.id,1200).broken,true);assert.equal(count(s),1);assert.equal(hit(s,n.id,1300).ok,false);assert.equal(hit(s,n.id,40000).ok,true);s.inventory.bush=capacity(s);const hp=n.hp;assert.equal(hit(s,n.id,40001).reason,'full');assert.equal(n.hp,hp);assert.equal(sell(s),60);assert.equal(sell(s),0);});
 test('purchases require money, respect caps and unlock regions',()=>{const s=fresh(),n=s.nodes.find(n=>n.zone===1);assert.equal(buy(s,'tool'),false);assert.equal(hit(s,n.id).ok,false);s.coins=1e6;assert.equal(buy(s,'zone'),true);assert.equal(hit(s,n.id).ok,true);s.tool=8;s.bag=6;s.zones=5;s.projects=3;s.workers=3;s.workshop=3;const c=s.coins;for(const k of ['tool','bag','zone','project','worker','workshop'])assert.equal(buy(s,k),false);assert.equal(s.coins,c);});
 test('deposit transfers exact quantities, crafts consume inputs once and finish once',()=>{const s=fresh();s.inventory.bush=6;assert.equal(deposit(s),6);assert.equal(deposit(s),0);assert.equal(count(s),0);assert.equal(craft(s,'plank'),false);s.workshop=1;assert.equal(craft(s,'plank'),true);assert.equal(s.stock.bush,3);assert.equal(craft(s,'plank'),false);tick(s,4);assert.equal(s.stock.plank,0);assert.equal(tick(s,1).crafted,'plank');assert.equal(s.stock.plank,1);tick(s,10);assert.equal(s.stock.plank,1);assert.equal(sellStock(s),27);assert.equal(sellStock(s),0);});
@@ -83,4 +84,68 @@ test('regional discoveries pay once and preserve partial progress across saves',
   assert.equal(s.findProgress[0], found.goal);
   assert.equal(s.coins, found.reward);
   assert.equal(s.findProgress[1], 0);
+});
+
+test('material cable fills available storage from the heights only when the bag is full', () => {
+  const s = fresh();
+  s.coins = 200;
+  s.stock.plank = 3;
+  assert.equal(buildValley(s, 'cable'), false);
+  s.zones = 3;
+  assert.equal(buildValley(s, 'cable'), true);
+  assert.equal(s.stock.plank, 0);
+  assert.equal(s.coins, 40);
+  assert.equal(buildValley(s, 'cable'), false);
+  s.inventory.bush = capacity(s) - 1;
+  assert.equal(sendCable(s, 2), 0);
+  s.inventory.rock = 1;
+  s.stock.bush = 5000;
+  assert.equal(sendCable(s, 1), 0);
+  assert.equal(sendCable(s, 2), 1);
+  assert.equal(s.stock.rock, 1);
+  assert.equal(s.inventory.bush, capacity(s) - 1);
+});
+
+test('forecast and lantern discoveries follow the clock and cannot be collected twice', () => {
+  const s = fresh();
+  s.zones = 3;
+  s.coins = 200;
+  s.stock.crystal = 1;
+  s.stock.rock = 4;
+  assert.equal(buildValley(s, 'lantern'), true);
+  assert.equal(buildValley(s, 'weather'), true);
+  assert.equal(valleySite(s), null);
+  tick(s, 300);
+  const crystal = valleySite(s);
+  assert.equal(crystal.name, 'Sternkristall');
+  assert.equal(collectValleySite(s, { x: 4, y: 7 }), null);
+  assert.equal(collectValleySite(s, crystal).name, 'Sternkristall');
+  assert.equal(collectValleySite(restore(JSON.stringify(s)), crystal), null);
+  tick(s, 300);
+  assert.equal(s.valley.day, 1);
+  const flower = valleySite(s);
+  assert.equal(flower.name, 'Alpenblume');
+  assert.equal(collectValleySite(s, flower).name, 'Alpenblume');
+  assert.equal(s.coins, 102);
+});
+
+test('the night market trades one blueprint and the marble track saves the best run', () => {
+  const s = fresh();
+  s.zones = 2;
+  s.coins = 100;
+  s.stock.plank = 6;
+  s.stock.brick = 1;
+  s.stock.rock = 2;
+  assert.equal(tradeBlueprint(s), false);
+  assert.equal(buildValley(s, 'marble'), false);
+  assert.equal(rollMarble(s, 74), null);
+  s.dayClock = 315;
+  assert.equal(tradeBlueprint(s), true);
+  assert.equal(tradeBlueprint(s), false);
+  assert.equal(s.stock.brick, 0);
+  assert.equal(buildValley(s, 'marble'), true);
+  assert.equal(s.stock.plank, 0);
+  assert.equal(rollMarble(s, 74), 42);
+  assert.ok(rollMarble(s, 25) < 42);
+  assert.equal(restore(JSON.stringify(s)).valley.bestRoll, 42);
 });

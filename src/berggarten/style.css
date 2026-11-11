@@ -368,3 +368,40 @@ main { align-items: start; }
 }
 .tal-finds small { display: block; }
 .tal-finds li > span { text-align: right; color: #53674e; font-size: 11px; }
+
+.valley-card { border-top: 1px solid #dce4d2; margin-top: 9px; padding-top: 9px; }
+.valley-card h4 { margin: 0 0 4px; font-size: 13px; }
+.valley-card p { margin: 4px 0 7px; }
+.valley-card small { display: block; margin: 3px 0; }
+.valley-card small:empty { display: none; }
+.valley-card input[type="range"] { width: 100%; padding: 0; accent-color: #447b56; }
+.marble-lane {
+  position: relative;
+  height: 8px;
+  margin: 10px 8px;
+  border-radius: 5px;
+  background: #c6aa7b;
+}
+#valley-ball {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 13px;
+  height: 13px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 28%, #e8f6df, #5f9277 64%, #294d43);
+}
+.valley-marker {
+  position: absolute;
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid #fff8cb;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: #305b4d;
+  color: #fff6c9;
+  font-size: 23px;
+  box-shadow: 0 0 14px #b0e3cf99;
+}
+.valley-marker:hover:not(:disabled) { transform: translate(-50%, -50%); }

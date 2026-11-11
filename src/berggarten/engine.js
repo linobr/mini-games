@@ -1,5 +1,6 @@
 import { WORLD_WIDTH, STOCK_LIMIT, PLOTS, BUILDINGS, QUESTS, tickBuildings } from './evolution.js';
 import { GEAR, gearFor, restoreGear } from './equipment.js';
+import { freshValley, restoreValley, hasValleyBuilding } from './valley.js';
 export const TYPES={bush:{name:'Holz',hp:3,value:3,color:0x74aa44},rock:{name:'Stein',hp:6,value:7,color:0x99aebb},crystal:{name:'Kristall',hp:10,value:15,color:0xb397ed}};
 export const ZONES=[{name:'Sonnenwiese',cost:0},{name:'Steinbruch',cost:180},{name:'Kristallhöhen',cost:650},{name:'Waldtal',cost:1100},{name:'Schneegipfel & Alpendorf',cost:1800}];
 export const TAL_FINDS = [
@@ -54,7 +55,7 @@ export function nodes(){
   arrangeMeadow(out);
   return out;
 }
-export function fresh(){return {version:3,buildings:[],quests:[],crafted:0,buildingUpgrades:0,dayClock:0,coins:0,tool:1,gear:[],equipped:'pick',findProgress:TAL_FINDS.map(()=>0),bag:0,inventory:{bush:0,rock:0,crystal:0},stock:empty(),zones:1,projects:0,broken:0,earned:0,xp:0,workers:0,workshop:0,job:null,orders:0,claimed:[],workerClock:0,gardenClock:0,lastSeen:Date.now(),nodes:nodes()};}
+export function fresh(){return {version:3,buildings:[],quests:[],crafted:0,buildingUpgrades:0,dayClock:0,valley:freshValley(),coins:0,tool:1,gear:[],equipped:'pick',findProgress:TAL_FINDS.map(()=>0),bag:0,inventory:{bush:0,rock:0,crystal:0},stock:empty(),zones:1,projects:0,broken:0,earned:0,xp:0,workers:0,workshop:0,job:null,orders:0,claimed:[],workerClock:0,gardenClock:0,lastSeen:Date.now(),nodes:nodes()};}
 export const count=s=>Object.values(s.inventory).reduce((a,b)=>a+b,0);
 export const value=s=>Object.entries(s.inventory).reduce((a,[k,v])=>a+TYPES[k].value*v,0);
 export const level=s=>1+Math.floor(Math.sqrt(s.xp/20));
@@ -85,6 +86,9 @@ export function hit(s, id, now = Date.now()) {
 }
 export function sell(s){const v=value(s);s.coins+=v;s.earned+=v;for(const k in s.inventory)s.inventory[k]=0;return v;}
 export function deposit(s){let n=0;for(const k in s.inventory){const moved=Math.min(s.inventory[k],Math.max(0,STOCK_LIMIT-s.stock[k]));s.stock[k]+=moved;s.inventory[k]-=moved;n+=moved;}return n;}
+export function sendCable(s, zone) {
+  return zone >= 2 && hasValleyBuilding(s, 'cable') && count(s) >= capacity(s) ? deposit(s) : 0;
+}
 export function stockValue(s){return GOODS.reduce((a,k)=>a+s.stock[k]*(TYPES[k]?.value??RECIPES[k].price),0);}
 export function sellStock(s){const v=stockValue(s);s.coins+=v;s.earned+=v;s.stock=empty();return v;}
 export function buy(s,kind){let cost,max;switch(kind){case'tool':cost=toolCost(s);max=s.tool>=8;break;case'bag':cost=bagCost(s);max=s.bag>=6;break;case'zone':cost=ZONES[s.zones]?.cost;max=s.zones>=ZONES.length;break;case'project':cost=PROJECTS[s.projects]?.cost;max=s.projects>=3;break;case'worker':cost=workerCost(s);max=s.workers>=3;break;case'workshop':cost=workshopCost(s);max=s.workshop>=3;break;default:return false;}
@@ -94,7 +98,9 @@ export function tick(s,seconds){
   seconds=Number.isFinite(seconds)?Math.max(0,Math.min(300,seconds)):0;
   const result={produced:0,passive:0,crafted:null,buildings:0};
   if(seconds===0)return result;
-  s.dayClock=(s.dayClock+seconds)%600;
+  const dayClock = s.dayClock + seconds;
+  if (dayClock >= 600) s.valley.day++;
+  s.dayClock = dayClock % 600;
   if(s.job){s.job.remaining=Math.max(0,s.job.remaining-seconds);if(s.job.remaining===0&&s.stock[s.job.kind]<STOCK_LIMIT){s.stock[s.job.kind]++;s.xp+=4;s.crafted++;result.crafted=s.job.kind;s.job=null;}}
   s.workerClock+=seconds;
   if(s.workers){const batches=Math.floor(s.workerClock/10);s.workerClock%=10;
@@ -119,6 +125,7 @@ export function restore(raw){
     s[k]=Math.floor(bounded(r[k],min,max,s[k]));
   }
   restoreGear(s, r);
+  s.valley = restoreValley(s, r.valley);
   s.findProgress = TAL_FINDS.map((find, zone) =>
     zone < s.zones ? Math.floor(bounded(r.findProgress?.[zone], 0, find.goal)) : 0);
   for(const k in s.inventory)s.inventory[k]=Math.floor(bounded(r.inventory?.[k],0,capacity(s)));

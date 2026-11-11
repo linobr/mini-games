@@ -1,10 +1,11 @@
 import { setupEvolution } from './evolution-ui.js';
+import { setupValley } from './valley-ui.js';
 import { buildingAt } from './evolution.js';
 import { loadGarden, acquireSaveLock, hasSaveLock, SAVE_KEY } from './storage.js';
 import { loadProfile } from '../nexus-model.js';
 import './style.css';
 import { GEAR, equipGear } from './equipment.js';
-import {TYPES,ZONES,PROJECTS,RECIPES,GOODS,NAMES,MILESTONES,TAL_FINDS,fresh,restore,hit,sell,buy,count,value,capacity,toolCost,bagCost,workerCost,workshopCost,deposit,sellStock,stockValue,craft,tick,order,fulfill,claim,level,findPath,findHarvestRoute} from './engine.js';
+import {TYPES,ZONES,PROJECTS,RECIPES,GOODS,NAMES,MILESTONES,TAL_FINDS,fresh,restore,hit,sell,buy,count,value,capacity,toolCost,bagCost,workerCost,workshopCost,deposit,sendCable,sellStock,stockValue,craft,tick,order,fulfill,claim,level,findPath,findHarvestRoute} from './engine.js';
 import {GardenWorld} from './world.js';import {CanvasGardenWorld} from './canvas-world.js';import {GardenAudio} from './audio.js';
 const exclusive = await acquireSaveLock();
 if (!exclusive) { document.getElementById('loading').textContent = 'Berggarten ist bereits in einem anderen Tab geöffnet oder dein Browser unterstützt keine sichere Tab-Sperre. Schliesse den anderen Tab und lade neu.'; }
@@ -21,6 +22,10 @@ function queueSave(){clearTimeout(saveTimer);saveTimer=setTimeout(save,250);}
 function label(x,y,text,color){const el=document.createElement('span');el.className='drop-label';el.textContent=text;if(color)el.style.color=color;$('labels').append(el);floating.push({el,x,y,life:1.5});}
 function button(id,cost,max,text){const el=$(id);el.textContent=max?'Voll ausgebaut ✓':`${text} · ${cost} ●`;el.disabled=max||state.coins<cost;}
 const evolution=setupEvolution({state,toast,changed:rebuild=>{target=null;path=[];if(rebuild){if(buildingAt(state,player.x,player.y)){player.x=4;player.y=7;}world?.rebuild();}updateUI();save();},backup:()=>{try{storage.setItem('berggarten-before-import',writable?JSON.stringify(state):(storage.getItem(KEY)||JSON.stringify(state)));return true;}catch{return false;}},replace:next=>{Object.assign(state,next);writable=true;player.x=4;player.y=7;target=null;path=[];world?.rebuild();updateUI();save();}});
+const valley = setupValley({
+  state, player, toast, changed: () => updateUI(true),
+  moveTo: site => { stopGathering(); go(site); },
+});
 const gearIds = Object.keys(GEAR);
 $('special-gear').innerHTML = gearIds.map(id => {
   const item = GEAR[id];
@@ -100,6 +105,7 @@ crystalButton.disabled = state.zones < 3;
 $('crystal-availability').textContent = crystalButton.disabled ? 'Ab Kristallhöhen' : '15 Münzen';
 updateGatherStatus();
 updateEquipment();
+valley.render();
 evolution();if(saveIt)queueSave();}
 function change(kind){audio.start();if(!buy(state,kind))return;audio.chime();const messages={tool:'Ein kräftigerer Schlag. Deine Hacke wurde aufgewertet.',bag:'Mehr Platz für deine nächste Tour.',worker:'Willkommen im Team! Dein Helfer liefert direkt ins Lager.',workshop:'Die Manufaktur ist bereit. Lagere Rohstoffe ein und starte die Produktion.',zone:'Ein neues Gebiet ist offen. Wege frei machen und weiterbauen!',project:'Dein Garten lockt die ersten Besucher an.'};toast(messages[kind]);if(['zone','project','worker','workshop'].includes(kind))world?.rebuild();updateUI(true);}
 for(const k of['tool','bag','worker','workshop','zone','project'])$('buy-'+k).onclick=()=>change(k);
@@ -361,9 +367,15 @@ function movePlayer(t, dt) {
   }
 }
 function frame(t){clock=t;const dt=Math.min((t-last)/1000,.04)||.016;last=t;movePlayer(t,dt);
-const wall=Date.now(),seconds=(wall-lastWall)/1000;lastWall=wall;{const r=tick(state,seconds);if(r.crafted){audio.tone(784,.22);toast(`${NAMES[r.crafted]} fertig – im Lager bereit!`);}if(r.produced||r.passive||r.crafted||r.buildings)queueSave();}
-uiClock+=dt;if(uiClock>.3){updateUI();uiClock=0;}$('combo').textContent=streak>1&&t-lastBreak<3500?`${streak} × Sauber!`:'';
-const zone=Math.min(state.zones-1,Math.floor(player.x/6));$('area').textContent=ZONES[zone].name;$('area-sub').textContent=['Dein erster kleiner Betrieb','Stein für den nächsten grossen Schritt','Hier funkelt die Zukunft','Holz für deine Produktionsketten','Alpenbausätze für neue Handelsaufträge'][zone];world.render(dt,player,target,hover,reduced);
+const wall=Date.now(),seconds=(wall-lastWall)/1000;lastWall=wall;const previousDay=state.valley.day;{const r=tick(state,seconds);if(r.crafted){audio.tone(784,.22);toast(`${NAMES[r.crafted]} fertig – im Lager bereit!`);}if(r.produced||r.passive||r.crafted||r.buildings||state.valley.day!==previousDay)queueSave();}
+uiClock+=dt;
+if(uiClock>.3){
+  const sent = sendCable(state, Math.floor(player.x / 6));
+  if (sent) toast(`Seilbahn: ${sent} Rohstoffe ins Lager geliefert.`);
+  updateUI(Boolean(sent));
+  uiClock=0;
+}$('combo').textContent=streak>1&&t-lastBreak<3500?`${streak} × Sauber!`:'';
+const zone=Math.min(state.zones-1,Math.floor(player.x/6));$('area').textContent=ZONES[zone].name;$('area-sub').textContent=['Dein erster kleiner Betrieb','Stein für den nächsten grossen Schritt','Hier funkelt die Zukunft','Holz für deine Produktionsketten','Alpenbausätze für neue Handelsaufträge'][zone];world.render(dt,player,target,hover,reduced);valley.positionMarker(world);
 for(const f of floating){f.life-=dt;const p=world.screen(f.x,f.y,1.6+(1.5-f.life)*.6);f.el.style.left=`${p.x}px`;f.el.style.top=`${p.y}px`;f.el.style.transform='translate(-50%,-100%)';f.el.style.opacity=String(Math.min(1,f.life*2));}floating=floating.filter(f=>{if(f.life<=0){f.el.remove();return false;}return true;});requestAnimationFrame(frame);}
 window.addEventListener('berggarten-before-unlock',save);window.addEventListener('pagehide',save);document.addEventListener('visibilitychange',()=>{if(document.hidden){save();clearInput();}});
 updateUI();try{try{world=new GardenWorld(canvas,state);}catch(error){console.warn('WebGL nicht verfügbar, Canvas-Ansicht aktiviert.');world=new CanvasGardenWorld(canvas,state);} new ResizeObserver(()=>world.resize()).observe(canvas);$('loading').hidden=true;$('loading').style.display='none';requestAnimationFrame(frame);if(offline.produced||offline.passive||offline.crafted||offline.buildings){toast(`Willkommen zurück: ${offline.produced} Rohstoffe und ${offline.passive} Münzen gesammelt.`);queueSave();}else if(!raw)dialog.showModal();}catch(error){$('loading').textContent='Dein Browser konnte die Gartenwelt nicht starten. Bitte verwende einen aktuellen Browser.';console.error('Berggarten 3D konnte nicht starten',error);}

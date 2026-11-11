@@ -1,6 +1,6 @@
 <!doctype html><html lang="de"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#183c35"><meta name="description" content="Berggarten Tycoon: Erkunde dein Alpental, baue Ressourcen ab, stelle Waren her und erschaffe mit deinen Helfern ein blühendes Gartenunternehmen."><title>Berggarten Tycoon · Mini Games</title><link rel="icon" href="../berggarten/icon.svg"></head><body>
 <div class="app"><header><a href="../" class="back">← <span>Mini Games</span></a><div class="brand"><span>✿</span><div><h1>Berggarten</h1><small>ALPINE GARDEN TYCOON</small></div></div><div class="head-actions"><span id="day-phase">☀ Tag</span><button id="sound" aria-label="Sound umschalten" aria-pressed="true">♫</button><button id="help" aria-label="Spielanleitung">?</button></div></header>
-<main><section class="play"><div class="scene-wrap"><canvas id="game" tabindex="0" aria-label="3D Gartenwelt. WASD oder Pfeiltasten bewegen. Leertaste baut ab. Escape stoppt die Sammeltour."></canvas><div class="top-hud"><div class="wallet"><span class="coin">●</span><strong id="coins">0</strong><small>MÜNZEN</small></div><div class="level-pill"><span id="level">LV 1</span><div class="progress"><i id="xp-fill"></i></div></div><div class="bag-pill"><span><span class="bag-mark" role="img" aria-label="Rucksack"></span><b id="bag-count">0 / 20</b></span><div class="progress"><i id="bag-fill"></i></div></div></div><div class="area-chip"><span class="area-dot"></span><span id="area">Sonnenwiese</span><small id="area-sub">Dein erster kleiner Betrieb</small></div><div class="combo" id="combo"></div><div class="world-controls"><button id="rotate-left" aria-label="Kamera nach links drehen">↶</button><button id="rotate-right" aria-label="Kamera nach rechts drehen">↷</button><button id="zoom-in" aria-label="Heranzoomen">+</button><button id="zoom-out" aria-label="Herauszoomen">−</button><button id="auto" aria-pressed="false">⛏ Auto aus</button></div><div class="mobile-controls"><button data-dir="left" aria-label="Links">←</button><button data-dir="up" aria-label="Hoch">↑</button><button data-dir="down" aria-label="Runter">↓</button><button data-dir="right" aria-label="Rechts">→</button><button id="chop" aria-label="Abbauen">⛏</button></div><div id="labels"></div><div class="loading" id="loading"><span>✿</span>Dein Tal erwacht …</div></div>
+<main><section class="play"><div class="scene-wrap"><canvas id="game" tabindex="0" aria-label="3D Gartenwelt. WASD oder Pfeiltasten bewegen. Leertaste baut ab. Escape stoppt die Sammeltour."></canvas><div class="top-hud"><div class="wallet"><span class="coin">●</span><strong id="coins">0</strong><small>MÜNZEN</small></div><div class="level-pill"><span id="level">LV 1</span><div class="progress"><i id="xp-fill"></i></div></div><div class="bag-pill"><span><span class="bag-mark" role="img" aria-label="Rucksack"></span><b id="bag-count">0 / 20</b></span><div class="progress"><i id="bag-fill"></i></div></div></div><div class="area-chip"><span class="area-dot"></span><span id="area">Sonnenwiese</span><small id="area-sub">Dein erster kleiner Betrieb</small></div><div class="combo" id="combo"></div><div class="world-controls"><button id="rotate-left" aria-label="Kamera nach links drehen">↶</button><button id="rotate-right" aria-label="Kamera nach rechts drehen">↷</button><button id="zoom-in" aria-label="Heranzoomen">+</button><button id="zoom-out" aria-label="Herauszoomen">−</button><button id="auto" aria-pressed="false">⛏ Auto aus</button></div><div class="mobile-controls"><button data-dir="left" aria-label="Links">←</button><button data-dir="up" aria-label="Hoch">↑</button><button data-dir="down" aria-label="Runter">↓</button><button data-dir="right" aria-label="Rechts">→</button><button id="chop" aria-label="Abbauen">⛏</button></div><div id="labels"></div><button id="valley-marker" class="valley-marker" type="button" hidden></button><div class="loading" id="loading"><span>✿</span>Dein Tal erwacht …</div></div>
 <div class="play-deck">
 <section class="gather-panel" aria-labelledby="gather-title">
   <div class="gather-heading">
@@ -51,6 +51,27 @@
   <details class="evolution-panel" open>
     <summary>Fundstücke <span id="find-count">0 / 5</span></summary>
     <ul id="tal-finds" class="tal-finds"></ul>
+  </details>
+  <details class="evolution-panel" id="valley-expansion">
+    <summary>Tal-Ausbau</summary>
+    <div id="valley-buildings"></div>
+    <article class="valley-card">
+      <h4>Nachtmarkt</h4><p>2 Bretter und 1 Baustein gegen den Bauplan der Murmelbahn.</p>
+      <button id="valley-market" type="button">Bauplan tauschen</button>
+      <small id="valley-market-status"></small>
+    </article>
+    <article class="valley-card" id="valley-discovery" hidden>
+      <h4>Fundstelle</h4><p id="valley-forecast"></p>
+      <button id="valley-find" type="button" hidden></button>
+    </article>
+    <article class="valley-card" id="valley-track" hidden>
+      <h4>Murmelbahn fahren</h4>
+      <label for="valley-power">Schubkraft <output id="valley-power-value" for="valley-power">50</output></label>
+      <input id="valley-power" type="range" min="0" max="100" value="50">
+      <div class="marble-lane" aria-hidden="true"><i id="valley-ball"></i></div>
+      <button id="valley-roll" type="button">Rollen lassen</button>
+      <p id="valley-record" role="status"></p>
+    </article>
   </details>
 </section>
 <section id="panel-storage" role="tabpanel" aria-labelledby="tab-storage" hidden>

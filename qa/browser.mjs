@@ -52,9 +52,10 @@ for (const engine of (process.env.NEXUS_QA_ENGINES === 'chromium' ? [chromium] :
   await page.evaluate(() => scrollTo(0, 0)); await page.screenshot({ path: `/tmp/nexus-${engine.name()}-mobile.png` });
   console.log(engine.name()+': launcher interactions passed');
   // Use a real v2 save and confirm migration, playable input, production, import and tab exclusion.
-  const old = fresh(); old.version = 2; old.coins = 10000; old.tool = 4; old.zones = 3; old.workshop = 1; old.stock.bush = 30; old.stock.rock = 30;
+  const old = fresh(); old.version = 2; old.coins = 10000; old.tool = 4; old.zones = 3; old.workshop = 1; old.stock.bush = 30; old.stock.rock = 30; old.stock.crystal = 1;
+  old.dayClock = 320; old.stock.plank = 6; old.stock.brick = 1;
   delete old.buildings; delete old.quests;
-  delete old.gear; delete old.equipped; delete old.findProgress;
+  delete old.gear; delete old.equipped; delete old.findProgress; delete old.valley;
   await page.evaluate(s => localStorage.setItem('berggarten-save-v1', JSON.stringify(s)), old);
   await page.goto(`${base}berggarten/`); await page.locator('#loading').waitFor({ state: 'hidden' });
   assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('berggarten-save-v1')).version), 3);
@@ -69,6 +70,15 @@ for (const engine of (process.env.NEXUS_QA_ENGINES === 'chromium' ? [chromium] :
   await page.locator('#deposit').click();
   await page.waitForFunction(() => JSON.parse(localStorage.getItem('berggarten-save-v1')).stock.bush === 31);
   await page.locator('#tab-world').click();
+  await page.locator('#valley-expansion summary').click();
+  await page.locator('#valley-build-lantern').click();
+  assert.equal(await page.locator('#valley-status-lantern').textContent(), 'Gebaut');
+  assert.equal(await page.locator('#valley-discovery').isVisible(), true);
+  assert.match(await page.locator('#valley-find').textContent(), /Sternkristall/);
+  await page.locator('#valley-market').click();
+  await page.locator('#valley-build-marble').click();
+  await page.locator('#valley-roll').click();
+  assert.match(await page.locator('#valley-record').textContent(), /Letzter Lauf: \d+ m · Bestweite: \d+ m/);
   const findProgress = await page.evaluate(() => JSON.parse(localStorage.getItem('berggarten-save-v1')).findProgress);
   assert.equal(findProgress.reduce((total, value) => total + value, 0), 1);
   const harvestedZone = findProgress.indexOf(1);
