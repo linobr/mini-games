@@ -16,8 +16,11 @@ concurrency:
 
 jobs:
   build:
-    # Playwright 1.58 supports Ubuntu 24.04.
     runs-on: ubuntu-24.04
+    # Keep the image version in sync with the Playwright dev dependency.
+    container:
+      image: mcr.microsoft.com/playwright:v1.58.2-noble
+      options: --ipc=host
     timeout-minutes: 20
     steps:
       - name: Checkout
@@ -37,9 +40,6 @@ jobs:
 
       - name: Build website
         run: npm run build
-
-      - name: Install browser test engines
-        run: npx playwright install --with-deps chromium webkit
 
       - name: Test mobile browsers and offline play
         run: npm run test:browser
