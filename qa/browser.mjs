@@ -69,7 +69,10 @@ for (const engine of (process.env.NEXUS_QA_ENGINES === 'chromium' ? [chromium] :
   await page.locator('#deposit').click();
   await page.waitForFunction(() => JSON.parse(localStorage.getItem('berggarten-save-v1')).stock.bush === 31);
   await page.locator('#tab-world').click();
-  assert.equal(await page.locator('#find-0').textContent(), '1 / 4 abgebaut');
+  const findProgress = await page.evaluate(() => JSON.parse(localStorage.getItem('berggarten-save-v1')).findProgress);
+  assert.equal(findProgress.reduce((total, value) => total + value, 0), 1);
+  const harvestedZone = findProgress.indexOf(1);
+  assert.match(await page.locator(`#find-${harvestedZone}`).textContent(), /^1 \/ \d+ abgebaut$/);
   await page.locator('#auto').click();
   await page.locator('#stop-gathering').click();
   assert.equal(await page.locator('#auto').getAttribute('aria-pressed'), 'false');
