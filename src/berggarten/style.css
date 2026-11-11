@@ -324,3 +324,47 @@ main { align-items: start; }
 #garden-next-cost { color: #6a623d; font-size: 11px; white-space: nowrap; }
 #management .save-tools { padding: 3px 8px; background: transparent; }
 #management .save-tools summary { font-size: 12px; font-weight: 650; }
+
+.special-gear { margin-top: 14px; }
+.special-gear h3 { margin: 0 0 4px; font-size: 14px; }
+.special-gear > p { margin: 0 0 8px; color: #53674e; font-size: 11px; }
+.gear-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border-top: 1px solid #dce4d2;
+}
+.gear-card h4 { margin: 0; font-size: 13px; }
+.gear-card p, .gear-card small { display: block; margin: 3px 0 0; color: #53674e; font-size: 11px; }
+.gear-card small:empty { display: none; }
+.gear-card button, #equip-pick {
+  min-height: 40px;
+  padding: 5px 8px;
+  border-radius: 8px;
+  background: #e4ead6;
+  color: #345745;
+  font-size: 11px;
+  font-weight: 700;
+}
+.gear-card button { flex: 0 0 auto; }
+.gear-card button:disabled { opacity: .75; }
+.gear-card button[aria-pressed="true"], #equip-pick[aria-pressed="true"] {
+  background: #315846;
+  color: #fff9e6;
+}
+#equip-pick { margin-top: 4px; }
+#find-count { margin-left: 5px; color: #53674e; font-size: 11px; }
+.tal-finds { margin: 0; padding: 0; list-style: none; }
+.tal-finds li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 0;
+  border-top: 1px solid #dce4d2;
+  font-size: 12px;
+}
+.tal-finds small { display: block; }
+.tal-finds li > span { text-align: right; color: #53674e; font-size: 11px; }

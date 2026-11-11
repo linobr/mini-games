@@ -3,7 +3,8 @@ import { buildingAt } from './evolution.js';
 import { loadGarden, acquireSaveLock, hasSaveLock, SAVE_KEY } from './storage.js';
 import { loadProfile } from '../nexus-model.js';
 import './style.css';
-import {TYPES,ZONES,PROJECTS,RECIPES,GOODS,NAMES,MILESTONES,fresh,restore,hit,sell,buy,count,value,capacity,toolCost,bagCost,workerCost,workshopCost,deposit,sellStock,stockValue,craft,tick,order,fulfill,claim,level,findPath,findHarvestRoute} from './engine.js';
+import { GEAR, equipGear } from './equipment.js';
+import {TYPES,ZONES,PROJECTS,RECIPES,GOODS,NAMES,MILESTONES,TAL_FINDS,fresh,restore,hit,sell,buy,count,value,capacity,toolCost,bagCost,workerCost,workshopCost,deposit,sellStock,stockValue,craft,tick,order,fulfill,claim,level,findPath,findHarvestRoute} from './engine.js';
 import {GardenWorld} from './world.js';import {CanvasGardenWorld} from './canvas-world.js';import {GardenAudio} from './audio.js';
 const exclusive = await acquireSaveLock();
 if (!exclusive) { document.getElementById('loading').textContent = 'Berggarten ist bereits in einem anderen Tab geöffnet oder dein Browser unterstützt keine sichere Tab-Sperre. Schliesse den anderen Tab und lade neu.'; }
@@ -20,11 +21,52 @@ function queueSave(){clearTimeout(saveTimer);saveTimer=setTimeout(save,250);}
 function label(x,y,text,color){const el=document.createElement('span');el.className='drop-label';el.textContent=text;if(color)el.style.color=color;$('labels').append(el);floating.push({el,x,y,life:1.5});}
 function button(id,cost,max,text){const el=$(id);el.textContent=max?'Voll ausgebaut ✓':`${text} · ${cost} ●`;el.disabled=max||state.coins<cost;}
 const evolution=setupEvolution({state,toast,changed:rebuild=>{target=null;path=[];if(rebuild){if(buildingAt(state,player.x,player.y)){player.x=4;player.y=7;}world?.rebuild();}updateUI();save();},backup:()=>{try{storage.setItem('berggarten-before-import',writable?JSON.stringify(state):(storage.getItem(KEY)||JSON.stringify(state)));return true;}catch{return false;}},replace:next=>{Object.assign(state,next);writable=true;player.x=4;player.y=7;target=null;path=[];world?.rebuild();updateUI();save();}});
+const gearIds = Object.keys(GEAR);
+$('special-gear').innerHTML = gearIds.map(id => {
+  const item = GEAR[id];
+  return `<article class="gear-card"><div><h4>${item.name}</h4><p>${item.hint}</p><small id="gear-require-${id}"></small></div><button id="gear-${id}" type="button" aria-pressed="false"></button></article>`;
+}).join('');
+$('tal-finds').innerHTML = TAL_FINDS.map((item, zone) =>
+  `<li><div><strong>${item.name}</strong><small>${ZONES[zone].name}</small></div><span id="find-${zone}"></span></li>`
+).join('');
+
+function chooseGear(id) {
+  if (!equipGear(state, id)) return;
+  audio.start();
+  audio.chime();
+  const name = GEAR[id]?.name ?? 'Normale Hacke';
+  toast(`${name} ausgerüstet.`);
+  updateUI(true);
+}
+for (const id of gearIds) $('gear-' + id).onclick = () => chooseGear(id);
+$('equip-pick').onclick = () => chooseGear('pick');
+
+function updateEquipment() {
+  $('equip-pick').setAttribute('aria-pressed', String(state.equipped === 'pick'));
+  for (const id of gearIds) {
+    const item = GEAR[id];
+    const owned = state.gear.includes(id);
+    const active = state.equipped === id;
+    const button = $('gear-' + id);
+    button.textContent = active ? 'Ausgerüstet' : owned ? 'Ausrüsten' : `${item.cost} ● kaufen`;
+    button.disabled = !owned && (state.coins < item.cost || state.tool < item.level);
+    button.setAttribute('aria-pressed', String(active));
+    $('gear-require-' + id).textContent = state.tool < item.level ? `Ab Hacke Stufe ${item.level}` : '';
+  }
+  let collected = 0;
+  for (const [zone, item] of TAL_FINDS.entries()) {
+    const found = state.findProgress[zone] >= item.goal;
+    if (found) collected++;
+    $('find-' + zone).textContent = found ? 'Gefunden ✓' : zone >= state.zones ? 'Region gesperrt' : `${state.findProgress[zone]} / ${item.goal} abgebaut`;
+  }
+  $('find-count').textContent = `${collected} / ${TAL_FINDS.length}`;
+}
+
 const icons={kit:'⌂',bush:'🌿',rock:'◆',crystal:'✦',plank:'▤',brick:'▦',gem:'◇'};
 $('inventory').innerHTML=GOODS.map(k=>`<div class="${TYPES[k]?'raw':''}">${icons[k]} ${NAMES[k]} <b id="stock-${k}">0</b></div>`).join('');
 $('recipes').innerHTML=Object.entries(RECIPES).filter(([k])=>k!=='kit').map(([k,r])=>`<button id="craft-${k}">${icons[k]} ${r.name}<small>3 ${NAMES[Object.keys(r.input)[0]]} → ${r.price} ●</small></button>`).join('');
 function updateUI(saveIt=false){$('coins').textContent=state.coins.toLocaleString('de-CH');$('bag-count').textContent=`${count(state)} / ${capacity(state)}`;$('bag-fill').style.width=`${count(state)/capacity(state)*100}%`;$('bag-fill').style.background=count(state)>=capacity(state)?'#c7985c':'#7d9d54';const lvl=level(state),low=(lvl-1)**2*20,high=lvl**2*20;$('level').textContent=`LV ${lvl}`;$('xp-fill').style.width=`${(state.xp-low)/(high-low)*100}%`;
-$('sell-value').textContent=`+${value(state)} ●`;$('sell').disabled=!count(state);$('deposit').disabled=!count(state);$('deposit-count').textContent=`${count(state)} Stück`;$('tool-label').textContent=`${state.tool>=5?'Kristallhacke':state.tool>=3?'Stahlhacke':'Gartenhacke'} · Stufe ${state.tool}`;$('tool-desc').textContent=`${state.tool} → ${Math.min(8,state.tool+1)} Schaden · schnellere Schläge`;$('bag-desc').textContent=`${capacity(state)} → ${capacity(state)+15} Plätze für deine Tour`;
+$('sell-value').textContent=`+${value(state)} ●`;$('sell').disabled=!count(state);$('deposit').disabled=!count(state);$('deposit-count').textContent=`${count(state)} Stück`;$('tool-label').textContent=GEAR[state.equipped]?.name ?? `${state.tool>=5?'Kristallhacke':state.tool>=3?'Stahlhacke':'Gartenhacke'} · Stufe ${state.tool}`;$('tool-desc').textContent=`${state.tool} → ${Math.min(8,state.tool+1)} Schaden · schnellere Schläge`;$('bag-desc').textContent=`${capacity(state)} → ${capacity(state)+15} Plätze für deine Tour`;
 button('buy-tool',toolCost(state),state.tool>=8,'Aufwerten');button('buy-bag',bagCost(state),state.bag>=6,'Vergrössern');button('buy-zone',ZONES[state.zones]?.cost,state.zones>=ZONES.length,'Erschliessen');button('buy-project',PROJECTS[state.projects]?.cost,state.projects>=3,'Restaurieren');button('buy-worker',workerCost(state),state.workers>=3,'Einstellen');button('buy-workshop',workshopCost(state),state.workshop>=3,state.workshop?'Ausbauen':'Bauen');
 $('workers').textContent=`${state.workers} / 3`;$('worker-desc').textContent=state.workers?`${state.workers} Ressourcen / 10 Sek. direkt ins Lager`:'Sammelt automatisch Holz, später Stein & Kristall';$('workshop-desc').textContent=state.workshop?`Stufe ${state.workshop} · ${state.workshop}× Produktionstempo`:'Rohstoffe rein. Wertvollere Produkte raus.';
 $('next-zone').textContent=ZONES[state.zones]?.name||'Dein ganzes Tal';$('zone-info').textContent=['','Neue Felsen und Stein für deine Helfer.','Kristalle für Schmuck und deinen dritten Helfer.','Waldtal: Holzvorräte und ein weiterer Bauplatz.','Schneegipfel: Kristalle und die Alpenwerkstatt.','Alle fünf Regionen erschlossen.'][state.zones];$('next-project').textContent=PROJECTS[state.projects]?.name||'Ein blühender Alpengarten';$('project-info').textContent=['Blüten und Bänke · +2 ● alle 15 Sek.','Frisches Wasser · weitere +2 ● / 15 Sek.','Dein Ruheplatz · weitere +2 ● / 15 Sek.','Alle Gartenprojekte sind restauriert.'][state.projects];
@@ -49,12 +91,15 @@ if (depositHelps) {
 } else {
   depositButton.removeAttribute('aria-label');
 }
+$('order-extra').hidden = state.orders > 0;
+$('order-extra').textContent = 'Erste Lieferung: Eine Bank entsteht am Berghaus.';
 $('order-title').textContent=o.title;$('order-desc').textContent=`${state.stock[o.kind]} / ${o.amount} ${NAMES[o.kind]} im Lager`;$('order-number').textContent=`#${state.orders+1}`;$('fulfill').textContent=`Liefern · +${o.reward} ● · +20 XP`;$('fulfill').disabled=state.stock[o.kind]<o.amount;
 const m=MILESTONES.find(m=>!state.claimed.includes(m.id));if(m){$('quest-title').textContent=`${m.title} · ${Math.min(state[m.stat],m.goal)} / ${m.goal}`;$('quest-fill').style.width=`${Math.min(1,state[m.stat]/m.goal)*100}%`;$('claim').textContent=state[m.stat]>=m.goal?`+${m.reward} ● abholen`:`Belohnung: ${m.reward} ●`;$('claim').disabled=state[m.stat]<m.goal;}else{$('quest-title').textContent='Alle Meilensteine erreicht';$('quest-fill').style.width='100%';$('claim').textContent='Talmeister ✓';$('claim').disabled=true;}
 $('business-status').textContent=state.workers||state.projects?`${state.workers} Helfer · ${state.projects*8} ● Besuchereinnahmen / Min.`:`${state.zones} / ${ZONES.length} Regionen erschlossen`;
 crystalButton.disabled = state.zones < 3;
 $('crystal-availability').textContent = crystalButton.disabled ? 'Ab Kristallhöhen' : '15 Münzen';
 updateGatherStatus();
+updateEquipment();
 evolution();if(saveIt)queueSave();}
 function change(kind){audio.start();if(!buy(state,kind))return;audio.chime();const messages={tool:'Ein kräftigerer Schlag. Deine Hacke wurde aufgewertet.',bag:'Mehr Platz für deine nächste Tour.',worker:'Willkommen im Team! Dein Helfer liefert direkt ins Lager.',workshop:'Die Manufaktur ist bereit. Lagere Rohstoffe ein und starte die Produktion.',zone:'Ein neues Gebiet ist offen. Wege frei machen und weiterbauen!',project:'Dein Garten lockt die ersten Besucher an.'};toast(messages[kind]);if(['zone','project','worker','workshop'].includes(kind))world?.rebuild();updateUI(true);}
 for(const k of['tool','bag','worker','workshop','zone','project'])$('buy-'+k).onclick=()=>change(k);
@@ -62,7 +107,16 @@ function doSell(){audio.start();const v=sell(state);if(v){audio.chime();toast(`B
 function doDeposit(){audio.start();const n=deposit(state);if(n){audio.tone(540,.12);toast(`${n} Rohstoffe eingelagert. Bereit für Produktion und Aufträge.`);updateUI(true);}}
 $('sell').onclick=doSell;$('deposit').onclick=doDeposit;$('sell-stock').onclick=()=>{audio.start();const v=sellStock(state);if(v){audio.chime();toast(`Lagerverkauf: +${v} Münzen`);updateUI(true);}};
 for(const k of Object.keys(RECIPES).filter(k=>k!=='kit'))$('craft-'+k).onclick=()=>{audio.start();if(craft(state,k)){audio.tone(340,.15,'triangle');updateUI(true);}};
-$('fulfill').onclick=()=>{audio.start();const v=fulfill(state);if(v){audio.chime();toast(`Auftrag geliefert: +${v} Münzen, +20 XP`);updateUI(true);}};
+$('fulfill').onclick = () => {
+  audio.start();
+  const first = state.orders === 0;
+  const reward = fulfill(state);
+  if (!reward) return;
+  audio.chime();
+  if (first) world?.rebuild();
+  toast(first ? `Eine Bank steht jetzt am Berghaus. +${reward} Münzen` : `Auftrag geliefert: +${reward} Münzen, +20 XP`);
+  updateUI(true);
+};
 $('claim').onclick=()=>{const m=MILESTONES.find(m=>!state.claimed.includes(m.id));if(m){const v=claim(state,m.id);if(v){audio.start();audio.chime();toast(`${m.title}: +${v} Münzen!`);updateUI(true);}}};
 const tabs = ['work', 'business', 'world', 'storage'];
 function selectTab(selected) {
@@ -234,7 +288,7 @@ $('chop').onpointerdown = event => {
 };
 $('chop').onlostpointercapture = () => { held = false; };
 function chop(n){const r=hit(state,n.id);if(!r.ok){if(r.reason==='full'){if(clock-blockedTip>2500){toast('Rucksack voll. Verkaufen oder einlagern.');blockedTip=clock;}target=null;path=[];held=false;}return;}
-world.hit(n,r.broken);player.facing=Math.atan2(n.x-player.x,n.y-player.y);world.player.rotation.y=player.facing;audio.hit(n.type,r.broken,streak);if(r.broken){streak=clock-lastBreak<4500?streak+1:1;lastBreak=clock;label(n.x,n.y,`+1 ${NAMES[n.type]}`);target=null;path=[];updateUI(true);}}
+world.hit(n,r.broken,r.gear,reduced);player.facing=Math.atan2(n.x-player.x,n.y-player.y);world.player.rotation.y=player.facing;audio.hit(n.type,r.broken,streak);if(r.broken){streak=clock-lastBreak<4500?streak+1:1;lastBreak=clock;label(n.x,n.y,`+1 ${NAMES[n.type]}`);if(r.find)toast(`${r.find.name} gefunden! +${r.find.reward} Münzen`);target=null;path=[];updateUI(true);}}
 function nearby(){return state.nodes.filter(n=>n.zone<state.zones&&n.ready<=Date.now()&&Math.hypot(n.x-player.x,n.y-player.y)<=1.15).sort((a,b)=>Math.hypot(a.x-player.x,a.y-player.y)-Math.hypot(b.x-player.x,b.y-player.y))[0];}
 function nextAuto() {
   const route = findHarvestRoute(state, player);

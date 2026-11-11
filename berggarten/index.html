@@ -28,7 +28,13 @@
   <span class="garden-next-icon" aria-hidden="true">✿</span><span><small>Nächstes Gartenprojekt</small><strong id="garden-next-name">Blumengarten</strong></span><span id="garden-next-cost">100 ●</span>
 </button>
 <nav class="tabs" aria-label="Verwaltung" role="tablist"><button role="tab" id="tab-work" aria-selected="true" aria-controls="panel-work">Werkzeug</button><button role="tab" id="tab-business" tabindex="-1" aria-selected="false" aria-controls="panel-business">Betrieb</button><button role="tab" id="tab-world" tabindex="-1" aria-selected="false" aria-controls="panel-world">Tal</button><button role="tab" id="tab-storage" tabindex="-1" aria-selected="false" aria-controls="panel-storage">Lager</button></nav>
-<section id="panel-work" role="tabpanel" aria-labelledby="tab-work"><article class="upgrade"><div class="item-icon tool">⛏</div><div><h3>Bessere Hacke</h3><p id="tool-desc"></p></div><button id="buy-tool"></button></article><article class="upgrade"><div class="item-icon bag">🎒</div><div><h3>Mehr Platz</h3><p id="bag-desc"></p></div><button id="buy-bag"></button></article></section>
+<section id="panel-work" role="tabpanel" aria-labelledby="tab-work"><article class="upgrade"><div class="item-icon tool">⛏</div><div><h3>Bessere Hacke</h3><p id="tool-desc"></p></div><button id="buy-tool"></button></article><article class="upgrade"><div class="item-icon bag">🎒</div><div><h3>Mehr Platz</h3><p id="bag-desc"></p></div><button id="buy-bag"></button></article>
+  <section class="special-gear" aria-labelledby="gear-title">
+    <h3 id="gear-title">Spezialwerkzeuge</h3>
+    <p>Für andere Rohstoffe greift deine Figur zur normalen Hacke.</p><div id="special-gear"></div>
+    <button id="equip-pick" type="button" aria-pressed="true">Normale Hacke</button>
+  </section>
+</section>
 <section id="panel-business" role="tabpanel" aria-labelledby="tab-business" hidden><article class="upgrade"><div class="item-icon">⚒</div><div><h3>Talhelfer <span id="workers"></span></h3><p id="worker-desc"></p></div><button id="buy-worker"></button></article><article class="upgrade"><div class="item-icon">▥</div><div><h3>Manufaktur</h3><p id="workshop-desc"></p></div><button id="buy-workshop"></button></article><div class="production"><div class="section-title">VEREDELN <span id="job-status">Manufaktur bauen</span></div><div class="progress"><i id="job-fill"></i></div><div id="recipes"></div></div>
 <details class="evolution-panel" open>
   <summary>Bauverwaltung</summary>
@@ -42,9 +48,13 @@
 </details>
 </section>
 <section id="panel-world" role="tabpanel" aria-labelledby="tab-world" hidden><article class="upgrade"><div class="item-icon">⛰</div><div><h3 id="next-zone"></h3><p id="zone-info"></p></div><button id="buy-zone"></button></article><article class="upgrade"><div class="item-icon flower">✿</div><div><h3 id="next-project"></h3><p id="project-info"></p></div><button id="buy-project"></button></article><details class="evolution-panel"><summary>Quests & Fortschritt</summary><div id="evolution-quests"></div></details>
+  <details class="evolution-panel" open>
+    <summary>Fundstücke <span id="find-count">0 / 5</span></summary>
+    <ul id="tal-finds" class="tal-finds"></ul>
+  </details>
 </section>
 <section id="panel-storage" role="tabpanel" aria-labelledby="tab-storage" hidden>
-<div class="warehouse"><div class="section-title">DEIN LAGER <button id="sell-stock">Alles verkaufen</button></div><div id="inventory"></div><small>Bis zu 5000 Stück pro Ware. Helfer liefern direkt ins Lager.</small></div><div class="order"><div class="section-title">HANDELSAUFTRAG <span id="order-number">#1</span></div><h3 id="order-title"></h3><p id="order-desc"></p><button id="fulfill"></button></div>
+<div class="warehouse"><div class="section-title">DEIN LAGER <button id="sell-stock">Alles verkaufen</button></div><div id="inventory"></div><small>Bis zu 5000 Stück pro Ware. Helfer liefern direkt ins Lager.</small></div><div class="order"><div class="section-title">HANDELSAUFTRAG <span id="order-number">#1</span></div><h3 id="order-title"></h3><p id="order-desc"></p><p id="order-extra" hidden></p><button id="fulfill"></button></div>
 </section>
 <details class="evolution-panel save-tools"><summary>Spielstand sichern</summary><p>Exportiere eine JSON-Datei auf dein Gerät. Die Offline-Produktion läuft bis zu 5 Minuten weiter.</p><button id="export-save">Spielstand exportieren</button><label>Spielstand importieren<input id="import-save" type="file" accept="application/json,.json"></label></details><footer><span id="save-status">Automatisch auf diesem Gerät gespeichert</span><button id="reset">Neustart</button></footer></aside></main></div>
 <dialog id="help-dialog" aria-labelledby="help-title"><button id="close-help" aria-label="Anleitung schliessen">×</button><h2 id="help-title">So spielst du Berggarten</h2><ol><li><b>Abbauen:</b> Wähle Holz, Stein oder Kristall unter der Karte oder tippe direkt auf eine Ressource. Deine Figur läuft hin und baut sie ab.</li><li><b>Verkaufen oder lagern:</b> Schnelle Münzen oder Vorräte für die Manufaktur und Aufträge.</li><li><b>Betrieb aufbauen:</b> Helfer sammeln alle 10 Sekunden. Die Manufaktur macht aus Rohstoffen wertvollere Waren.</li><li><b>Tal erweitern:</b> Neue Gebiete, Kristalle und Gartenprojekte mit Besuchereinnahmen.</li></ol><p>Wenn die Karte fokussiert ist: WASD / Pfeiltasten bewegen · Leertaste abbauen · R einlagern · F verkaufen · Escape stoppt die Sammeltour. «Auto» sucht laufend erreichbare Rohstoffe.</p><small>Auch wenn du die Seite schliesst: Helfer und Garten arbeiten bis zu 5 Minuten weiter. Kein Konto und keine Echtgeldkäufe.</small><button id="start-playing" class="primary">Ab ins Tal →</button></dialog><div id="toast" role="status" aria-live="polite"></div><script type="module" src="../src/berggarten/main.js"></script></body></html>

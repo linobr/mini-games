@@ -1,6 +1,14 @@
 import { WORLD_WIDTH, STOCK_LIMIT, PLOTS, BUILDINGS, QUESTS, tickBuildings } from './evolution.js';
+import { GEAR, gearFor, restoreGear } from './equipment.js';
 export const TYPES={bush:{name:'Holz',hp:3,value:3,color:0x74aa44},rock:{name:'Stein',hp:6,value:7,color:0x99aebb},crystal:{name:'Kristall',hp:10,value:15,color:0xb397ed}};
 export const ZONES=[{name:'Sonnenwiese',cost:0},{name:'Steinbruch',cost:180},{name:'Kristallhöhen',cost:650},{name:'Waldtal',cost:1100},{name:'Schneegipfel & Alpendorf',cost:1800}];
+export const TAL_FINDS = [
+  { name: 'Alpenblatt', goal: 4, reward: 15 },
+  { name: 'Farnabdruck', goal: 5, reward: 25 },
+  { name: 'Prismensplitter', goal: 6, reward: 40 },
+  { name: 'Harzperle', goal: 7, reward: 55 },
+  { name: 'Sternquarz', goal: 8, reward: 75 },
+];
 export const PROJECTS=[{name:'Blumengarten',cost:100},{name:'Gartenbrunnen',cost:300},{name:'Alpenpavillon',cost:800}];
 export const RECIPES={plank:{name:'Bretter',input:{bush:3},price:18,time:5},brick:{name:'Bausteine',input:{rock:3},price:42,time:8},gem:{name:'Schmucksteine',input:{crystal:3},price:95,time:12},kit:{name:'Alpenbausatz',input:{plank:2,brick:2,gem:1},price:300,time:20}};
 export const GOODS=['bush','rock','crystal','plank','brick','gem','kit'];
@@ -46,11 +54,35 @@ export function nodes(){
   arrangeMeadow(out);
   return out;
 }
-export function fresh(){return {version:3,buildings:[],quests:[],crafted:0,buildingUpgrades:0,dayClock:0,coins:0,tool:1,bag:0,inventory:{bush:0,rock:0,crystal:0},stock:empty(),zones:1,projects:0,broken:0,earned:0,xp:0,workers:0,workshop:0,job:null,orders:0,claimed:[],workerClock:0,gardenClock:0,lastSeen:Date.now(),nodes:nodes()};}
+export function fresh(){return {version:3,buildings:[],quests:[],crafted:0,buildingUpgrades:0,dayClock:0,coins:0,tool:1,gear:[],equipped:'pick',findProgress:TAL_FINDS.map(()=>0),bag:0,inventory:{bush:0,rock:0,crystal:0},stock:empty(),zones:1,projects:0,broken:0,earned:0,xp:0,workers:0,workshop:0,job:null,orders:0,claimed:[],workerClock:0,gardenClock:0,lastSeen:Date.now(),nodes:nodes()};}
 export const count=s=>Object.values(s.inventory).reduce((a,b)=>a+b,0);
 export const value=s=>Object.entries(s.inventory).reduce((a,[k,v])=>a+TYPES[k].value*v,0);
 export const level=s=>1+Math.floor(Math.sqrt(s.xp/20));
-export function hit(s,id,now=Date.now()){const n=s.nodes.find(n=>n.id===id);if(!n||n.zone>=s.zones||n.ready>now)return {ok:false,reason:'locked'};if(count(s)>=capacity(s))return {ok:false,reason:'full'};if(n.hp<=0)n.hp=TYPES[n.type].hp;n.hp=Math.max(0,n.hp-power(s));if(n.hp)return {ok:true,broken:false};s.inventory[n.type]++;s.broken++;s.xp+=3;n.ready=now+30000;return {ok:true,broken:true,type:n.type};}
+function recordFind(state, zone) {
+  const find = TAL_FINDS[zone];
+  if (state.findProgress[zone] >= find.goal) return null;
+  state.findProgress[zone]++;
+  if (state.findProgress[zone] !== find.goal) return null;
+  state.coins += find.reward;
+  state.earned += find.reward;
+  return find;
+}
+
+export function hit(s, id, now = Date.now()) {
+  const node = s.nodes.find(n => n.id === id);
+  if (!node || node.zone >= s.zones || node.ready > now) return { ok: false, reason: 'locked' };
+  if (count(s) >= capacity(s)) return { ok: false, reason: 'full' };
+  const gear = gearFor(s, node.type);
+  const damage = power(s) + (GEAR[gear]?.bonus ?? 0);
+  if (node.hp <= 0) node.hp = TYPES[node.type].hp;
+  node.hp = Math.max(0, node.hp - damage);
+  if (node.hp) return { ok: true, broken: false, gear };
+  s.inventory[node.type]++;
+  s.broken++;
+  s.xp += 3;
+  node.ready = now + 30000;
+  return { ok: true, broken: true, type: node.type, gear, find: recordFind(s, node.zone) };
+}
 export function sell(s){const v=value(s);s.coins+=v;s.earned+=v;for(const k in s.inventory)s.inventory[k]=0;return v;}
 export function deposit(s){let n=0;for(const k in s.inventory){const moved=Math.min(s.inventory[k],Math.max(0,STOCK_LIMIT-s.stock[k]));s.stock[k]+=moved;s.inventory[k]-=moved;n+=moved;}return n;}
 export function stockValue(s){return GOODS.reduce((a,k)=>a+s.stock[k]*(TYPES[k]?.value??RECIPES[k].price),0);}
@@ -86,6 +118,9 @@ export function restore(raw){
     const min=['tool','zones'].includes(k)?1:0;
     s[k]=Math.floor(bounded(r[k],min,max,s[k]));
   }
+  restoreGear(s, r);
+  s.findProgress = TAL_FINDS.map((find, zone) =>
+    zone < s.zones ? Math.floor(bounded(r.findProgress?.[zone], 0, find.goal)) : 0);
   for(const k in s.inventory)s.inventory[k]=Math.floor(bounded(r.inventory?.[k],0,capacity(s)));
   // Preserve legitimate contents up to capacity instead of erasing the whole bag on overflow.
   let free=capacity(s);

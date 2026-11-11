@@ -7,6 +7,8 @@ export function trailCenter(x) {
   return 7 + Math.sin(x * .76) * .44 + Math.sin(x * .36) * .17;
 }
 
+export const berghausBench = { x: .66, y: 11.98 };
+
 export const meadowArch = { x: 2.55, y: trailCenter(2.55), radius: .88 };
 export const meadowSpur = [
   [meadowArch.x, meadowArch.y], [2.55, 8.15], [2.44, 8.87],

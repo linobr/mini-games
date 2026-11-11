@@ -1,7 +1,7 @@
 import { WORLD_WIDTH, PLOTS, BUILDINGS } from './evolution.js';
 import { ZONES } from './engine.js';
 import * as THREE from 'three';
-import { meadowColors, trailColor, woodColors, crystalColors, trailCenter, eveningLight, cameraFocus, paintAlpineBackdrop, meadowArch, meadowSpur, meadowBank } from './scenery.js';
+import { meadowColors, trailColor, woodColors, crystalColors, trailCenter, eveningLight, cameraFocus, paintAlpineBackdrop, meadowArch, meadowSpur, meadowBank, berghausBench } from './scenery.js';
 const C = { roof: 0x426858 };
 const skyDay = new THREE.Color(0xa8c1bc), skyEvening = new THREE.Color(0x667886);
 const sunDay = new THREE.Color(0xffe0ac), sunEvening = new THREE.Color(0xffbf94);
@@ -254,11 +254,37 @@ export class GardenWorld{
   this.chaletLight.position.set(x + .43, 1.15, z + 1.22);
   group.add(this.chaletLight);
  }
+ marketBench() {
+  const x = wx(berghausBench.x), z = wz(berghausBench.y);
+  const wood = 0xaa7950, frame = 0x604e40;
+  for (const side of [-1, 1]) {
+   box(this.decor, frame, x + side * .43, .17, z, .1, .34, .41, true);
+   box(this.decor, frame, x + side * .43, .44, z - .21, .09, .56, .08, true);
+  }
+  for (let i = -1; i <= 1; i++) box(this.decor, wood, x, .35, z + i * .13, 1.06, .075, .11, true);
+  for (let i = 0; i < 2; i++) box(this.decor, wood, x, .54 + i * .12, z - .205, 1.06, .09, .07, true);
+
+  const traveler = new THREE.Group();
+  traveler.position.set(x + .14, 0, z);
+  const cloak = 0x597993;
+  box(traveler, cloak, 0, .57, -.08, .28, .34, .22, true);
+  ball(traveler, 0xe8ba91, 0, .84, -.064, .145, leafGeo);
+  mesh(traveler, cylinderGeo, 0x835742, 0, .958, -.07, .22, .038, .19, true);
+  mesh(traveler, cylinderGeo, 0x9a6c4f, 0, .99, -.075, .143, .083, .14, true);
+  for (const side of [-1, 1]) {
+   const x = side * .09;
+   box(traveler, 0x51554f, x, .405, .07, .12, .1, .27, true);
+   box(traveler, 0x51554f, x, .27, .189, .11, .27, .105, true);
+   box(traveler, 0x654b38, x, .115, .219, .13, .08, .17, true);
+  }
+  this.decor.add(traveler);
+ }
  flower(g,x,z,c=0xe8ae9c){const f=ball(g,c,x,.22,z,.13);box(g,0x7ba259,x,.1,z,.035,.2,.035);f.castShadow=false;}
  rebuild(){for(const n of this.state.nodes){const g=this.resources.get(n.id);if(g)g.userData.node=n;}while(this.decor.children.length){const child=this.decor.children.pop();child.traverse(o=>{if(o.geometry&&!([boxGeo,sphereGeo,leafGeo,cylinderGeo,coneGeo].includes(o.geometry)))o.geometry.dispose();});child.parent=null;}
  for(const w of this.workers)this.scene.remove(w);this.workers=[];
  // Market hub, log piles and an animated workshop.
  this.chalet(this.decor,wx(1),wz(11));for(let i=0;i<4;i++){const log=mesh(this.decor,cylinderGeo,0x916a49,wx(1.92)+i%2*.21,.16+Math.floor(i/2)*.18,wz(11.28),.17,.82,.17,true);log.rotation.x=Math.PI/2;}
+ if(this.state.orders > 0) this.marketBench();
  if(this.state.workshop){this.house(this.decor,wx(1),wz(9),0x58899a);box(this.decor,0x8a6744,wx(1.8),.15,wz(9),.9,.3,1.7);this.wheel=mesh(this.decor,new THREE.TorusGeometry(.47,.08,6,12),0x8d7151,wx(2.2),.75,wz(9.2));this.wheel.rotation.y=Math.PI/2;box(this.decor,0x78968c,wx(.2),1.75,wz(8.9),.3,1.1,.3,true);}else this.wheel=null;
  for(let i=0;i<this.state.workers;i++){const w=this.makePerson([0x96b7cc,0xd5b77c,0xb49fcd][i]);const cargo=mesh(w,cylinderGeo,[0xb48c59,0xa4b6be,0xc4a3ee][i],0,.67,.28,.14,.65,.14);cargo.rotation.z=Math.PI/2;w.userData.cargo=cargo;this.workers.push(w);this.scene.add(w);}
  for(let z=this.state.zones;z<ZONES.length;z++){const x=wx(z*6)-.8;for(let j=-1;j<=1;j++){box(this.decor,0xa58e68,x,.35,j*1.5,.12,.7,.12);box(this.decor,0xc8b384,x,.58,j*1.5,.14,.1,1.6);}const sign=box(this.decor,0x68816b,x+.5,.8,0,.9,.6,.12,true);sign.rotation.y=Math.PI/2;}
@@ -270,7 +296,32 @@ export class GardenWorld{
  }
  pick(clientX,clientY){const r=this.canvas.getBoundingClientRect();this.pointer.set((clientX-r.left)/r.width*2-1,-(clientY-r.top)/r.height*2+1);this.ray.setFromCamera(this.pointer,this.camera);const visible=[...this.resources.values()].filter(g=>g.visible);const intersections=this.ray.intersectObjects(visible,true);for(const i of intersections){let g=i.object;while(g&&!g.userData.node)g=g.parent;if(g?.userData.node)return {node:g.userData.node,x:g.userData.node.x,y:g.userData.node.y};}const p=new THREE.Vector3();if(this.ray.ray.intersectPlane(this.groundPlane,p))return {x:p.x/1.7+8.5,y:p.z/1.7+7};return null;}
  burst(n,color,amount=14){for(let i=0;i<amount;i++){const m=mesh(this.scene,sphereGeo,color,wx(n.x),.6,wz(n.y),.045+Math.random()*.05,.06,.06);this.effects.push({m,v:new THREE.Vector3((Math.random()-.5)*3,2+Math.random()*2,(Math.random()-.5)*3),life:.5+Math.random()*.4});}}
- hit(n,broken){const g=this.resources.get(n.id);g.userData.hit=1;if(broken)this.burst(n,n.type==='bush'?0xa8ca6d:n.type==='rock'?0xb3c4c8:0xace8ce);this.player.userData.swing=1;}
+ emberTrail(node) {
+  const from = this.player.position;
+  for (let i = 1; i <= 7; i++) {
+   const step = i / 8;
+   const x = THREE.MathUtils.lerp(from.x, wx(node.x), step);
+   const z = THREE.MathUtils.lerp(from.z, wz(node.y), step);
+   const ember = mesh(this.scene, sphereGeo, i % 2 ? 0xffa33c : 0xffdf7e,
+    x, .72 + Math.sin(step * Math.PI) * .29, z, .12, .12, .12);
+   this.effects.push({ m: ember, v: new THREE.Vector3(0, .65, 0), life: .2 + step * .12 });
+  }
+ }
+
+ hit(node, broken, gear = 'pick', reduced = false) {
+  const group = this.resources.get(node.id);
+  group.userData.hit = 1;
+  this.player.userData.swing = 1;
+  if (reduced) return;
+  if (gear === 'ember') {
+   this.emberTrail(node);
+   this.burst(node, 0xf7b053, 9);
+  } else if (gear === 'machine') {
+   this.burst(node, 0xc2d7da, 12);
+  } else if (broken) {
+   this.burst(node, node.type === 'bush' ? 0xa8ca6d : node.type === 'rock' ? 0xb3c4c8 : 0xace8ce);
+  }
+ }
  screen(x,y,height=1.5){const v=new THREE.Vector3(wx(x),height,wz(y));v.project(this.camera);return {x:(v.x*.5+.5)*this.W,y:(-v.y*.5+.5)*this.H};}
  updateView(dt, player, reduced) {
   const focus = cameraFocus(player);

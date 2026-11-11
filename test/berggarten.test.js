@@ -1,5 +1,6 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';
-import {fresh,hit,sell,buy,count,capacity,restore,TYPES,deposit,craft,tick,fulfill,order,claim,sellStock,findPath,findHarvestRoute} from '../src/berggarten/engine.js';
+import { equipGear } from '../src/berggarten/equipment.js';
+import {fresh,hit,sell,buy,count,capacity,restore,TYPES,TAL_FINDS,deposit,craft,tick,fulfill,order,claim,sellStock,findPath,findHarvestRoute} from '../src/berggarten/engine.js';
 test('harvest rewards once, bag full blocks damage, cooldown regrows',()=>{const s=fresh(),n=s.nodes.find(n=>n.type==='bush'&&n.zone===0);hit(s,n.id,1000);hit(s,n.id,1100);assert.equal(hit(s,n.id,1200).broken,true);assert.equal(count(s),1);assert.equal(hit(s,n.id,1300).ok,false);assert.equal(hit(s,n.id,40000).ok,true);s.inventory.bush=capacity(s);const hp=n.hp;assert.equal(hit(s,n.id,40001).reason,'full');assert.equal(n.hp,hp);assert.equal(sell(s),60);assert.equal(sell(s),0);});
 test('purchases require money, respect caps and unlock regions',()=>{const s=fresh(),n=s.nodes.find(n=>n.zone===1);assert.equal(buy(s,'tool'),false);assert.equal(hit(s,n.id).ok,false);s.coins=1e6;assert.equal(buy(s,'zone'),true);assert.equal(hit(s,n.id).ok,true);s.tool=8;s.bag=6;s.zones=5;s.projects=3;s.workers=3;s.workshop=3;const c=s.coins;for(const k of ['tool','bag','zone','project','worker','workshop'])assert.equal(buy(s,k),false);assert.equal(s.coins,c);});
 test('deposit transfers exact quantities, crafts consume inputs once and finish once',()=>{const s=fresh();s.inventory.bush=6;assert.equal(deposit(s),6);assert.equal(deposit(s),0);assert.equal(count(s),0);assert.equal(craft(s,'plank'),false);s.workshop=1;assert.equal(craft(s,'plank'),true);assert.equal(s.stock.bush,3);assert.equal(craft(s,'plank'),false);tick(s,4);assert.equal(s.stock.plank,0);assert.equal(tick(s,1).crafted,'plank');assert.equal(s.stock.plank,1);tick(s,10);assert.equal(s.stock.plank,1);assert.equal(sellStock(s),27);assert.equal(sellStock(s),0);});
@@ -34,4 +35,52 @@ test('harvest routing skips blocked resources and selects the shortest reachable
   assert.deepEqual(findHarvestRoute(s, player, null, 1000), { node: s.nodes[1], path: [] });
   assert.equal(findHarvestRoute(s, player, 'bush', 5000).node.id, 7);
   assert.equal(findHarvestRoute(s, player, 'crystal', 1000), null);
+});
+
+test('special gear unlocks at the required tool level and boosts only matching resources', () => {
+  const s = fresh();
+  s.coins = 500;
+  assert.equal(equipGear(s, 'ember'), false);
+  assert.equal(s.coins, 500);
+  s.tool = 2;
+  assert.equal(equipGear(s, 'ember'), true);
+  assert.equal(s.coins, 415);
+  const bush = s.nodes.find(node => node.zone === 0 && node.type === 'bush');
+  const rock = s.nodes.find(node => node.zone === 0 && node.type === 'rock');
+  const woodHit = hit(s, bush.id, 1000);
+  assert.equal(woodHit.broken, true);
+  assert.equal(woodHit.gear, 'ember');
+  assert.equal(hit(s, rock.id, 1001).gear, 'pick');
+  assert.equal(rock.hp, 4);
+  assert.equal(equipGear(s, 'machine'), false);
+  s.tool = 4;
+  assert.equal(equipGear(s, 'machine'), true);
+  assert.equal(s.coins, 175);
+  const restored = restore(JSON.stringify(s));
+  assert.equal(restored.equipped, 'machine');
+  assert.equal(hit(restored, rock.id, 1002).gear, 'machine');
+  assert.equal(restore(JSON.stringify({ version: 3, tool: 1, gear: ['machine'], equipped: 'machine' })).equipped, 'pick');
+  assert.equal(equipGear(s, 'pick'), true);
+  assert.equal(equipGear(s, 'ember'), true);
+  assert.equal(s.coins, 175);
+});
+
+test('regional discoveries pay once and preserve partial progress across saves', () => {
+  let s = fresh();
+  s.tool = 8;
+  const bush = s.nodes.find(node => node.zone === 0 && node.type === 'bush');
+  const found = TAL_FINDS[0];
+  const locked = s.nodes.find(node => node.zone === 1);
+  assert.equal(hit(s, locked.id, 0).reason, 'locked');
+  for (let i = 0; i < found.goal - 1; i++) assert.equal(hit(s, bush.id, i * 31000).find, null);
+  assert.equal(s.coins, 0);
+  s = restore(JSON.stringify(s));
+  assert.equal(s.findProgress[0], found.goal - 1);
+  assert.equal(hit(s, bush.id, found.goal * 31000).find.name, found.name);
+  assert.equal(s.coins, found.reward);
+  s = restore(JSON.stringify(s));
+  assert.equal(hit(s, bush.id, (found.goal + 1) * 31000).find, null);
+  assert.equal(s.findProgress[0], found.goal);
+  assert.equal(s.coins, found.reward);
+  assert.equal(s.findProgress[1], 0);
 });
