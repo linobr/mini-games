@@ -1,16 +1,56 @@
 export const PROFILE_KEY = 'mini-games:nexus-profile:v1';
 export const AVATARS = ['✦', '⛰', '⚡', '◈', '☾', '✿'];
 export const GAME_META = {
-  berggarten: { selector: 'a[href="./berggarten/"]', category: 'Aufbau', mode: 'Solo', icon: '⛰', color: '#478e74' },
-  mooslicht: { selector: 'a[href="./mooslicht/"]', category: 'Abenteuer', mode: 'Solo', icon: '✧', color: '#567a96' },
-  'ki-mooslicht': { selector: 'a[href="./ki-mooslicht/"]', category: 'Abenteuer', mode: 'Solo · Live', icon: '✧', color: '#a45e91' },
-  tictactoe: { selector: '#open-tictactoe', category: 'Strategie', mode: '2 · Lokal / WLAN', icon: '× ○', color: '#4d789f' },
-  turbo: { selector: '#open-turbo', category: 'Arcade', mode: '2–4 · WLAN', icon: '⚡', color: '#8465c1' },
-  color: { selector: '#open-color-clash', category: 'Strategie', mode: '1–4 · Solo / WLAN', icon: '⇄', color: '#af5c88' },
-  meteor: { selector: 'a[href="./meteor-run.html"]', category: 'Arcade', mode: 'Solo', icon: '☄', color: '#7f914e' },
-  neon: { selector: 'a[href="./neon-defender.html"]', category: 'Arcade', mode: 'Solo', icon: '✦', color: '#29899e' },
-  atom: { selector: 'a[href="./atom-lab.html"]', category: 'Lernen', mode: 'Solo', icon: '⚛', color: '#578c80' },
-  rift: { selector: 'a[href="./rift-relay/"]', category: 'Arcade', mode: 'Solo', icon: 'ϟ', color: '#6265a5' },
+  berggarten: {
+    selector: 'a[href="./berggarten/"]', category: 'Aufbau', mode: '1 Spieler', playModes: ['solo'],
+    icon: '⛰', color: '#478e74',
+    description: 'Sammle Rohstoffe und baue deinen Gartenbetrieb in einem 3D-Alpental auf.',
+  },
+  mooslicht: {
+    selector: 'a[href="./mooslicht/"]', category: 'Abenteuer', mode: '1 Spieler', playModes: ['solo'],
+    icon: '✧', color: '#567a96',
+    description: 'Erkunde einen magischen 3D-Miniaturgarten und entdecke seine versteckten Wege.',
+  },
+  'ki-mooslicht': {
+    selector: 'a[href="./ki-mooslicht/"]', category: 'Abenteuer', mode: '1 Spieler · Live', playModes: ['solo'],
+    icon: '✧', color: '#a45e91',
+    description: 'Spiele den Mooslicht-Ableger, der vom Jetson weiterentwickelt wird.',
+  },
+  tictactoe: {
+    selector: '#open-tictactoe', category: 'Strategie', mode: '2 Spieler · Lokal / WLAN', playModes: ['local', 'network'],
+    icon: '× ○', color: '#4d789f',
+    description: 'Bringt drei Zeichen in eine Reihe. Eine Runde dauert etwa zwei Minuten.',
+  },
+  turbo: {
+    selector: '#open-turbo', category: 'Arcade', mode: '2–4 Spieler · WLAN', playModes: ['network'],
+    icon: '⚡', color: '#8465c1',
+    description: 'Schubst euch mit Autoscootern aus der Arena.',
+  },
+  color: {
+    selector: '#open-color-clash', category: 'Strategie', mode: '1–4 Spieler · Solo / WLAN', playModes: ['solo', 'network'],
+    icon: '⇄', color: '#af5c88',
+    description: 'Spiele Karten passend ab und wechsle zwischen ihren beiden Seiten.',
+  },
+  meteor: {
+    selector: 'a[href="./meteor-run.html"]', category: 'Arcade', mode: '1 Spieler', playModes: ['solo'],
+    icon: '☄', color: '#7f914e',
+    description: 'Weiche Meteoren aus und verbessere deinen Highscore.',
+  },
+  neon: {
+    selector: 'a[href="./neon-defender.html"]', category: 'Arcade', mode: '1 Spieler', playModes: ['solo'],
+    icon: '✦', color: '#29899e',
+    description: 'Überlebe Angriffswellen, sammle Upgrades und besiege Bosse.',
+  },
+  atom: {
+    selector: 'a[href="./atom-lab.html"]', category: 'Lernen', mode: '1 Spieler', playModes: ['solo'],
+    icon: '⚛', color: '#578c80',
+    description: 'Baue Atome und sieh, wie sich Elektronen auf Schalen verteilen.',
+  },
+  rift: {
+    selector: 'a[href="./rift-relay/"]', category: 'Arcade', mode: '1 Spieler', playModes: ['solo'],
+    icon: 'ϟ', color: '#6265a5',
+    description: 'Weiche mit Dashes aus und schleudere Energie zurück.',
+  },
 };
 const integer = (v, max = 1e7) => Number.isFinite(v) ? Math.max(0, Math.min(max, Math.floor(v))) : 0;
 export function normalizeProfile(raw) {
@@ -50,10 +90,15 @@ export function progress(profile) {
     achievements: [{ title: 'Erster Start', value: unique, goal: 1 }, { title: 'Entdecker', value: unique, goal: 5 },
       { title: 'Horizonte', value: categories.size, goal: 4 }] };
 }
-export function selectGames(games, profile, { query = '', category = '', favorites = false, sort = 'featured' } = {}) {
+export function selectGames(games, profile, { query = '', category = '', mode = '', favorites = false, sort = 'featured' } = {}) {
   const term = query.trim().toLocaleLowerCase('de');
-  const list = games.filter(g => (!category || g.category === category) && (!favorites || profile.favorites.includes(g.id)) &&
-    `${g.title} ${g.description} ${g.category}`.toLocaleLowerCase('de').includes(term));
+  const list = games.filter(g => (!category || g.category === category) && (!mode || g.playModes?.includes(mode)) &&
+    (!favorites || profile.favorites.includes(g.id)) &&
+    `${g.title} ${g.description} ${g.category} ${g.mode ?? ''}`.toLocaleLowerCase('de').includes(term));
+  if (sort === 'recommended') {
+    const priority = new Map(recommendedGames(list, profile).map((game, index) => [game.id, index]));
+    list.sort((a, b) => (priority.get(a.id) ?? list.length) - (priority.get(b.id) ?? list.length));
+  }
   if (sort === 'title') list.sort((a, b) => a.title.localeCompare(b.title, 'de'));
   if (sort === 'recent') list.sort((a, b) => (profile.stats[b.id]?.lastOpened || 0) - (profile.stats[a.id]?.lastOpened || 0));
   return list;

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeProfile, recordOpen, toggleFavorite, progress, selectGames, recommendedGames, loadProfile, persistProfile } from '../src/nexus-model.js';
+import { GAME_META, normalizeProfile, recordOpen, toggleFavorite, progress, selectGames, recommendedGames, loadProfile, persistProfile } from '../src/nexus-model.js';
 import { normalizeInterface, PREFERENCE_KEY } from '../src/interface-switch.js';
 import { injectLiveGame } from '../scripts/inject-live-game.mjs';
 import { readFileSync } from 'node:fs';
@@ -41,6 +41,15 @@ test('search, categories, favorites and sorting compose without mutating catalog
   assert.equal(selectGames(games, p, { sort: 'title' })[0].id, 'berggarten');
   assert.equal(selectGames(games, p, { sort: 'recent' })[0].id, 'meteor');
   assert.equal(games[0].id, 'meteor'); assert.equal(recommendedGames(games, p)[0].id, 'neon');
+});
+test('play mode filters reflect the launchers supported by each game', () => {
+  const catalog = Object.entries(GAME_META).map(([id, info]) => ({ id, title: id, ...info }));
+  const profile = normalizeProfile(null);
+  const ids = options => selectGames(catalog, profile, options).map(game => game.id);
+  assert.deepEqual(ids({ mode: 'network' }), ['tictactoe', 'turbo', 'color']);
+  assert.deepEqual(ids({ mode: 'local' }), ['tictactoe']);
+  assert.deepEqual(ids({ mode: 'solo', category: 'Arcade' }), ['meteor', 'neon', 'rift']);
+  assert.deepEqual(ids({ mode: 'network', query: 'Autoscootern' }), ['turbo']);
 });
 test('live injection accepts reordered attributes and extra classes; is idempotent', () => {
   const source = readFileSync(new URL('../index.html', import.meta.url), 'utf8');

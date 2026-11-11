@@ -62,7 +62,7 @@ html[data-interface="nexus"] .site-shell {
   padding: 0 clamp(18px, 4.8vw, 80px);
 }
 html[data-interface="nexus"] .topbar {
-  min-height: 92px;
+  min-height: 74px;
   border-bottom: 1px solid rgba(151, 169, 220, .16);
 }
 html[data-interface="nexus"] .brand { color: #f5f8ff; font-size: 19px; letter-spacing: -.04em; }
@@ -91,113 +91,97 @@ html[data-interface="nexus"] .theme-switch button[aria-pressed="true"] {
   background: linear-gradient(135deg, #8df6d7, #9fb4ff);
   box-shadow: 0 2px 13px rgba(126, 218, 245, .25);
 }
-html[data-interface="nexus"] .home-view { width: 100%; padding: 72px 0 108px; }
+html[data-interface="nexus"] .home-view { width: 100%; padding: clamp(16px, 2.5vw, 35px) 0 86px; }
 html[data-interface="nexus"] .hero-copy { display: none; }
 html[data-interface="nexus"] .nexus-only { display: block; }
 
 html[data-interface="nexus"] .nexus-hero {
-  position: relative;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(270px, .86fr);
   align-items: center;
-  min-height: 440px;
-  overflow: hidden;
-  padding: clamp(36px, 6vw, 78px);
-  border: 1px solid rgba(128, 160, 240, .26);
-  border-radius: 36px;
+  gap: clamp(22px, 5vw, 68px);
+  padding: clamp(22px, 4vw, 55px);
+  border: 1px solid #80a0f042;
+  border-radius: 28px;
   background:
-    radial-gradient(circle at 84% 48%, rgba(106, 64, 215, .42), transparent 37%),
-    linear-gradient(125deg, #172446 0%, #111833 54%, #161634 100%);
-  box-shadow: 0 34px 96px rgba(0, 0, 0, .3), inset 0 1px 0 rgba(255, 255, 255, .07);
+    radial-gradient(ellipse at 90% 24%, #6344bb61, transparent 58%),
+    linear-gradient(125deg, #172446, #111833 57%, #161634);
+  box-shadow: 0 18px 65px #0004;
 }
-html[data-interface="nexus"] .nexus-hero::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: linear-gradient(130deg, rgba(173, 232, 255, .08), transparent 35%);
-}
-html[data-interface="nexus"] .nexus-hero-content { position: relative; z-index: 2; max-width: 680px; }
-html[data-interface="nexus"] .nexus-kicker {
-  display: inline-flex;
-  gap: 10px;
-  align-items: center;
-  color: #8cf7db;
-  letter-spacing: .18em;
-  font-size: 11px;
+.nexus-hero h1 {
+  margin: 0;
+  font-size: clamp(36px, 5.2vw, 73px);
   font-weight: 900;
+  letter-spacing: -.065em;
+  line-height: 1.02;
 }
-html[data-interface="nexus"] .nexus-kicker-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #8cf7db;
-  box-shadow: 0 0 18px #8cf7db;
-}
-html[data-interface="nexus"] .nexus-hero h1 {
-  margin: 22px 0 0;
-  font-size: clamp(48px, 6.2vw, 94px);
-  font-weight: 900;
-  letter-spacing: -.075em;
-  line-height: .98;
-}
-html[data-interface="nexus"] .nexus-hero h1 span {
-  background: linear-gradient(90deg, #89f8dd, #a3adff 75%, #e5a5ff);
-  -webkit-background-clip: text;
+.nexus-hero h1 span {
+  background: linear-gradient(90deg, #89f8dd, #a3adff);
   background-clip: text;
   color: transparent;
 }
-html[data-interface="nexus"] .nexus-hero p {
-  max-width: 500px;
-  margin: 23px 0 0;
-  color: #b8c9e2;
-  font-size: 16px;
-  line-height: 1.65;
+.nexus-hero p {
+  max-width: 39ch;
+  margin: 16px 0 20px;
+  color: #c6d3e9;
+  line-height: 1.55;
 }
-html[data-interface="nexus"] .nexus-hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
-html[data-interface="nexus"] .nexus-cta,
-html[data-interface="nexus"] .nexus-secondary {
+.nexus-secondary {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 18px;
-  min-height: 48px;
-  padding: 13px 22px;
-  border-radius: 13px;
+  gap: 14px;
+  min-height: 44px;
+  padding: 10px 15px;
+  border: 1px solid #b1cdf54d;
+  border-radius: 11px;
+  background: #ffffff10;
+  color: #e5edff;
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 750;
   text-decoration: none;
-  transition: transform 170ms ease, border-color 170ms ease;
 }
-html[data-interface="nexus"] .nexus-cta { color: #071422; background: linear-gradient(120deg, #85f6d2, #90d9ff); }
-html[data-interface="nexus"] .nexus-secondary { color: #e5edff; background: rgba(255, 255, 255, .06); border: 1px solid rgba(177, 205, 245, .3); }
-html[data-interface="nexus"] .nexus-cta:hover,
-html[data-interface="nexus"] .nexus-secondary:hover { transform: translateY(-3px); }
-html[data-interface="nexus"] .nexus-cta:focus-visible,
-html[data-interface="nexus"] .nexus-secondary:focus-visible { outline: 3px solid #8cf7db; outline-offset: 3px; }
-html[data-interface="nexus"] .nexus-orbit {
+.nexus-cta {
+  position: relative;
+  display: grid;
+  min-height: 218px;
+  isolation: isolate;
+  overflow: hidden;
+  align-items: end;
+  padding: 20px;
+  border: 1px solid #96baad77;
+  border-radius: 19px;
+  background: #254a41;
+  color: #fff;
+  text-decoration: none;
+}
+.nexus-cta img,
+.nexus-cta::after {
   position: absolute;
-  top: 50%;
-  right: 4%;
-  width: min(37vw, 480px);
-  aspect-ratio: 1;
-  transform: translateY(-50%);
-  border: 1px solid rgba(153, 178, 255, .38);
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at 35% 28%, rgba(155, 247, 235, .75), transparent 8%),
-    radial-gradient(circle at 48% 45%, #283774, #141834 50%, #090e24 70%);
-  box-shadow: 0 0 100px rgba(117, 96, 236, .35), inset -30px -30px 65px rgba(0, 0, 0, .55);
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
 }
-html[data-interface="nexus"] .nexus-orbit::before,
-html[data-interface="nexus"] .nexus-orbit::after {
+.nexus-cta img { object-fit: cover; object-position: center 44%; }
+.nexus-cta::after {
   content: "";
-  position: absolute;
-  inset: -13%;
-  border: 1px solid rgba(133, 240, 235, .42);
-  border-radius: 50%;
-  transform: rotate(-31deg) scaleY(.47);
+  background: linear-gradient(0deg, #071d19 0%, #071d19b3 39%, transparent 82%);
 }
-html[data-interface="nexus"] .nexus-orbit::after { inset: 12%; border-color: rgba(163, 152, 255, .6); transform: rotate(54deg) scaleY(.55); }
+.nexus-feature-copy {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 4px 12px;
+}
+.nexus-feature-type {
+  grid-column: 1 / -1;
+  color: #c2ecdd;
+  font-size: 12px;
+}
+.nexus-feature-copy strong { font-size: clamp(18px, 2.2vw, 28px); line-height: 1.12; }
+.nexus-feature-play { color: #aff5df; font-size: 13px; font-weight: 800; white-space: nowrap; }
+.nexus-cta:hover, .nexus-secondary:hover { border-color: #a4e9da; }
+.nexus-cta:focus-visible, .nexus-secondary:focus-visible { outline: 3px solid #8cf7db; outline-offset: 3px; }
 html[data-interface="nexus"] .network-notice {
   margin: 25px 0 0;
   border: 1px solid #2b4259;
@@ -251,8 +235,6 @@ html[data-interface="nexus"] .board-panel { background: #e8eef6; color: #17223a;
 html[data-interface="nexus"] footer { border-top-color: #273553; color: #acbad2; }
 
 @media (max-width: 980px) {
-  html[data-interface="nexus"] .nexus-hero { min-height: 390px; }
-  html[data-interface="nexus"] .nexus-orbit { right: -12%; opacity: .35; }
   html[data-interface="nexus"] .game-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 680px) {
@@ -260,17 +242,19 @@ html[data-interface="nexus"] footer { border-top-color: #273553; color: #acbad2;
   .header-actions { gap: 8px; }
   .header-actions .online-pill { display: none; }
   .theme-switch button { padding: 9px 10px; font-size: 11px; }
-  html[data-interface="nexus"] .topbar { min-height: 76px; }
+  html[data-interface="nexus"] .topbar { min-height: 66px; }
   html[data-interface="nexus"] .brand { font-size: 15px; }
   html[data-interface="nexus"] .brand-mark { width: 34px; height: 34px; }
-  html[data-interface="nexus"] .home-view { padding: 28px 0 70px; }
-  html[data-interface="nexus"] .nexus-hero { min-height: 420px; padding: 29px 23px; border-radius: 24px; }
-  html[data-interface="nexus"] .nexus-hero h1 { font-size: clamp(46px, 11vw, 66px); }
-  html[data-interface="nexus"] .nexus-hero p { font-size: 14px; }
-  html[data-interface="nexus"] .nexus-orbit { width: 260px; right: -30%; top: 25%; opacity: .19; }
-  html[data-interface="nexus"] .nexus-hero-actions { gap: 9px; }
-  html[data-interface="nexus"] .nexus-cta,
-  html[data-interface="nexus"] .nexus-secondary { padding: 12px 14px; }
+  html[data-interface="nexus"] .home-view { padding: 14px 0 60px; }
+  html[data-interface="nexus"] .nexus-hero {
+    grid-template-columns: 1fr;
+    gap: 15px;
+    padding: 17px;
+    border-radius: 22px;
+  }
+  .nexus-hero h1 { font-size: clamp(31px, 8vw, 48px); }
+  .nexus-hero p { font-size: 14px; margin: 8px 0 11px; }
+  .nexus-cta { min-height: 122px; padding: 12px; border-radius: 13px; }
   html[data-interface="nexus"] .game-grid { grid-template-columns: 1fr; }
   html[data-interface="nexus"] .game-card:first-child { grid-column: auto; }
   html[data-interface="nexus"] .game-card { min-height: 220px; }

@@ -23,6 +23,14 @@ for (const engine of (process.env.NEXUS_QA_ENGINES === 'chromium' ? [chromium] :
   await page.goto(base); await page.locator('#nx-cards .nx-card').first().waitFor();
   assert.equal(await page.locator('#nx-cards .nx-card').count(), 10);console.log(engine.name()+': launcher loaded');
   assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
+  await page.locator('.nexus-cta img').evaluate(image => image.decode());
+  assert.equal(await page.locator('#nx-recent-row').isHidden(), true);
+  await page.locator('#nx-mode').selectOption('network');
+  assert.deepEqual(await page.locator('#nx-cards .nx-card').evaluateAll(cards => cards.map(card => card.dataset.game)), ['tictactoe', 'turbo', 'color']);
+  assert.equal(await page.locator('#nx-network-hint').isVisible(), true);
+  await page.locator('#nx-category').selectOption('Aufbau');
+  await page.getByRole('button', { name: 'Filter zurücksetzen' }).click();
+  assert.equal(await page.locator('#nx-cards .nx-card').count(), 10);
   await page.locator('#nx-search').fill('Berggarten'); assert.equal(await page.locator('#nx-cards .nx-card').count(), 1);
   await page.locator('.nx-favorite').first().click();
   await page.locator('#nx-search').fill(''); await page.locator('#nx-favorites').click(); assert.equal(await page.locator('#nx-cards .nx-card').count(), 1);
@@ -33,6 +41,7 @@ for (const engine of (process.env.NEXUS_QA_ENGINES === 'chromium' ? [chromium] :
   await page.locator('[data-game="tictactoe"] .nx-more').click(); assert.equal(await page.locator('#nx-detail').evaluate(d => d.open), true);
   await page.locator('#nx-detail .nx-primary').click(); await page.locator('#start-local').click(); await page.locator('.cell').first().click(); assert.match(await page.locator('.cell').first().textContent(), /X/);
   await page.locator('#brand-button').click();
+  assert.match(await page.locator('#nx-recent').textContent(), /Tic-Tac-Toe/);
   await page.locator('[data-interface-option="original"]').click(); assert.equal(await page.locator('#game-grid').isVisible(), true);
   await page.reload(); assert.equal(await page.locator('html').getAttribute('data-interface'), 'original');
   await page.locator('#open-color-clash').click(); await page.locator('#brand-button').click();

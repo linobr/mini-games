@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="Mooslicht, Tic-Tac-Toe, Turbo Bump, Color Clash Flip, Meteor Run, Neon Defender und RIFT//RELAY kostenlos im Browser spielen."
+      content="Berggarten, Mooslicht und weitere kostenlose Browser-Spiele für Solo-Runden, Spiele am selben Gerät oder Multiplayer im WLAN."
     />
     <meta name="theme-color" content="#17221d" />
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2317221d'/%3E%3Cpath d='m13 23 12 18m0-18L13 41' stroke='%23cfff69' stroke-width='5' stroke-linecap='round'/%3E%3Ccircle cx='43' cy='32' r='9' fill='none' stroke='%23cfff69' stroke-width='5'/%3E%3C/svg%3E" />
@@ -45,18 +45,21 @@
       </header>
 
       <section class="home-view view" id="home-view">
-        <div class="nexus-hero nexus-only">
+        <section class="nexus-hero nexus-only" aria-labelledby="nexus-hero-title">
           <div class="nexus-hero-content">
-            <span class="nexus-kicker"><span class="nexus-kicker-dot" aria-hidden="true"></span>NEXUS ARCADE // MINI GAMES</span>
-            <h1>Next level.<br /><span>Instant play.</span></h1>
-            <p>Dein Spiele-Hub im Browser. Entdecke 3D-Abenteuer, Arcade-Games und Multiplayer – direkt starten, ohne Installation.</p>
-            <div class="nexus-hero-actions">
-              <a class="nexus-cta" href="./berggarten/">Berggarten spielen <span aria-hidden="true">↗</span></a>
-              <a class="nexus-secondary" href="#nx-library">Alle Spiele <span aria-hidden="true">↓</span></a>
-            </div>
+            <h1 id="nexus-hero-title">Was spielst du <span>heute?</span></h1>
+            <p>Erkunde ein Alpental, jage deinen Highscore oder starte eine Runde mit Freunden.</p>
+            <a class="nexus-secondary" href="#nx-library">Alle Spiele <span aria-hidden="true">↓</span></a>
           </div>
-          <div class="nexus-orbit" aria-hidden="true"></div>
-        </div>
+          <a class="nexus-cta" href="./berggarten/">
+            <img src="/covers/berggarten.svg" width="640" height="350" alt="" />
+            <span class="nexus-feature-copy">
+              <span class="nexus-feature-type">Aufbau · Solo</span>
+              <strong>Berggarten Tycoon</strong>
+              <span class="nexus-feature-play">Spielen <span aria-hidden="true">↗</span></span>
+            </span>
+          </a>
+        </section>
         <div class="hero-copy">
           <span class="eyebrow">Spieleabend, direkt im Browser</span>
           <h1>Kleine Spiele.<br />Grosse Revanchen.</h1>
@@ -211,15 +214,6 @@
             <span class="card-arrow" aria-hidden="true">→</span>
           </a>
 
-          <article class="game-card coming-soon" aria-label="Weiteres Spiel geplant">
-            <span class="card-topline">
-              <span class="game-icon plus-icon" aria-hidden="true">+</span>
-            </span>
-            <span class="game-card-copy">
-              <strong>Deine nächste Idee</strong>
-              <small>Die Plattform wächst mit</small>
-            </span>
-          </article>
         </div>
       </section>
 
