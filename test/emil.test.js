@@ -1,29 +1,39 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  TARGET, MELODY, startRun, nextChapter, setPosition, ringBell, tickRun,
-  playStudioNote, chooseContact, answerContact, loadRecord, saveRecord,
+  TARGET, MARKET_PERIOD, startRun, nextChapter, setPosition, ringBell, tickRun,
+  selectOrder, tickQueue, moveQueue, setAccent, setStyle, finishMix, chooseClip, finishEdit,
+  chooseContact, conversation, answerContact, loadRecord, saveRecord,
 } from '../public/emil/engine.js';
 
 function sample(state, count = 1) {
   state.spawnClock = 100;
-  state.entities = Array.from({length:count}, (_, id) => ({id,kind:'note',x:state.x,y:state.y,tone:0,speed:0}));
+  state.entities = Array.from({length:count}, (_, id) => ({id,kind:'note',x:state.x,y:state.y,sound:['relay', 'motor', 'metal'][id % 3],speed:0}));
   return tickRun(state, .016);
 }
-test('samples advance both chapters exactly once before the studio', () => {
+test('workshop samples become a sound bank and the queue adds the selected sound', () => {
   const state = startRun();
   sample(state, TARGET);
   assert.equal(state.phase, 'chapter');
+  assert.deepEqual(state.bank, ['relay', 'motor', 'metal']);
   assert.equal(state.samples, TARGET);
   assert.equal(state.score, 950);
   assert.deepEqual(tickRun(state, .04), []);
   assert.equal(nextChapter(state), true);
   assert.equal(nextChapter(state), false);
   assert.equal(state.chapter, 1);
-  assert.equal(state.samples, 0);
-  sample(state, TARGET);
+  assert.equal(state.phase, 'market');
+  assert.equal(selectOrder(state, 'bowl'), true);
+  assert.equal(selectOrder(state, 'coffee'), false);
+  assert.equal(moveQueue(state), false);
+  for (let move = 0; move < 4; move++) {
+    while (state.queueClock < MARKET_PERIOD * .5) tickQueue(state, .05);
+    assert.equal(moveQueue(state), true);
+  }
   assert.equal(state.phase, 'studio');
-  assert.equal(state.score, 1900);
+  assert.deepEqual(state.bank, ['relay', 'motor', 'metal', 'bowl']);
+  assert.deepEqual(state.accents, ['relay', null, 'motor', null, 'bowl', null, 'metal', null]);
+  assert.equal(state.score, 1250);
 });
 test('collisions consume energy with invulnerability and stop the run at zero', () => {
   const state = startRun();
@@ -75,24 +85,35 @@ test('position, frame time and chapter transitions stay bounded', () => {
   nextChapter(state);
   assert.deepEqual([state.x,state.y], [450,470]);
 });
-test('a wrong studio note stays on the same step and completing the tune opens a conversation', () => {
+test('only collected sounds can be mixed and the cut and style shape the dialogue', () => {
   const state = startRun();
-  state.phase = 'studio';
-  assert.deepEqual(playStudioNote(state,2), {correct:false,complete:false});
-  assert.equal(state.studioIndex,0);
-  assert.equal(playStudioNote(state,9),null);
-  for (const tone of MELODY) assert.equal(playStudioNote(state,tone).correct,true);
-  assert.equal(state.phase,'meet');
-  assert.equal(playStudioNote(state,0),null);
-  assert.equal(chooseContact(state,'unknown'),false);
-  assert.equal(chooseContact(state,'lea'),true);
-  assert.equal(answerContact(state,4),false);
-  assert.equal(answerContact(state,0),true);
-  assert.equal(state.phase,'done');
-  assert.equal(state.ending.match,true);
+  sample(state, TARGET);
+  nextChapter(state);
+  selectOrder(state, 'coffee');
+  for (let move = 0; move < 2; move++) {
+    while (state.queueClock < MARKET_PERIOD * .5) tickQueue(state, .05);
+    moveQueue(state);
+  }
+  assert.equal(setStyle(state, 'trap'), true);
+  assert.equal(setAccent(state, 0, 'bowl'), false);
+  assert.equal(setAccent(state, 0, 'coffee'), true);
+  assert.equal(state.accents[0], 'coffee');
+  assert.equal(finishMix(state), true);
+  assert.equal(chooseClip(state, 'solo'), true);
+  assert.equal(chooseClip(state, 'solo'), false);
+  assert.equal(finishEdit(state), false);
+  for (const clip of ['market', 'workshop']) assert.equal(chooseClip(state, clip), true);
+  assert.equal(finishEdit(state), true);
+  assert.equal(chooseContact(state, 'mia'), true);
+  assert.match(conversation(state).question, /allein/);
+  assert.match(conversation(state).options[0].text, /Kaffee/);
+  assert.equal(answerContact(state, 4), false);
+  assert.equal(answerContact(state, 0), true);
+  assert.equal(state.phase, 'done');
+  assert.equal(state.ending.match, true);
   const score = state.score;
-  assert.equal(answerContact(state,0),false);
-  assert.equal(state.score,score);
+  assert.equal(answerContact(state, 0), false);
+  assert.equal(state.score, score);
 });
 test('alternate meeting ending is reachable and blocked storage keeps the game usable', () => {
   const state = startRun();

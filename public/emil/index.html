@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#171e29">
-  <meta name="description" content="Emil Klingel: Sammle Werkstatt-Sounds, finde den Neumarkt und spiele deinen eigenen Klingelton. Ein Feierabend-Abenteuer.">
+  <meta name="description" content="Emil Klingel: Sammle Werkstatt-Sounds, produziere einen House- oder Trap-Beat und schneide einen Clip dazu.">
   <title>Emil Klingel · Mini Games</title>
   <link rel="stylesheet" href="./style.css">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23171e29'/%3E%3Ctext x='32' y='45' text-anchor='middle' font-size='44' fill='%23f0b66f'%3E%E2%99%AA%3C/text%3E%3C/svg%3E">
@@ -18,7 +18,7 @@
   </header>
   <section class="intro" aria-labelledby="title">
     <div><p class="eyebrow">FEIERABENDFREQUENZ</p><h1 id="title">Vom Werkstatt-Beat<br>zum <em>ersten Date.</em></h1></div>
-    <p>Sammle Sounds, finde den Neumarkt und mach den Abend zu deinem Klingelton.</p>
+    <p>Sammle Sounds bei Starrag, leg im Heimstudio einen Beat und schneide deinen ersten Clip dazu.</p>
   </section>
   <div class="game-layout">
     <section class="stage-card" aria-label="Spielfeld">
@@ -30,8 +30,9 @@
       <div class="canvas-wrap">
         <canvas id="game" width="900" height="600" tabindex="0" aria-label="Emils Spielfeld. Pfeiltasten oder WASD bewegen, Leertaste klingelt."></canvas>
         <div class="overlay" id="overlay" role="region" aria-labelledby="overlay-title"><div class="overlay-card"><p class="eyebrow" id="overlay-kicker"></p><h2 id="overlay-title"></h2><p id="overlay-copy"></p><div id="overlay-actions"></div></div></div>
+        <p class="clip-caption" id="clip-caption" hidden></p>
       </div>
-      <div class="touch-bar" aria-label="Spielsteuerung">
+      <div id="workshop-controls" class="touch-bar" aria-label="Spielsteuerung">
         <div class="directions">
           <button type="button" data-direction="left" aria-label="Links">←</button>
           <button type="button" data-direction="up" aria-label="Hoch">↑</button>
@@ -40,20 +41,53 @@
         </div>
         <button type="button" id="bell" class="bell" disabled>Klingel! <small id="bell-state">Leertaste</small></button>
       </div>
+      <section class="play-panel" id="market" hidden aria-labelledby="market-title">
+        <h3 id="market-title">Was holst du dir?</h3>
+        <div class="choice-row" id="orders">
+          <button class="choice" type="button" data-order="coffee">Kaffee<small>Kurze Schlange · Espresso-Sample</small></button>
+          <button class="choice" type="button" data-order="bowl">Poke Bowl<small>Längere Schlange · Schüssel-Sample</small></button>
+        </div>
+        <div id="queue" hidden>
+          <p>Tippe auf «Aufrücken», sobald die Anzeige grün wird.</p>
+          <div class="queue-meter" id="queue-meter" aria-hidden="true"><span></span></div>
+          <div class="actions">
+            <button id="queue-tap" class="action" type="button">Aufrücken</button>
+            <p id="queue-status"></p>
+          </div>
+        </div>
+      </section>
+      <section class="play-panel" id="studio" hidden aria-labelledby="studio-title">
+        <h3 id="studio-title">Dein Klingelton</h3>
+        <div class="choice-row" role="group" aria-label="Musikstil">
+          <button class="choice" type="button" data-style="house" aria-pressed="true">House<small>124 BPM · durchgehende Kick</small></button>
+          <button class="choice" type="button" data-style="trap" aria-pressed="false">Trap<small>88 BPM · schnelle Hi-Hats</small></button>
+        </div>
+        <p>Wähle einen Sound und tippe auf einen der acht Schritte. Tippe erneut, um ihn zu entfernen.</p>
+        <div class="sample-options" id="sound-bank" role="group" aria-label="Gesammelte Sounds"></div>
+        <div class="beat-grid" id="beat-grid" role="group" aria-label="Acht Taktschritte"></div>
+        <div class="actions">
+          <button id="listen" class="quiet" type="button">Beat anhören</button>
+          <button id="finish-mix" class="action" type="button">Zum Videoschnitt</button>
+        </div>
+      </section>
+      <section class="play-panel" id="edit" hidden aria-labelledby="edit-title">
+        <h3 id="edit-title">Dein erster Schnitt</h3>
+        <p>Wähle drei Szenen in der Reihenfolge, in der sie zum Beat laufen sollen.</p>
+        <div class="choice-row" id="clip-options" role="group" aria-label="Verfügbare Clips"></div>
+        <ol class="clip-timeline" id="clip-timeline" aria-label="Reihenfolge der Clips"></ol>
+        <div class="actions">
+          <button id="undo-cut" class="quiet" type="button">Letzten Schnitt lösen</button>
+          <button id="preview-cut" class="quiet" type="button">Clip ansehen</button>
+          <button id="finish-cut" class="action" type="button">Clip zeigen</button>
+        </div>
+      </section>
+      <p id="feedback" class="feedback stage-feedback" role="status">Ab uf Feierabend.</p>
     </section>
     <aside class="session-panel">
       <div class="chapter-label"><span id="chapter-number">01</span><small id="chapter-place">STARRAG-WERKSTATT</small></div>
       <h2 id="chapter-title">Feierabend bei Starrag</h2>
       <p id="mission">8 Samples aufnehmen. Werkzeugwagen ausweichen.</p>
       <div class="sample-track" id="sample-track" aria-label="Gesammelte Samples"></div>
-      <p id="feedback" class="feedback" role="status">Ab uf Feierabend.</p>
-      <section class="studio" id="studio" hidden aria-labelledby="studio-title">
-        <h3 id="studio-title">Dein Klingelton</h3>
-        <p>Spiele die leuchtende Note. Tastatur A, S, D oder die Tasten unten.</p>
-        <div id="melody" class="melody"></div>
-        <div class="pads"><button type="button" data-tone="0">G<kbd>A</kbd></button><button type="button" data-tone="1">H<kbd>S</kbd></button><button type="button" data-tone="2">D<kbd>D</kbd></button></div>
-        <button id="listen" class="quiet" type="button">Klingelton anhören</button>
-      </section>
       <div class="session-actions"><button id="pause" type="button" class="quiet" disabled>Pause</button><button id="restart" type="button" class="quiet">Neu starten</button></div>
       <div class="record"><small>DEINE BESTMARKE</small><strong id="best">0</strong></div>
       <details class="instructions"><summary>So spielst du</summary><p>Bewege Emil mit Pfeiltasten oder WASD. Auf dem Handy die Richtungstasten nutzen oder über die Strasse ziehen. Nimm die leuchtenden Noten auf. Die Klingel schafft kurz Platz um Emil. Nach acht Samples geht es weiter.</p></details>

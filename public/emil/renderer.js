@@ -1,9 +1,8 @@
-import { WIDTH, HEIGHT, CHAPTERS, MELODY } from './engine.js';
+import { WIDTH, HEIGHT, SOUNDS, CLIPS } from './engine.js';
 
 const ink = '#14232e';
 const cream = '#f1d5aa';
 const amber = '#e9b16c';
-const mint = '#9ad7c4';
 
 function rounded(ctx, x, y, w, h, radius, color) {
   ctx.fillStyle = color;
@@ -120,31 +119,25 @@ export function drawEmil(ctx, x, y, time = 0, moving = false, scale = 1) {
   ctx.restore();
 }
 function drawNote(ctx, item, time, reduced) {
+  const sound = SOUNDS[item.sound];
   const y = item.y + (reduced ? 0 : Math.sin(time * 4 + item.id) * 3);
   ellipse(ctx, item.x, y + 19, 19, 5, '#10232d44');
   light(ctx, item.x, y - 6, 40, 'rgba(154,215,196,.22)');
   rounded(ctx, item.x - 23, y - 28, 46, 46, 13, '#203f48');
-  ctx.strokeStyle = mint; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.roundRect(item.x - 23, y - 28, 46, 46, 13); ctx.stroke();
-  text(ctx, '♪', item.x, y + 6, 35, '#aee5cd');
+  ctx.strokeStyle = sound.color; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.roundRect(item.x - 23, y - 28, 46, 46, 13); ctx.stroke();
+  text(ctx, sound.mark, item.x, y + 3, 22, sound.color);
+  text(ctx, '♪', item.x + 14, y - 14, 12, sound.color);
 }
-function drawObstacle(ctx, item, chapter) {
+function drawObstacle(ctx, item) {
   const x = item.x, y = item.y;
   ellipse(ctx, x, y + 14, 34, 9, '#0b202b66');
-  if (chapter === 0) {
-    rounded(ctx, x - 29, y - 27, 58, 36, 5, '#586d76');
-    polygon(ctx, [[x-29,y-27],[x-19,y-35],[x+38,y-35],[x+29,y-27]], '#8fa4a5');
-    polygon(ctx, [[x+29,y-27],[x+38,y-35],[x+38,y+1],[x+29,y+9]], '#3c5662');
-    rounded(ctx, x - 24, y - 15, 48, 3, 1, '#aeb9ae');
-    for (const side of [-1, 1]) ellipse(ctx, x + side * 20, y + 10, 5, 6, '#172b36');
-    rounded(ctx, x - 21, y - 34, 28, 5, 2, '#bc9868');
-    text(ctx, '!', x, y + 2, 13, '#e7d3ad');
-  } else {
-    for (const offset of [-18, 0, 18]) {
-      rounded(ctx, x + offset - 8, y - 15, 16, 25, 6, ['#758da0','#917d75','#648578'][(offset + 18) / 18]);
-      ellipse(ctx, x + offset, y - 21, 7, 8, '#d9bba1');
-    }
-    text(ctx, 'SCHLANGE', x, y - 37, 8, '#e5c7a2');
-  }
+  rounded(ctx, x - 29, y - 27, 58, 36, 5, '#586d76');
+  polygon(ctx, [[x-29,y-27],[x-19,y-35],[x+38,y-35],[x+29,y-27]], '#8fa4a5');
+  polygon(ctx, [[x+29,y-27],[x+38,y-35],[x+38,y+1],[x+29,y+9]], '#3c5662');
+  rounded(ctx, x - 24, y - 15, 48, 3, 1, '#aeb9ae');
+  for (const side of [-1, 1]) ellipse(ctx, x + side * 20, y + 10, 5, 6, '#172b36');
+  rounded(ctx, x - 21, y - 34, 28, 5, 2, '#bc9868');
+  text(ctx, '!', x, y + 2, 13, '#e7d3ad');
 }
 
 export class EmilRenderer {
@@ -177,7 +170,10 @@ export class EmilRenderer {
       const y = 175 + i * 49;
       ctx.strokeStyle = '#b9c7b911'; ctx.beginPath(); ctx.moveTo(170, y); ctx.lineTo(730, y); ctx.stroke();
     }
-    if (chapter === 0) this.workshop(ctx); else if (chapter === 1) this.neumarkt(ctx); else this.studio(ctx);
+    if (chapter === 0) this.workshop(ctx);
+    else if (chapter === 1) this.neumarkt(ctx);
+    else if (chapter === 2) this.studio(ctx);
+    else this.travel(ctx);
     const vignette = ctx.createRadialGradient(450, 330, 150, 450, 330, 560);
     vignette.addColorStop(0, '#08192200'); vignette.addColorStop(1, '#0819225c');
     ctx.fillStyle = vignette; ctx.fillRect(0, 0, WIDTH, HEIGHT);
@@ -238,24 +234,60 @@ export class EmilRenderer {
     polygon(ctx, [[283,376],[617,376],[650,458],[250,458]], '#b4865f');
     rounded(ctx, 300, 409, 300, 37, 5, '#1b303c');
     for (let i = 0; i < 18; i++) rounded(ctx, 310 + i * 15.4, 416, 13, 23, 1, i % 3 === 1 ? '#6d8b89' : '#d2d9cb');
-    text(ctx, 'DEIN FEIERABEND. DEIN SOUND.', 450, 101, 16, '#f3d1a0');
+    text(ctx, 'HEIMSTUDIO', 450, 101, 16, '#f3d1a0');
     light(ctx, 450, 286, 205, 'rgba(232,179,105,.12)');
+  }
+  travel(ctx) {
+    const dusk = ctx.createLinearGradient(0, 0, 0, HEIGHT);
+    dusk.addColorStop(0, '#293f60'); dusk.addColorStop(.49, '#bc857e'); dusk.addColorStop(1, '#203f55');
+    ctx.fillStyle = dusk; ctx.fillRect(0, 0, WIDTH, HEIGHT);
+    light(ctx, 670, 235, 140, '#ffbd8b75');
+    ellipse(ctx, 670, 235, 49, 49, '#f2b68e');
+    polygon(ctx, [[0,277],[900,277],[900,600],[0,600]], '#345768');
+    polygon(ctx, [[0,479],[274,420],[531,474],[900,407],[900,600],[0,600]], '#b49278');
+    for (let i = 0; i < 5; i++) {
+      const y = 296 + i * 22;
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.quadraticCurveTo(450, y + 24, 900, y + 5);
+      ctx.strokeStyle = '#e2c1a044'; ctx.lineWidth = 2; ctx.stroke();
+    }
+    tree(ctx, 135, 468, 1.3); tree(ctx, 792, 516, .85);
+    text(ctx, 'RAUS AUS DER STADT', 450, 115, 22, '#f5dcc1');
   }
   render(state, seconds, moving, reduced = false) {
     const ctx = this.ctx;
-    const isStudio = ['studio', 'meet', 'chat', 'done'].includes(state.phase);
-    const chapter = isStudio ? 2 : state.chapter;
-    if (this.scene !== chapter) this.makeBackground(chapter);
+    const clip = CLIPS[state.previewClip];
+    const isStudio = ['studio', 'edit', 'meet', 'chat', 'done'].includes(state.phase);
+    const scene = clip?.scene ?? (isStudio ? 2 : state.chapter);
+    if (this.scene !== scene) this.makeBackground(scene);
     ctx.drawImage(this.background, 0, 0);
     const time = reduced ? 0 : seconds;
-    if (isStudio) {
+    if (clip) {
+      if (state.previewClip === 'lino') {
+        ellipse(ctx, 540, 478, 24, 7, '#14283150');
+        rounded(ctx, 525, 451, 11, 24, 4, '#324656');
+        rounded(ctx, 542, 451, 11, 24, 4, '#324656');
+        rounded(ctx, 518, 423, 42, 36, 11, '#8b777e');
+        ellipse(ctx, 539, 411, 16, 19, '#d3a78d');
+        ellipse(ctx, 539, 402, 17, 12, '#37414a');
+      }
+      const shift = reduced ? 0 : Math.sin(time * 4) * 12;
+      drawEmil(ctx, 450 + shift, 464, time, !reduced, 1.38);
+    } else if (isStudio) {
       drawEmil(ctx, 450, 365, time, false, 1.3);
-      if (state.phase === 'studio') {
-        const tone = state.studioFlash >= 0 && state.flashTime > 0 ? state.studioFlash : MELODY[state.studioIndex];
-        text(ctx, ['G','H','D'][tone] ?? '♪', 450, 560, 34, '#f5c383');
+    } else if (scene === 1) {
+      const count = state.order === 'bowl' ? 4 : 2;
+      if (state.order) {
+        for (let i = 0; i < count - state.queueMoves; i++) {
+          const y = 278 + i * 54;
+          rounded(ctx, 517, y, 31, 37, 11, ['#566f83', '#947765', '#6b8b7a', '#917d8f'][i]);
+          ellipse(ctx, 533, y - 9, 11, 13, '#d6b698');
+        }
+        drawEmil(ctx, 451, 476 - state.queueMoves * 54, 0, false, 1.12);
+      } else {
+        drawEmil(ctx, 450, 470, 0, false, 1.12);
       }
     } else {
-      const actors = state.entities.map(item => ({ y: item.y, draw: () => item.kind === 'note' ? drawNote(ctx, item, time, reduced) : drawObstacle(ctx, item, state.chapter) }));
+      const actors = state.entities.map(item => ({ y: item.y, draw: () => item.kind === 'note' ? drawNote(ctx, item, time, reduced) : drawObstacle(ctx, item) }));
       actors.push({ y: state.y, draw: () => {
         if (state.invincible > 0) {
           ctx.strokeStyle = '#d7debd'; ctx.lineWidth = 2;
