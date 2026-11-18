@@ -20,17 +20,18 @@ let paused = false;
 let confirming = false;
 let last = performance.now();
 let selectedSound = null;
+let draftIndex = null;
 let preview = null;
 let dragging = false;
 const input = { left: false, right: false, up: false, down: false };
 const movement = { ArrowLeft:'left', ArrowRight:'right', ArrowUp:'up', ArrowDown:'down', a:'left', d:'right', w:'up', s:'down' };
 const sections = ['market', 'studio', 'edit'];
 const chapters = [
-  ['STARRAG-WERKSTATT', 'Feierabend bei Starrag', 'Sammle die leuchtenden Samples und weiche Werkzeugwagen aus.'],
+  ['STARRAG-WERKSTATT', 'Feierabend bei Starrag', 'Sammle Relais, Motor und Metall und weiche den Werkzeugwagen aus.'],
   ['NEUMARKT', 'Kaffee oder Poke Bowl?', 'Rücke in der Schlange auf und nimm einen Sound mit.'],
-  ['HEIMSTUDIO', 'House oder Trap?', 'Baue einen Klingelton aus deinen gesammelten Sounds.'],
-  ['VIDEOSCHNITT', 'Drei Szenen zum Beat', 'Schneide deinen ersten Clip und zeig ihn weiter.'],
-  ['NACH DEM AUFTRITT', 'Ein Gespräch nach dem Clip', 'Entscheide, mit wem Emil ins Gespräch kommt und was er sagt.'],
+  ['HEIMSTUDIO', 'House oder Trap?', 'Ein kleines Heimstudio reicht. Baue aus deinen Werkstatt-Sounds einen Klingelton.'],
+  ['VIDEOSCHNITT', 'Drei Szenen zum Beat', 'Mach aus dem Material einen Clip für die Projektwoche.'],
+  ['NACH DEM AUFTRITT', 'Eine Nachricht nach dem Clip', 'Entscheide, wem Emil schreibt. Du kannst den Entwurf vor dem Abschicken ändern.'],
 ];
 const canPause = () => state.phase === 'run' || (state.phase === 'market' && !!state.order);
 
@@ -131,11 +132,12 @@ function newRun() {
   clearInput();
   void audio.unlock();
   state = startRun();
+  draftIndex = null;
   paused = false;
   confirming = false;
   last = performance.now();
   $('overlay').hidden = true;
-  feedback('Sammle Relais, Motor und Metall für dein Heimstudio.');
+  feedback('Mechatronik am Tag, Beats am Abend. Nimm die leuchtenden Sounds mit.');
   updateHUD();
   focusGame();
 }
@@ -174,22 +176,18 @@ function enterPhase() {
         if (!preview && state.phase === 'studio') audio.sample(sound);
       }
     })));
-    feedback('Emils Heimstudio ist bereit. Das Startmuster kannst du frei ändern.');
+    feedback('Kleines Heimstudio, null Budget für neue Samples. Gut, dass du welche mitgebracht hast.');
     updateStudio();
   } else if (state.phase === 'edit') {
-    feedback('Emils erster Videoschnitt. Ob die Reihenfolge passt, hörst du beim Abspielen.');
+    feedback('Erster Schnitt für die Projektwoche. Zeit für die Frage: erst die Werkstatt oder gleich ans Meer?');
     updateEdit();
   } else if (state.phase === 'meet') {
     persist();
     overlay('NACH DEM AUFTRITT', 'Wer hört mit?', 'Emil hat den Clip gezeigt. Jetzt kommt der Teil ohne Schnittprogramm: jemanden ansprechen.', CONTACTS.map(person =>
-      button(person.name + ' kennenlernen', () => { chooseContact(state, person.id); enterPhase(); }, false, person.interest)
+      button(person.name + ' kennenlernen', () => { draftIndex = null; chooseContact(state, person.id); enterPhase(); }, false, person.interest)
     ));
   } else if (state.phase === 'chat') {
-    const person = CONTACTS.find(contact => contact.id === state.contact);
-    const dialogue = conversation(state);
-    overlay('NACH DEM AUFTRITT', person.name, dialogue.question, dialogue.options.map((option, index) =>
-      button(option.text, () => { answerContact(state, index); enterPhase(); }, index > 0)
-    ));
+    openConversation();
   } else if (state.phase === 'done') {
     persist();
     const replay = button('Beat und Clip ansehen', () => void playPreview(true), true);
@@ -207,17 +205,71 @@ function enterPhase() {
   updateHUD();
   if ($('overlay').hidden) focusGame();
 }
+function openConversation() {
+  const person = CONTACTS.find(contact => contact.id === state.contact);
+  const dialogue = conversation(state);
+  if (draftIndex === null) {
+    overlay('NACHRICHT VON ' + person.name.toUpperCase(), person.name, dialogue.question,
+      dialogue.options.map((option, index) => button(option.text, () => {
+        draftIndex = index;
+        openConversation();
+        updateHUD();
+      }, index > 0)));
+    return;
+  }
+  overlay('ENTWURF', 'An ' + person.name, dialogue.options[draftIndex].text, [
+    button('Nachricht abschicken', () => {
+      answerContact(state, draftIndex);
+      draftIndex = null;
+      enterPhase();
+    }),
+    button('Umformulieren', () => { draftIndex = null; openConversation(); updateHUD(); }, true),
+  ]);
+}
+function updateStageProgress() {
+  let label = 'Samples';
+  let progress = state.samples + ' / ' + TARGET;
+  switch (state.phase) {
+    case 'market':
+      label = 'Schlange';
+      progress = state.order ? state.queueMoves + ' / ' + ORDERS[state.order].moves : '–';
+      break;
+    case 'studio':
+      label = 'Soundspur';
+      progress = state.accents.filter(Boolean).length + ' / ' + state.accents.length;
+      break;
+    case 'edit':
+      label = 'Schnitt';
+      progress = state.clips.length + ' / 3';
+      break;
+    case 'meet':
+    case 'chat':
+    case 'done':
+      label = 'Chat';
+      progress = state.phase === 'done' ? 'Gesendet' : draftIndex === null ? 'Offen' : 'Entwurf';
+      break;
+  }
+  $('progress-label').textContent = label;
+  $('samples').textContent = progress;
+}
 function updateHUD() {
-  $('samples').textContent = state.chapter ? String(state.bank.length) : state.samples + ' / ' + TARGET;
+  updateStageProgress();
   $('score').textContent = state.score.toLocaleString('de-CH');
   $('best').textContent = Math.max(record.best, state.score).toLocaleString('de-CH');
-  $('lives').textContent = Array.from({ length: 3 }, (_, i) => i < state.lives ? '●' : '○').join(' ');
-  $('lives').setAttribute('aria-label', state.lives + ' Energie');
+  $('energy').hidden = state.chapter !== 0;
+  $('energy').parentElement.dataset.hasEnergy = String(state.chapter === 0);
+  $('lives').setAttribute('aria-label', state.lives + ' von 3 Energie');
+  Array.from($('lives').children).forEach((bar, index) => bar.classList.toggle('full', index < state.lives));
   const chapter = ['meet', 'chat', 'done'].includes(state.phase) ? 5
     : state.phase === 'edit' ? 4
     : state.phase === 'studio' ? 3
     : state.chapter + 1;
-  $('chapter-number').textContent = '0' + chapter;
+  Array.from($('chapter-trail').children).forEach((step, index) => {
+    const position = index + 1;
+    if (position === chapter) step.setAttribute('aria-current', 'step');
+    else step.removeAttribute('aria-current');
+    step.dataset.passed = String(position < chapter);
+  });
   $('chapter-place').textContent = chapters[chapter - 1][0];
   $('chapter-title').textContent = chapters[chapter - 1][1];
   $('mission').textContent = chapters[chapter - 1][2];
@@ -227,14 +279,18 @@ function updateHUD() {
     $(id).hidden = state.phase !== id;
     $(id).inert = paused || confirming;
   }
-  $('sample-track').hidden = state.chapter !== 0;
   $('pause').disabled = confirming || !canPause();
-  $('pause').textContent = paused ? 'Weiter' : 'Pause';
+  const pauseLabel = paused ? 'Weiter' : 'Pause';
+  $('pause').setAttribute('aria-label', pauseLabel);
+  $('pause').title = pauseLabel;
+  $('pause-label').textContent = pauseLabel;
+  $('pause-icon').textContent = paused ? '▶' : 'Ⅱ';
   updateBell();
   $('sound').textContent = audio.muted ? 'Ton aus' : 'Ton an';
   $('sound').setAttribute('aria-pressed', String(!audio.muted));
-  for (const [index, element] of Array.from($('sample-track').children).entries()) {
-    element.classList.toggle('collected', index < state.samples);
+  $('inventory').hidden = !['ready', 'run', 'chapter', 'market', 'over'].includes(state.phase);
+  for (const element of $('sample-track').children) {
+    element.dataset.captured = String(state.bank.includes(element.dataset.sound));
   }
   $('orders').hidden = !!state.order;
   $('queue').hidden = !state.order;
@@ -271,6 +327,7 @@ function updateStudio() {
     pad.lastChild.textContent = sound?.mark ?? '–';
   }
   $('finish-mix').disabled = !state.accents.some(Boolean);
+  updateStageProgress();
 }
 function updateEdit() {
   for (const [index, item] of Array.from($('clip-timeline').children).entries()) {
@@ -282,8 +339,8 @@ function updateEdit() {
   $('undo-cut').disabled = state.clips.length === 0;
   $('preview-cut').disabled = state.clips.length !== 3;
   $('finish-cut').disabled = state.clips.length !== 3;
+  updateStageProgress();
 }
-for (let i = 0; i < TARGET; i++) $('sample-track').append(document.createElement('i'));
 const pads = state.accents.map((_, index) => {
   const pad = button(String(index + 1), () => {
     const sound = state.accents[index] === selectedSound ? null : selectedSound;
@@ -440,7 +497,7 @@ window.addEventListener('blur', pauseAway);
 document.addEventListener('visibilitychange', () => { if (document.hidden) pauseAway(); });
 window.addEventListener('pagehide', persist);
 
-overlay('EMIL KLINGEL', 'Ab uf Feierabend.', 'Sammle acht Sounds bei Starrag. Über den Neumarkt geht es ins Heimstudio, wo du einen Beat und deinen ersten Clip baust.', [button('Feierabend starten →', newRun)], false);
+overlay('EMIL KLINGEL', 'Ab uf Feierabend.', 'Sammle acht Sounds bei Starrag. Über den Neumarkt geht es ins Heimstudio und zum ersten Clip.', [button('Feierabend starten →', newRun)], false);
 updateHUD();
 let lastBellLabelUpdate = 0;
 function frame(now) {

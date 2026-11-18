@@ -23,6 +23,7 @@ export async function testEmil(context, base) {
   await page.locator('#game').click({position});
   await page.getByRole('button',{name:'Zum Neumarkt'}).waitFor();
   await page.getByRole('button',{name:'Zum Neumarkt'}).click();
+  assert.equal(await page.locator('#chapter-trail [aria-current="step"]').textContent(),'Neumarkt');
   await page.getByRole('button',{name:/^Kaffee/}).click();
   const queueTap = page.getByRole('button',{name:'Aufrücken'});
   for (let move = 0; move < 2; move++) {
@@ -35,6 +36,8 @@ export async function testEmil(context, base) {
   await page.getByRole('button',{name:'Espresso',exact:true}).click();
   await page.getByRole('button',{name:'Schritt 2: leer'}).click();
   await page.getByRole('button',{name:'Schritt 2: Espresso'}).waitFor();
+  assert.equal(await page.locator('#progress-label').textContent(),'Soundspur');
+  assert.equal(await page.locator('#samples').textContent(),'5 / 8');
   await page.getByRole('button',{name:'Beat anhören'}).click();
   await page.locator('#beat-grid .playing').first().waitFor();
   await page.getByRole('button',{name:'Zum Videoschnitt'}).click();
@@ -45,6 +48,10 @@ export async function testEmil(context, base) {
   await page.getByRole('button',{name:'Mia kennenlernen'}).click();
   assert.match(await page.locator('#overlay-copy').textContent(),/allein/);
   await page.getByRole('button',{name:/bei einem Kaffee/}).click();
+  assert.equal(await page.locator('#samples').textContent(),'Entwurf');
+  await page.getByRole('button',{name:'Umformulieren'}).click();
+  await page.getByRole('button',{name:/bei einem Kaffee/}).click();
+  await page.getByRole('button',{name:'Nachricht abschicken'}).click();
   assert.equal(await page.locator('#overlay-title').textContent(),'Ein Treffen steht.');
   assert.ok(await page.evaluate(() => JSON.parse(localStorage.getItem('mini-games:emil:v1')).best > 0));
   const sound = await page.locator('#sound').getAttribute('aria-pressed');

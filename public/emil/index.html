@@ -18,15 +18,29 @@
   </header>
   <section class="intro" aria-labelledby="title">
     <div><p class="eyebrow">FEIERABENDFREQUENZ</p><h1 id="title">Vom Werkstatt-Beat<br>zum <em>ersten Date.</em></h1></div>
-    <p>Sammle Sounds bei Starrag, leg im Heimstudio einen Beat und schneide deinen ersten Clip dazu.</p>
+    <p>Mach aus Werkstattgeräuschen einen Beat und schneide Emils ersten Clip dazu.</p>
   </section>
   <div class="game-layout">
     <section class="stage-card" aria-label="Spielfeld">
-      <div class="stage-hud">
-        <span><small>SAMPLES</small><strong id="samples">0 / 8</strong></span>
-        <span><small>PUNKTE</small><strong id="score">0</strong></span>
-        <span><small>ENERGIE</small><strong id="lives" aria-label="3 Energie">● ● ●</strong></span>
-      </div>
+      <header class="stage-hud">
+        <ol class="chapter-trail" id="chapter-trail" aria-label="Stationen im Spiel">
+          <li aria-current="step">Werkstatt</li><li>Neumarkt</li><li>Studio</li><li>Schnitt</li><li>Chat</li>
+        </ol>
+        <div class="hud-stats">
+          <div class="hud-metric"><span id="progress-label">Samples</span><strong id="samples">0 / 8</strong></div>
+          <div class="hud-metric"><span>Punkte</span><strong id="score">0</strong></div>
+          <div class="hud-metric" id="energy">
+            <span>Energie</span>
+            <span class="energy-bars" id="lives" role="img" aria-label="3 von 3 Energie">
+              <i class="full"></i><i class="full"></i><i class="full"></i>
+            </span>
+          </div>
+          <div class="hud-actions">
+            <button id="pause" type="button" class="quiet" aria-label="Pause" title="Pause" disabled><span id="pause-icon" aria-hidden="true">Ⅱ</span><span id="pause-label">Pause</span></button>
+            <button id="restart" type="button" class="quiet" aria-label="Neu starten" title="Neu starten"><span aria-hidden="true">↻</span><span>Neu starten</span></button>
+          </div>
+        </div>
+      </header>
       <div class="canvas-wrap">
         <canvas id="game" width="900" height="600" tabindex="0" aria-label="Emils Spielfeld. Pfeiltasten oder WASD bewegen, Leertaste klingelt."></canvas>
         <div class="overlay" id="overlay" role="region" aria-labelledby="overlay-title"><div class="overlay-card"><p class="eyebrow" id="overlay-kicker"></p><h2 id="overlay-title"></h2><p id="overlay-copy"></p><div id="overlay-actions"></div></div></div>
@@ -48,10 +62,10 @@
           <button class="choice" type="button" data-order="bowl">Poke Bowl<small>Längere Schlange · Schüssel-Sample</small></button>
         </div>
         <div id="queue" hidden>
-          <p>Tippe auf «Aufrücken», sobald die Anzeige grün wird.</p>
+          <p>Tippe auf «Aufrücken», sobald dort «jetzt» steht.</p>
           <div class="queue-meter" id="queue-meter" aria-hidden="true"><span></span></div>
           <div class="actions">
-            <button id="queue-tap" class="action" type="button">Aufrücken</button>
+            <button id="queue-tap" class="action" type="button" aria-label="Aufrücken">Aufrücken</button>
             <p id="queue-status"></p>
           </div>
         </div>
@@ -71,7 +85,7 @@
         </div>
       </section>
       <section class="play-panel" id="edit" hidden aria-labelledby="edit-title">
-        <h3 id="edit-title">Dein erster Schnitt</h3>
+        <h3 id="edit-title">Emils erster Schnitt</h3>
         <p>Wähle drei Szenen in der Reihenfolge, in der sie zum Beat laufen sollen.</p>
         <div class="choice-row" id="clip-options" role="group" aria-label="Verfügbare Clips"></div>
         <ol class="clip-timeline" id="clip-timeline" aria-label="Reihenfolge der Clips"></ol>
@@ -84,13 +98,19 @@
       <p id="feedback" class="feedback stage-feedback" role="status">Ab uf Feierabend.</p>
     </section>
     <aside class="session-panel">
-      <div class="chapter-label"><span id="chapter-number">01</span><small id="chapter-place">STARRAG-WERKSTATT</small></div>
+      <p class="eyebrow" id="chapter-place">STARRAG-WERKSTATT</p>
       <h2 id="chapter-title">Feierabend bei Starrag</h2>
       <p id="mission">8 Samples aufnehmen. Werkzeugwagen ausweichen.</p>
-      <div class="sample-track" id="sample-track" aria-label="Gesammelte Samples"></div>
-      <div class="session-actions"><button id="pause" type="button" class="quiet" disabled>Pause</button><button id="restart" type="button" class="quiet">Neu starten</button></div>
+      <section class="inventory" id="inventory" aria-labelledby="inventory-label">
+        <h3 id="inventory-label">Soundbank</h3>
+        <ul id="sample-track" aria-label="Gesammelte Sounds">
+          <li data-sound="relay" data-captured="false"><b>R</b> Relais</li>
+          <li data-sound="motor" data-captured="false"><b>M</b> Motor</li>
+          <li data-sound="metal" data-captured="false"><b>K</b> Metall</li>
+        </ul>
+      </section>
       <div class="record"><small>DEINE BESTMARKE</small><strong id="best">0</strong></div>
-      <details class="instructions"><summary>So spielst du</summary><p>Bewege Emil mit Pfeiltasten oder WASD. Auf dem Handy die Richtungstasten nutzen oder über die Strasse ziehen. Nimm die leuchtenden Noten auf. Die Klingel schafft kurz Platz um Emil. Nach acht Samples geht es weiter.</p></details>
+      <details class="instructions"><summary>Steuerung</summary><p>Pfeiltasten oder WASD bewegen Emil. Die Leertaste klingelt. Auf dem Handy kannst du die Richtungstasten nutzen oder Emil auf dem Spielfeld ziehen.</p></details>
       <p id="save-status" class="save-status"></p>
     </aside>
   </div>
