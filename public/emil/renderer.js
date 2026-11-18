@@ -66,33 +66,57 @@ function lamp(ctx, x, y) {
 
 export function drawEmil(ctx, x, y, time = 0, moving = false, scale = 1) {
   ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale);
-  ellipse(ctx, 0, 10, 23, 8, '#07182066');
+  ellipse(ctx, 0, 10, 24, 8, '#07182066');
   const step = moving ? Math.sin(time * 13) * 5 : 0;
-  rounded(ctx, -13, -6 + step, 11, 22, 4, '#283a4c');
-  rounded(ctx, 3, -6 - step, 11, 22, 4, '#283a4c');
-  rounded(ctx, -16, 11 + step, 16, 7, 3, '#e5dfcd');
-  rounded(ctx, 3, 11 - step, 16, 7, 3, '#e5dfcd');
-  rounded(ctx, -19, -39, 38, 35, 10, '#c97d4e');
-  rounded(ctx, -24, -35, 10, 29, 5, '#dc9965');
-  rounded(ctx, 15, -35, 10, 29, 5, '#dc9965');
-  rounded(ctx, -15, -36, 30, 6, 3, '#e4b27a');
-  rounded(ctx, -1, -34, 2, 28, 1, '#845b45');
-  ellipse(ctx, -17, -10, 5, 6, '#e4b98f');
-  ellipse(ctx, 20, -10, 5, 6, '#e4b98f');
-  rounded(ctx, 17, -21, 10, 16, 2, '#b9c7c4');
-  rounded(ctx, 19, -19, 6, 9, 1, '#294d59');
-  rounded(ctx, -8, -49, 17, 14, 5, '#e4b98f');
-  ellipse(ctx, 0, -58, 18, 21, '#e5bc94');
-  ellipse(ctx, -17, -56, 4, 6, '#ce9e79');
-  ellipse(ctx, 17, -56, 4, 6, '#ce9e79');
-  polygon(ctx, [[-18,-59],[-19,-73],[-11,-82],[1,-85],[16,-78],[20,-64],[9,-69],[-4,-70],[-14,-61]], '#1b2630');
-  polygon(ctx, [[-16,-72],[-6,-81],[4,-81],[13,-76],[-1,-75]], '#37424a');
-  ellipse(ctx, -6, -57, 1.7, 2.3, '#26303a');
-  ellipse(ctx, 7, -57, 1.7, 2.3, '#26303a');
-  ctx.strokeStyle = '#9a6956'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(2, -50, 5, .2, 2.2); ctx.stroke();
-  ctx.strokeStyle = '#99bdbe'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(0, -63, 22, Math.PI, Math.PI * 2); ctx.stroke();
-  rounded(ctx, -24, -67, 7, 15, 3, '#88acac');
-  rounded(ctx, 18, -67, 7, 15, 3, '#88acac');
+  // Loose jeans and white sneakers.
+  rounded(ctx, -14, -8 + step, 13, 25, 4, '#6d96b2');
+  rounded(ctx, 2, -8 - step, 13, 25, 4, '#6d96b2');
+  rounded(ctx, -12, -5 + step, 3, 18, 1, '#89aec5');
+  rounded(ctx, 4, -5 - step, 3, 18, 1, '#89aec5');
+  rounded(ctx, -17, 11 + step, 18, 8, 3, '#ece9dd');
+  rounded(ctx, 2, 11 - step, 18, 8, 3, '#ece9dd');
+  rounded(ctx, -17, 17 + step, 18, 2, 1, '#28353e');
+  rounded(ctx, 2, 17 - step, 18, 2, 1, '#28353e');
+  rounded(ctx, -12, 11 + step, 6, 3, 1, '#293a46');
+  rounded(ctx, 7, 11 - step, 6, 3, 1, '#293a46');
+  // Black oversized shirt and a grey crossbody bag.
+  rounded(ctx, -21, -39, 42, 36, 8, '#202a32');
+  polygon(ctx, [[-18,-38],[-27,-33],[-26,-19],[-16,-18]], '#29353e');
+  polygon(ctx, [[18,-38],[27,-33],[26,-19],[16,-18]], '#29353e');
+  rounded(ctx, -25, -21, 8, 15, 4, '#dfb18c');
+  rounded(ctx, 18, -21, 8, 15, 4, '#dfb18c');
+  ctx.strokeStyle = '#59656b'; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.moveTo(-14, -36); ctx.lineTo(11, -9); ctx.stroke();
+  rounded(ctx, -1, -25, 21, 16, 5, '#768189');
+  rounded(ctx, 2, -22, 15, 3, 1, '#384951');
+  rounded(ctx, 4, -16, 12, 1.5, 1, '#a2acaf');
+  ellipse(ctx, -21, -8, 4.5, 5, '#e4b98f');
+  ellipse(ctx, 22, -8, 4.5, 5, '#e4b98f');
+  rounded(ctx, 19, -19, 9, 15, 2, '#b9c7c4');
+  rounded(ctx, 21, -17, 5, 9, 1, '#294d59');
+  rounded(ctx, -7, -48, 14, 12, 4, '#d8a782');
+  ellipse(ctx, 0, -59, 18, 23, '#e5bc94');
+  ellipse(ctx, -17, -57, 3.5, 6, '#ce9e79');
+  ellipse(ctx, 17, -57, 3.5, 6, '#ce9e79');
+  // Short sides, tousled fringe and thin round metal frames.
+  polygon(ctx, [[-18,-59],[-20,-74],[-15,-80],[-17,-85],[-7,-83],[-2,-89],[5,-84],[12,-86],[17,-79],[22,-77],[19,-65],[12,-66],[7,-70],[1,-65],[-6,-68],[-13,-63]], '#20272b');
+  polygon(ctx, [[-15,-77],[-6,-82],[-1,-80],[7,-83],[14,-77],[4,-76],[-1,-71],[-7,-73]], '#364047');
+  ctx.strokeStyle = '#435059'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(-13, -76); ctx.lineTo(-7, -79); ctx.moveTo(2, -81); ctx.lineTo(9, -78); ctx.stroke();
+  ellipse(ctx, -7, -58, 1.6, 2.1, '#26303a');
+  ellipse(ctx, 8, -58, 1.6, 2.1, '#26303a');
+  ctx.strokeStyle = '#414f57'; ctx.lineWidth = 1.4;
+  ctx.beginPath(); ctx.arc(-8, -58, 8, 0, Math.PI * 2); ctx.moveTo(17, -58); ctx.arc(9, -58, 8, 0, Math.PI * 2); ctx.moveTo(0, -59); ctx.lineTo(1, -59); ctx.moveTo(-19, -60); ctx.lineTo(-16, -60); ctx.moveTo(17, -60); ctx.lineTo(19, -60); ctx.stroke();
+  ctx.strokeStyle = '#ffffff77'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(-12, -62); ctx.lineTo(-9, -64); ctx.moveTo(5, -62); ctx.lineTo(8, -64); ctx.stroke();
+  ctx.strokeStyle = '#9a6956'; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(0, -56); ctx.lineTo(-1, -52); ctx.lineTo(2, -52); ctx.stroke();
+  ctx.strokeStyle = '#5c4a3f'; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(-5, -48); ctx.lineTo(-1, -49); ctx.moveTo(1, -49); ctx.lineTo(5, -48); ctx.stroke();
+  ctx.strokeStyle = '#986a56'; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.arc(0, -49, 5, .35, 2.8); ctx.stroke();
+  ctx.strokeStyle = '#625247'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(-5, -41); ctx.quadraticCurveTo(0, -37, 6, -42); ctx.moveTo(-1, -43); ctx.lineTo(2, -43); ctx.stroke();
   ctx.restore();
 }
 function drawNote(ctx, item, time, reduced) {
