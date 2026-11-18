@@ -1,6 +1,11 @@
 export const PROFILE_KEY = 'mini-games:nexus-profile:v1';
 export const AVATARS = ['✦', '⛰', '⚡', '◈', '☾', '✿'];
 export const GAME_META = {
+  emil: {
+    selector: 'a[href="./emil/"]', category: 'Abenteuer', mode: '1 Spieler', playModes: ['solo'],
+    icon: '♪', color: '#b68a5d',
+    description: 'Sammle Werkstatt-Sounds, finde den Neumarkt und spiele Emils Klingelton vor dem ersten Date.',
+  },
   berggarten: {
     selector: 'a[href="./berggarten/"]', category: 'Aufbau', mode: '1 Spieler', playModes: ['solo'],
     icon: '⛰', color: '#478e74',

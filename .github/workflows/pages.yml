@@ -59,6 +59,7 @@ jobs:
           path: |
             /tmp/nexus-*.png
             /tmp/berggarten-*.png
+            /tmp/emil-*.png
           if-no-files-found: ignore
           retention-days: 7
 

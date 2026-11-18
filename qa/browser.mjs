@@ -1,5 +1,6 @@
 // Run against the production preview: node qa/browser.mjs [base URL]
 import assert from 'node:assert/strict';
+import { testEmil } from './emil.mjs';
 import { pathToFileURL } from 'node:url';
 import { spawn } from 'node:child_process';
 import { fresh, exportSave } from '../src/berggarten/engine.js';
@@ -21,7 +22,7 @@ for (const engine of (process.env.NEXUS_QA_ENGINES === 'chromium' ? [chromium] :
   const page = await context.newPage(), errors = [];
   page.on('pageerror', e => errors.push(e.message));
   await page.goto(base); await page.locator('#nx-cards .nx-card').first().waitFor();
-  assert.equal(await page.locator('#nx-cards .nx-card').count(), 10);console.log(engine.name()+': launcher loaded');
+  assert.equal(await page.locator('#nx-cards .nx-card').count(), 11);console.log(engine.name()+': launcher loaded');
   assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
   await page.locator('.nexus-cta img').evaluate(image => image.decode());
   assert.equal(await page.locator('#nx-recent-row').isHidden(), true);
@@ -30,7 +31,7 @@ for (const engine of (process.env.NEXUS_QA_ENGINES === 'chromium' ? [chromium] :
   assert.equal(await page.locator('#nx-network-hint').isVisible(), true);
   await page.locator('#nx-category').selectOption('Aufbau');
   await page.getByRole('button', { name: 'Filter zurücksetzen' }).click();
-  assert.equal(await page.locator('#nx-cards .nx-card').count(), 10);
+  assert.equal(await page.locator('#nx-cards .nx-card').count(), 11);
   await page.locator('#nx-search').fill('Berggarten'); assert.equal(await page.locator('#nx-cards .nx-card').count(), 1);
   await page.locator('.nx-favorite').first().click();
   await page.locator('#nx-search').fill(''); await page.locator('#nx-favorites').click(); assert.equal(await page.locator('#nx-cards .nx-card').count(), 1);
@@ -126,6 +127,7 @@ for (const engine of (process.env.NEXUS_QA_ENGINES === 'chromium' ? [chromium] :
   await page.locator('header .back').click(); await page.locator('#nx-cards').waitFor();
   assert.deepEqual(errors, []);
   results.push(`${engine.name()}: mobile launcher, original, profile, local round, v2 migration, production, five regions, export/import, tab exclusion PASS`);
+  await testEmil(context, base);
   await context.close();
   if (engine === chromium) {
     // Force Canvas fallback independently of the browser's GPU configuration.
@@ -139,7 +141,7 @@ for (const engine of (process.env.NEXUS_QA_ENGINES === 'chromium' ? [chromium] :
     assert.equal(await p.locator('#panel-world').isVisible(), true);
     assert.equal(await p.locator('#next-project').textContent(), 'Blumengarten');
     await p.screenshot({ path: '/tmp/berggarten-canvas.png' }); assert.deepEqual(errors, []); await fallback.close(); results.push('Canvas fallback PASS');
-    const offline = await browser.newContext(); const pwa = await offline.newPage(); await pwa.goto(base); await pwa.evaluate(() => navigator.serviceWorker.ready); await pwa.reload(); await pwa.waitForFunction(() => !!navigator.serviceWorker.controller); await offline.setOffline(true); await pwa.reload(); await pwa.locator('#nx-cards .nx-card').first().waitFor(); await pwa.goto(`${base}berggarten/`); await pwa.locator('#loading').waitFor({ state: 'hidden' }); await offline.close(); results.push('PWA precache, offline reload and offline Berggarten PASS');
+    const offline = await browser.newContext(); const pwa = await offline.newPage(); await pwa.goto(base); await pwa.evaluate(() => navigator.serviceWorker.ready); await pwa.reload(); await pwa.waitForFunction(() => !!navigator.serviceWorker.controller); await offline.setOffline(true); await pwa.reload(); await pwa.locator('#nx-cards .nx-card').first().waitFor(); await pwa.goto(`${base}berggarten/`); await pwa.locator('#loading').waitFor({ state: 'hidden' }); await pwa.goto(`${base}emil/`); await pwa.getByRole('button', {name:'Feierabend starten'}).click(); await pwa.locator('#game').waitFor(); await offline.close(); results.push('PWA precache, offline reload and offline Berggarten PASS');
   }
   await browser.close();
 }

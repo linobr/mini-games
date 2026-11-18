@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 350">
+<defs><linearGradient id="sky" x2="0" y2="1"><stop stop-color="#2f465b"/><stop offset=".65" stop-color="#a48f80"/><stop offset="1" stop-color="#2c4654"/></linearGradient><radialGradient id="lamp"><stop stop-color="#efc18a" stop-opacity=".5"/><stop offset="1" stop-color="#efc18a" stop-opacity="0"/></radialGradient></defs>
+<path fill="url(#sky)" d="M0 0h640v350H0z"/><g fill="#4b626c"><path d="M10 98h58v120H10zM80 53h72v165H80zM166 88h59v130h-59zM468 67h82v151h-82zM562 45h64v173h-64z"/></g>
+<path fill="#304b57" d="m206 143 219 0 110 207H99z"/><path fill="#829189" d="m189 143 17 0-107 207H44zM425 143h18l142 207h-50z"/>
+<path fill="#2b4653" d="M0 120h154v211H0zM502 123h138v215H502z"/>
+<g fill="#dfbc87"><path d="M21 146h25v23H21zM63 146h25v23H63zM106 146h25v23h-25zM21 187h25v23H21zM63 187h25v23H63zM106 187h25v23h-25zM519 149h25v23h-25zM560 149h25v23h-25zM601 149h25v23h-25z"/></g>
+<rect x="510" y="230" width="120" height="25" rx="3" fill="#d7b581"/><text x="570" y="247" text-anchor="middle" fill="#27414b" font-family="system-ui,sans-serif" font-size="10" font-weight="700">BOWL &amp; KAFFEE</text>
+<circle cx="187" cy="224" r="74" fill="url(#lamp)"/><path stroke="#577078" stroke-width="5" d="M187 222v114"/><rect x="175" y="217" width="24" height="11" rx="3" fill="#f5d6a2"/>
+<g transform="translate(326 272)"><ellipse cy="37" rx="30" ry="9" fill="#152e3980"/><path fill="#263746" d="M-16 4h13v34h-13zM4 4h13v34H4z"/><rect x="-24" y="-33" width="48" height="44" rx="11" fill="#d58d58"/><path stroke="#efc48b" stroke-width="7" d="M-20-26h40"/><ellipse cy="-54" rx="23" ry="27" fill="#e6bd93"/><path fill="#1f2b33" d="M-23-52v-23l17-13 23 3 11 23-12-7-19-1z"/><path d="M-28-53v-12a28 28 0 0 1 56 0v12" fill="none" stroke="#99bcba" stroke-width="5"/><g fill="#99bcba"><rect x="-32" y="-65" width="9" height="19" rx="3"/><rect x="23" y="-65" width="9" height="19" rx="3"/></g><g fill="#28333a"><circle cx="-8" cy="-54" r="2"/><circle cx="8" cy="-54" r="2"/></g></g>
+<g fill="#9cdec6" font-family="system-ui,sans-serif" font-size="43"><text x="259" y="182">♪</text><text x="392" y="152">♫</text></g>
+<text x="320" y="52" text-anchor="middle" fill="#f1d8b2" font-family="system-ui,sans-serif" font-size="15" font-weight="700" letter-spacing="4">FEIERABENDFREQUENZ</text>
+</svg>

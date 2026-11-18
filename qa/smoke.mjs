@@ -15,7 +15,7 @@ await page.goto(base); await page.locator('#nx-cards .nx-card').first().waitFor(
 await page.screenshot({ path: '/tmp/nexus-desktop.png' });
 await page.locator('#nx-library').scrollIntoViewIfNeeded(); await page.screenshot({ path: '/tmp/nexus-library.png' });
 for (const id of ['turbo', 'color']) { await page.locator(`[data-game="${id}"] .nx-play`).click(); assert.equal(await page.locator('#home-view').isVisible(), false); await page.locator('#brand-button').click(); }
-for (const path of ['mooslicht/', 'ki-mooslicht/', 'meteor-run.html', 'neon-defender.html', 'atom-lab.html', 'rift-relay/']) {
+for (const path of ['mooslicht/', 'ki-mooslicht/', 'meteor-run.html', 'neon-defender.html', 'atom-lab.html', 'rift-relay/', 'emil/']) {
   const response = await page.goto(base + path); assert.equal(response.status(), 200);
   await page.locator('canvas').first().waitFor();
   await page.waitForTimeout(900);
@@ -31,4 +31,8 @@ const p = await blocked.newPage(); p.on('pageerror', e => errors.push(e.message)
 await p.locator('[data-interface-option="original"]').click(); await p.locator('#open-color-clash').click(); await p.locator('#brand-button').click();
 await p.locator('[data-interface-option="nexus"]').click(); await p.locator('[data-game="tictactoe"] .nx-play').click(); await p.locator('#start-local').click();
 await p.locator('.cell').first().click(); assert.match(await p.locator('.cell').first().textContent(), /X/);
+await p.goto(base + 'emil/');
+await p.getByRole('button',{name:'Feierabend starten'}).click();
+await p.locator('#pause').click();
+assert.equal(await p.locator('#overlay-title').textContent(), 'Pause.');
 assert.deepEqual(errors, []); await blocked.close(); await browser.close(); server?.kill(); console.log('Desktop entries, assets and blocked-storage play PASS');
